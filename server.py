@@ -35,7 +35,7 @@ def hello_world():
 @app.route('/send-user-input', methods=['POST'])
 def send_user_input():
     try:
-        user_input = request.json.get('user_input', '')
+        user_input = request.form.get('user_input')
         if not user_input:
             return jsonify({'error': 'No user input provided'}), 400
 
@@ -43,7 +43,43 @@ def send_user_input():
         return jsonify({'response': response.text})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+@app.route('/send-image', methods=['POST'])
+def send_image():
+    try:
+        file = request.files.get('image')
+        print(f"Received file: {file}")
+        if not file:
+            return jsonify({'error': 'No image file provided'}), 400
 
+        filepath = save_image_and_get_path(file)
+        image_file = model.files.upload(file=filepath)
+        
+        prompt = (
+            "Give a 50 word description of the satellite image. "
+            "In description, mention the type of possible crops and soil. "
+            "In description, mention what type of Eco-regime (from P1 to P7) can be applied here."
+            "Ouside of description, ask a few follow up question for better eco-regime classification."
+            "Context document: https://www.fega.gob.es/sites/default/files/inline-files/220930_nota_aclaratoria_aplicacion_eco_regimenes.pdf."
+        )
+        
+        response = model.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=[image_file, prompt],
+        )
+        return jsonify({'response': response.text})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+def save_image_and_get_path(file):
+    upload_dir = 'temp/uploads'
+    os.makedirs(upload_dir, exist_ok=True)
+    print(f"Upload directory: {upload_dir}")
+    filename = file.filename;
+    filepath = os.path.join(upload_dir, filename)
+    file.save(filepath)
+    
+    return filepath
 
 if __name__ == '__main__':
     app.run(debug=True)
