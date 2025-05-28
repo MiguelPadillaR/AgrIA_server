@@ -1,0 +1,5 @@
+{
+  "name": "image_description_long",
+  "description": "Initial setup prompt for the Gemini model",
+  "content_file": "image_description_long.txt"
+}

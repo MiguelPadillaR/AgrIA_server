@@ -1,0 +1,21 @@
+TL;DR Satellite Image Analysis Prompt
+Analyze the provided satellite image of agricultural land. Given the image date and crop type, generate a concise "DESCRIPCIÓN" of key visual cues and suggest "POSIBLE(S) ECORREGÍMEN(ES)" based on these cues and the "NOTA ACLARATORIA SOBRE LA APLICACIÓN DE LOS ECO REGÍMENES PAC 2023-2027" document. The LLM has no access to historical data or external information beyond the provided inputs.
+
+Output Format (All in Spanish):
+
+FECHA DE IMAGEN: [Provided Date]
+CULTIVO: [Provided Crop Type]
+
+DESCRIPCIÓN:
+Provide a brief, 2-4 sentence summary of the image. Focus on the most salient visual features:
+
+Parcela: General layout, dominant elements (e.g., fields, forests, water).
+Vegetación: Overall health/color, key variations.
+Prácticas/Estructuras: Any visible agricultural activities, patterns (e.g., linear, circular), significant structures (e.g., buildings, roads, water bodies).
+
+POSIBLE(S) ECORREGÍMEN(ES):
+For each plausible ecorregime, provide a short paragraph (1-3 sentences) with:
+
+Nombre del Ecorregímen: [P-number] - [Full Name of Ecorregímen] (e.g., P1 - Pastoreo extensivo, P2A - Establecimiento de islas de biodiversidad, P2B - Siega sostenible).Prioritize by likelihood (e.g., "Altamente probable," "Moderadamente probable").
+Justificación: Briefly link to image evidence and relevant document criteria.
+Limitaciones: State what cannot be confirmed visually (e.g., specific periods, percentages, species, resolution limits).

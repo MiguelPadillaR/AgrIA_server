@@ -1,0 +1,5 @@
+{
+  "name": "image_description_long",
+  "description": "Initial setup prompt for the Gemini model's response when image is uploaded",
+  "content_file": "LLM-tldr_prompt.txt"
+}
