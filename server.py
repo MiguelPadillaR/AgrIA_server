@@ -2,8 +2,9 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
+from google.generativeai import types
 import google.generativeai as genai
-
+from PIL import Image
 # Load environment variables from a .env file
 load_dotenv()
 
@@ -18,9 +19,6 @@ elif not UI_URL:
 
 # Configure Google Generative AI client
 genai.configure(api_key=GEMINI_API_KEY)
-
-# Prepare the model
-model = genai.GenerativeModel("models/gemini-2.0-flash")
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -38,12 +36,12 @@ def send_user_input():
         user_input = request.form.get('user_input')
         if not user_input:
             return jsonify({'error': 'No user input provided'}), 400
-
+        model = genai.GenerativeModel("models/gemini-2.0-flash")
         response = model.generate_content(user_input)
         return jsonify({'response': response.text})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    
+
 @app.route('/send-image', methods=['POST'])
 def send_image():
     try:
@@ -53,7 +51,9 @@ def send_image():
             return jsonify({'error': 'No image file provided'}), 400
 
         filepath = save_image_and_get_path(file)
-        image_file = model.files.upload(file=filepath)
+        model = genai.GenerativeModel("models/gemini-2.0-flash")
+        # Convert uploaded file to a PIL image
+        image = Image.open(file.stream)
         
         prompt = (
             "Give a 50 word description of the satellite image. "
@@ -65,12 +65,19 @@ def send_image():
         
         response = model.models.generate_content(
             model="gemini-2.0-flash",
-            contents=[image_file, prompt],
+            contents=[
+                types.Part.from_bytes(
+                    data=image.tobytes(),
+                    mime_type='image/jpeg',
+                ),
+                prompt,
+            ]
+,
         )
         return jsonify({'response': response.text})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    
+
 def save_image_and_get_path(file):
     upload_dir = 'temp/uploads'
     os.makedirs(upload_dir, exist_ok=True)
