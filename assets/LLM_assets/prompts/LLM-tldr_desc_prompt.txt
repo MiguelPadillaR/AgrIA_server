@@ -1,5 +1,4 @@
-TL;DR Satellite Image Analysis Prompt
-Analyze the provided satellite image of agricultural land. Given the image date and crop type, generate a concise "DESCRIPCIÓN" of key visual cues and suggest "POSIBLE(S) ECORREGÍMEN(ES)" based on these cues and the "NOTA ACLARATORIA SOBRE LA APLICACIÓN DE LOS ECO REGÍMENES PAC 2023-2027" document. The LLM has no access to historical data or external information beyond the provided inputs.
+Analyze the provided satellite image of agricultural land. Given the image date and crop type, generate a concise "DESCRIPCIÓN" of key visual cues and suggest "POSIBLE(S) ECORREGÍMEN(ES)" based on these cues and the "NOTA ACLARATORIA SOBRE LA APLICACIÓN DE LOS ECO REGÍMENES PAC 2023-2027" document (https://www.fega.gob.es/sites/default/files/inline-files/220930_nota_aclaratoria_aplicacion_eco_regimenes.pdf). The LLM has no access to historical data or external information beyond the provided inputs.
 
 Output Format (All in Spanish):
 
