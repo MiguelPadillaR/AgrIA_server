@@ -1,14 +1,11 @@
 {
-    "description": "Initial setup prompt for the Gemini model's response when image is uploaded",
-  "image_description_list":[
-    {
-      "name": "long",
-      "prompt_filepath": "LLM-full_desc_prompt.txt"
+    "description": "Initial setup prompts for the Gemini model's response when image is uploaded",
+    "long":{
+        "name": "long",
+        "prompt_filepath": "LLM-full_desc_prompt.txt"
     },
-    {
-      "name": "short",
-      "prompt_filepath": "LLM-tldr_desc_prompt.txt"
+    "short": {
+        "name": "short",
+        "prompt_filepath": "LLM-tldr_desc_prompt.txt"
     }
-  ]
-
 }
