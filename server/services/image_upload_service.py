@@ -1,9 +1,9 @@
 from PIL import Image
 from ..utils.llm_utils import load_prompt_from_json
 from ..utils.image_utils import save_image_and_get_path
-from ..config.chat_init_contig import CHAT as chat
+from ..config.chat_init_config import CHAT as chat
 from ..config.constants import PROMPT_LIST_FILE
-import os
+
 def get_image_description(file):
     """
     Handles the image upload and description generation.
