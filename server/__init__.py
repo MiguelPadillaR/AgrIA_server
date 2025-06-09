@@ -4,6 +4,7 @@ from .config.env_config import UI_URL
 from .endpoints.hello import hello_bp
 from .endpoints.user_input import user_input_bp
 from .endpoints.image_upload import image_upload_bp
+from .endpoints.parcel_finder import parcel_finder_bp
 import shutil
 import os
 
@@ -18,5 +19,6 @@ def create_app():
     app.register_blueprint(hello_bp)
     app.register_blueprint(user_input_bp)
     app.register_blueprint(image_upload_bp)
-
+    app.register_blueprint(parcel_finder_bp)
+    
     return app
