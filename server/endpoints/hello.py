@@ -1,4 +1,3 @@
-# app/routes/hello.py
 from flask import Blueprint, jsonify
 
 hello_bp = Blueprint('hello', __name__)
