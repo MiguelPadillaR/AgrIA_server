@@ -1,22 +1,7 @@
+import os
+import shutil
+from ..config.constants import TEMP_UPLOADS_PATH
 from sigpac_tools.find import find_from_cadastral_registry
-
-def find_parcel_by_cadastral_reference(cadastral_reference: str):
-    """
-    Finds a parcel by its cadastral reference using the sigpac_tools library.
-    
-    Args:
-        cadastral_reference (str): The cadastral reference of the parcel to find.
-    
-    Returns:
-        dict: A dictionary containing the parcel information if found, otherwise None.
-    """
-    try:
-        # Use the find_from_cadastral_registry function to get parcel information
-        geometry, metadata = find_from_cadastral_registry(cadastral_reference)
-        return geometry, metadata
-    except Exception as e:
-        print(f"Error finding parcel with cadastral reference {cadastral_reference}: {e}")
-        return None
 
 def get_s2dr3_image(date: str, geometry: dict):
     """    Retrieves the S2DR3 image for a given date and geometry.
@@ -27,3 +12,33 @@ def get_s2dr3_image(date: str, geometry: dict):
         TODO
     """
     return "This function is not implemented yet. Please implement the logic to retrieve the S2DR3 image based on the geometry and date."
+
+def get_s2dr3_image_url():
+        upload_dir = TEMP_UPLOADS_PATH
+        os.makedirs(upload_dir, exist_ok=True)
+        sr_images_dir = TEMP_UPLOADS_PATH # Must be this dir for LLM to read it
+        sr_image_name = "image_name.jpg"
+
+        ###############
+        #  TODO: Mock example. Remove when feature has been implemented.
+        sr_images_dir = get_sr_dir()
+        sr_image_name = "GoogleMaps_Munovela-P1.jpg"
+        sr_image_path = os.path.join(sr_images_dir, sr_image_name)
+        
+        # Move image to upload folder if not there already!
+        destination_dir =  os.path.join(os.getcwd(), TEMP_UPLOADS_PATH, sr_image_name)
+        print(destination_dir)
+        print(sr_image_path)
+
+        shutil.copy(sr_image_path, destination_dir)
+        print(os.path.exists(destination_dir))
+
+        ###############
+        return f"{os.getenv('API_URL')}/uploads/{sr_image_name}"
+
+def get_sr_dir(): # DELETE THIS, IT'S A MOCK METHOD
+    current_script_dir = os.path.dirname(os.path.abspath(__file__))
+    common_parent_dir = os.path.abspath(os.path.join(current_script_dir, '..', '..', '..'))
+    data_dir = os.path.join(common_parent_dir, 'data')
+    return  os.path.join(os.getcwd(), data_dir, "SR-images", "crop-fields")
+
