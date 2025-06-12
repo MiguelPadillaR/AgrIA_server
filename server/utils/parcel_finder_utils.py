@@ -14,8 +14,7 @@ def get_s2dr3_image(date: str, geometry: dict):
     return "This function is not implemented yet. Please implement the logic to retrieve the S2DR3 image based on the geometry and date."
 
 def get_s2dr3_image_url():
-        upload_dir = TEMP_UPLOADS_PATH
-        os.makedirs(upload_dir, exist_ok=True)
+        os.makedirs(TEMP_UPLOADS_PATH, exist_ok=True)
         sr_images_dir = TEMP_UPLOADS_PATH # Must be this dir for LLM to read it
         sr_image_name = "image_name.jpg"
 

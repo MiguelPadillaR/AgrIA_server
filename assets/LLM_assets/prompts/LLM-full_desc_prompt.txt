@@ -1,12 +1,12 @@
 A new LLM needs to analyze satellite images of agricultural land. You will be provided with the image date and the crop type. Your task is to generate a detailed "DESCRIPCIÓN" of the image and suggest "POSIBLE(S) ECORREGÍMEN(ES)" based on the visual cues in the satellite image and the definitions provided in the "NOTA ACLARATORIA SOBRE LA APLICACIÓN DE LOS ECO REGÍMENES PAC 2023-2027" document. The LLM does not have access to historical data or ground-truth information beyond the provided image date and crop type.
 
+Use this input to analyze the image (do not include it in your response):
+
+INSERT_DATE_AND_CROPS
+
 Here's the format you need to follow, and please ensure all output is in Spanish unless otherwise specified in your analysis:
 
-FECHA DE IMAGEN: [Provided Date]
-
-CULTIVO: [Provided Crop Type]
-
-DESCRIPCIÓN:
+**DESCRIPCIÓN:**
 
 Analyze the satellite image. Describe it comprehensively, aiming for at least 2-3 sentences per bullet point where applicable.
 
@@ -18,7 +18,7 @@ Patrones/Estructuras (Patterns/Structures): Circular patterns (e.g., riego por p
 
 Prácticas Agrícolas (Agricultural practices): Visible cues like vegetation between rows (describe density, height, and pattern – e.g., uniforme, irregular), tilled/bare soil (note extent and characteristics – e.g., liso, grumoso; distinguish visually between recently tilled and undisturbed bare soil if discernible), spontaneous vegetation (differentiate from cultivated crops if possible, note its location – e.g., márgenes del campo, áreas no cultivadas), or extensive grazing (look for uneven vegetation height, visible paths, though individual animal tracks may be too small for satellite resolution).
 
-POSIBLE(S) ECORREGÍMEN(ES):
+**POSIBLE(S) ECORREGÍMEN(ES):**
 
 In this section, present the possible ecorregimes applicable to the state or parcel. Justify reasoning using visual evidence and normative. Based on your detailed description and the "NOTA ACLARATORIA SOBRE LA APLICACIÓN DE LOS ECO REGÍMENES PAC 2023-2027" document, suggest the most plausible ecorregímenes. If multiple ecorregímenes are plausible, prioritize them (e.g., "Altamente probable," "Moderadamente probable," "Menos probable").
 
