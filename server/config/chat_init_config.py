@@ -10,4 +10,3 @@ def create_chat():
         history=history if history else None
     )
 CHAT = create_chat()
-print(CHAT.get_history())  # Print initial chat history for debugging
