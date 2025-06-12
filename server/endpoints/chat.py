@@ -1,10 +1,6 @@
 import json
-import os
-from pathlib import Path
 from flask import Blueprint, request, jsonify
 from server.services.chat_service import *
-from ..config.constants import TEMP_UPLOADS_PATH, PROMPT_LIST_FILE
-from ..utils.llm_utils import load_prompt_from_json
 
 chat_bp = Blueprint('chat', __name__)
 
@@ -42,22 +38,7 @@ def send_parcel_info_to_chat():
         image_crops = json.loads(request.form.get('imageCrops'))
         image_filename = request.form.get('imageFilename')
         
-        # Build image context prompt
-        image_context_prompt =f'FECHA DE IMAGEN: {image_date}\nCULTIVOS DETECTADOS: {len(image_crops)}'
-        for crop in image_crops:
-            image_context_prompt+= f'\nTipo: {crop["uso_sigpac"]}\nSuperficie (m2): {crop["dn_surface"]}'
-        
-        # Read image desc file and insert image context prompt
-        image_desc_prompt =  load_prompt_from_json(PROMPT_LIST_FILE, is_image_desc_prompt=True).replace("INSERT_DATE_AND_CROPS", image_context_prompt)
-        
-        # Open image from path
-        image_path = Path(os.path.join(TEMP_UPLOADS_PATH, image_filename))
-        image = Image.open(image_path)
-
-        response = {
-            "text": chat.send_message([image, image_desc_prompt],).text,
-            "imageDesc":image_context_prompt
-            }
+        response = get_parcel_description(image_date, image_crops, image_filename)
 
         return jsonify({'response': response})
     except Exception as e:
