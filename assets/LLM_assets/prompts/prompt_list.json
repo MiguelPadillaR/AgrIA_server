@@ -2,11 +2,13 @@
     "description": "Initial setup prompts for the Gemini model",
     "long":{
         "name": "long",
-        "prompt_filepath": "LLM-full_desc_prompt.txt"
+        "prompt_filepath": "LLM-full_desc_prompt.txt",
+        "example": "LLM-full_desc_example.txt"
     },
     "short": {
         "name": "short",
-        "prompt_filepath": "LLM-tldr_desc_prompt.txt"
+        "prompt_filepath": "LLM-tldr_desc_prompt.txt",
+        "example": "LLM-tldr_desc_example.txt"
     },
     "role": {
         "name": "role",

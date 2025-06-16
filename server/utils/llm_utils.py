@@ -36,7 +36,7 @@ def generate_initial_history(documents_json_path: str, role_json_path: str) -> l
 
     return initial_history
 
-def load_prompt_from_json(json_path: str, base_path: str = BASE_PROMPTS_PATH, is_image_desc_prompt: bool = False, get_short_description: bool = True) -> dict:
+def load_prompt_from_json(json_path: str, base_path: str = BASE_PROMPTS_PATH, is_image_desc_prompt: bool = False, is_detailed_description: bool = True) -> dict:
     """
     Reads a JSON file to get the prompt description and returns the content of the specified prompt file.
     Args:
@@ -53,19 +53,42 @@ def load_prompt_from_json(json_path: str, base_path: str = BASE_PROMPTS_PATH, is
     with open(full_json_path, 'r', encoding='utf-8') as json_file:
         meta = json.load(json_file)
     if is_image_desc_prompt:
-        desc_type = meta.get('short') if get_short_description else meta.get('long')
+        prompt_type = 'short' if not is_detailed_description else 'long'
     else:
-        desc_type = meta.get('role')
+        prompt_type = 'role'
 
-    desc_filename = desc_type["prompt_filepath"]
+    print("PROMPT TYPE: ", prompt_type.capitalize())
 
-    # Read desc file and get content
-    prompt_file = os.path.join(base_path, desc_filename).replace("\\", "/")
-    with open(prompt_file, 'r', encoding='utf-8') as prompt_file:
-        content = prompt_file.read()
+    prompt_data = meta.get(prompt_type)
 
+
+    content = get_description_prompt(base_path, prompt_data, is_image_desc_prompt)
     meta['content'] = content
-    del desc_filename
+    return content
+
+def get_description_prompt(base_path, desc_type, is_image_desc_prompt):
+    """
+    Get the full description prompt from both the instructions and example files.
+    Args:
+        base_path (str): Base path where all prompt related files are located.
+        desc_type (str): The type of description the prompt is (`long`, `short`, or `role`).
+        is_image_desc_prompt (bool): Whether the prompt is for image description or not.
+    Returns:
+        content (str): The full constructed description prompt to pass to the LLM.
+    """
+    print(desc_type)
+    desc_filename = desc_type["prompt_filepath"]
+    prompt_path = os.path.join(base_path, desc_filename).replace("\\", "/")
+
+    with open(prompt_path, 'r', encoding='utf-8') as pf:
+        content = pf.read()
+
+    if is_image_desc_prompt:
+        example_filename = desc_type["example"]
+        example_path = os.path.join(base_path, example_filename).replace("\\", "/")
+        with open(example_path, 'r', encoding='utf-8') as ef:
+            content += "\n" + ef.read()
+
     return content
 
 def load_documents_from_json(json_path: str, base_path: str = BASE_CONTEXT_PATH) -> list:

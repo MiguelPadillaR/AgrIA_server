@@ -20,12 +20,16 @@ def send_user_input():
 @chat_bp.route('/send-image', methods=['POST'])
 def send_image():
     try:
+        print("Is detailed desc?", request.form.get("isDetailedDescription"))
         file = request.files.get('image')
+        print("FILE", file)
+        is_detailed_description: bool = "true" in str(request.form.get("isDetailedDescription")).lower()
         print("Image file", file)
+        print("Is detailed desc?", is_detailed_description)
         if not file:
             return jsonify({'error': 'No image file provided'}), 400
         
-        response_text = get_image_description(file)
+        response_text = get_image_description(file, is_detailed_description)
 
         return jsonify({'response': response_text})
     except Exception as e:
