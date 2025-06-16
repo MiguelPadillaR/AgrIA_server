@@ -20,9 +20,7 @@ def send_user_input():
 @chat_bp.route('/send-image', methods=['POST'])
 def send_image():
     try:
-        print("Is detailed desc?", request.form.get("isDetailedDescription"))
         file = request.files.get('image')
-        print("FILE", file)
         is_detailed_description: bool = "true" in str(request.form.get("isDetailedDescription")).lower()
         print("Image file", file)
         print("Is detailed desc?", is_detailed_description)
@@ -41,8 +39,9 @@ def send_parcel_info_to_chat():
         image_date = request.form.get('imageDate')
         image_crops = json.loads(request.form.get('imageCrops'))
         image_filename = request.form.get('imageFilename')
+        is_detailed_description: bool = "true" in str(request.form.get("isDetailedDescription")).lower()
         
-        response = get_parcel_description(image_date, image_crops, image_filename)
+        response = get_parcel_description(image_date, image_crops, image_filename, is_detailed_description)
 
         return jsonify({'response': response})
     except Exception as e:

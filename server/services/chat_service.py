@@ -24,7 +24,7 @@ def get_image_description(file, is_detailed_description):
 
     return response.text
 
-def get_parcel_description(image_date, image_crops, image_filename):
+def get_parcel_description(image_date, image_crops, image_filename, is_detailed_description):
     """
     Handles the parcel information reading and description.
     """
@@ -34,7 +34,7 @@ def get_parcel_description(image_date, image_crops, image_filename):
         image_context_prompt+= f'\nTipo: {crop["uso_sigpac"]}\nSuperficie (m2): {crop["dn_surface"]}'
     
     # Read image desc file and insert image context prompt
-    image_desc_prompt =  load_prompt_from_json(PROMPT_LIST_FILE, is_image_desc_prompt=True, is_detailed_description=False).replace("INSERT_DATE_AND_CROPS", image_context_prompt)
+    image_desc_prompt =  load_prompt_from_json(PROMPT_LIST_FILE, is_image_desc_prompt=True, is_detailed_description = is_detailed_description).replace("INSERT_DATE_AND_CROPS", image_context_prompt)
     
     # Open image from path
     image_path = Path(os.path.join(TEMP_UPLOADS_PATH, image_filename))
