@@ -1,6 +1,8 @@
 from pathlib import Path
-import os
 from PIL import Image
+import os
+from google.genai.types import Content
+from ..config.llm_client import client
 from ..utils.llm_utils import load_prompt_from_json
 from ..utils.chat_utils import save_image_and_get_path
 from ..config.chat_init_config import CHAT as chat
@@ -46,5 +48,50 @@ def get_parcel_description(image_date, image_crops, image_filename, is_detailed_
     }
 
     return response
+
+def get_suggestion_for_chat(chat_history: list[Content]):
+    """
+    Provides a suggested input for the model's last chat output.
+    Args:
+        last_chat_output (str): Model's last chat output.
+    Returns:
+        suggestion (str): Suggestion for the user to input.
+    """
+    last_message = chat_history[-1].parts[0].text
+    summarised_chat = "### CHAT_SUMMARY_START ###\n" + get_summarised_chat(chat_history) + "\n### CHAT_SUMMARY_END ###"
+    print(summarised_chat)
+    last_chat_output = "### LAST_OUTPUT_START ###\n" + last_message + "\n### LAST_OUTPUT_END ###"
+    suggestion_prompt = "Using the summarisation as context, provide an appropiate 300-character max response in Spanish to this chat output. You are acting as a user. Do not use any data not mentioned. Questions are heavily encouraged:\n\n"
+    suggestion = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=[suggestion_prompt, summarised_chat, last_chat_output]
+    )
+    print(suggestion.text)
+    return suggestion.text
+
+def get_summarised_chat(chat_history):
+    """
+    Provides a summary of the chat history.
+    Args:
+        chat_history (str): Chat history.
+    Returns:
+        summarised_chat.text (str): The summary of the history.
+    """
+    try:
+        chat_message_history = []
+        for el in chat_history:
+            for part in el.parts:
+                chat_message_history.append(part.text)
+        print(chat_message_history)
+        summarised_chat = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=[
+                "Summarise this chat history in 100 words aprox:",
+                chat_message_history
+            ]
+        )
+        return summarised_chat.text
+    except Exception as e:
+        print(e)
 
 

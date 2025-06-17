@@ -46,3 +46,11 @@ def send_parcel_info_to_chat():
         return jsonify({'response': response})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+@chat_bp.route('/get-input-suggestion', methods=['GET'])
+def get_input_suggestion():
+    try:
+        response = get_suggestion_for_chat(chat.get_history())
+        return jsonify({'response': response})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
