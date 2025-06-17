@@ -1,6 +1,5 @@
 from ..config.llm_client import client
 import pathlib
-import os
 
 def upload_context_document(pdf_file_path: str) -> str:
     """

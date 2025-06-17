@@ -20,3 +20,5 @@ For each plausible ecorregime, provide a short paragraph (1-3 sentences) with:
 
 Nombre del Ecorregímen: [P-number] - [Full Name of Ecorregímen] (e.g., P1 - Pastoreo extensivo, P2A - Establecimiento de islas de biodiversidad, P2B - Siega sostenible).Prioritize by likelihood (e.g., "Altamente probable," "Moderadamente probable"). Briefly link to image evidence and relevant document criteria.
 Limitaciones: State what cannot be confirmed visually (e.g., specific periods, percentages, species, resolution limits).
+
+At the end, mention what crucial information for full eco-regime assessment cannot be gathered from the image and ask the user if they can provide it
