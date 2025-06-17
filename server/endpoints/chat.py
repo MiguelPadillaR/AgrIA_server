@@ -22,8 +22,6 @@ def send_image():
     try:
         file = request.files.get('image')
         is_detailed_description: bool = "true" in str(request.form.get("isDetailedDescription")).lower()
-        print("Image file", file)
-        print("Is detailed desc?", is_detailed_description)
         if not file:
             return jsonify({'error': 'No image file provided'}), 400
         

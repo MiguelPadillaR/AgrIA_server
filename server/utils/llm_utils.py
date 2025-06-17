@@ -1,10 +1,9 @@
-from ..config.constants import BASE_CONTEXT_PATH, BASE_PROMPTS_PATH
+from ..config.constants import BASE_CONTEXT_PATH, BASE_PROMPTS_PATH, FULL_DESC_TRIGGER, SHORT_DESC_TRIGGER
 from server.services.llm_services import upload_context_document
-from google.genai import types
 import json
 import os
 
-def generate_system_instructions(documents_json_path: str, role_json_path: str):
+def generate_system_instructions(documents_json_path: str, prompt_json_path: str):
     """
     Sets up the initial model's system instructions and context documents for the chat.
     
@@ -15,14 +14,16 @@ def generate_system_instructions(documents_json_path: str, role_json_path: str):
     Returns:
         list: A list containing the system instruction and context documents info as dictionaries.
     """
-    # Upload files and read role file
-    role_instructions = load_prompt_from_json(role_json_path)
+    # Upload files and read role and description files
+    role_prompt = load_prompt_from_json(prompt_json_path)
+    short_description_prompt = load_prompt_from_json(prompt_json_path,is_image_desc_prompt= True, is_detailed_description=False)
+    full_description_prompt = load_prompt_from_json(prompt_json_path, is_image_desc_prompt= True, is_detailed_description=True)
     context_documents = load_documents_from_json(documents_json_path)
     documents_uris =[]
 
     for doc in context_documents:
         if doc:
-            # Upload the document and get its relative path
+            # Upload the document and get its relative uploaded path
             uploaded_doc = upload_context_document(doc)
             if uploaded_doc:
                 documents_uris.append(uploaded_doc.uri)
@@ -33,12 +34,15 @@ def generate_system_instructions(documents_json_path: str, role_json_path: str):
 
     # Compose system insrtuctions from files' URI and role text data
     documents_instructions = "\n\nUse these files as your context documents for the task:"
-    system_instructions = role_instructions + documents_instructions + str(documents_uris)
+    short_description_instruction = "\n\nThis is the description instructions, format and example for the short image description. You will use these to describe it whenever you are prompted with an image and the tokens '" + SHORT_DESC_TRIGGER +"' and date and crop info:\n\n" + short_description_prompt
+    long_description_instruction = "\n\nThis is the description instructions, format and example for the long image description. You will use these to describe it whenever you are prompted with an image and the tokens '" + FULL_DESC_TRIGGER +"' and date and crop info:\n\n" + full_description_prompt
+
+    system_instructions = role_prompt + documents_instructions + str(documents_uris) + short_description_instruction + long_description_instruction
 
     return system_instructions
 
 
-def load_prompt_from_json(json_path: str, base_path: str = BASE_PROMPTS_PATH, is_image_desc_prompt: bool = False, is_detailed_description: bool = True) -> dict:
+def load_prompt_from_json(json_path: str, base_path: str = BASE_PROMPTS_PATH, is_image_desc_prompt: bool = False, is_detailed_description: bool = False) -> dict:
     """
     Reads a JSON file to get the prompt description and returns the content of the specified prompt file.
     Args:
