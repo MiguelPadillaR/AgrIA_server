@@ -8,7 +8,7 @@ def generate_system_instructions(documents_json_path: str, prompt_json_path: str
     Sets up the initial model's system instructions and context documents for the chat.
     
     Args:
-        documents_json_path (str): JSO filepath containing paths to the actual context documents.
+        documents_json_path (str): JSON filepath containing paths to the actual context documents.
         role_json_path (str): JSON filepath containing paths to the actual text file with the role prompt.
     
     Returns:
