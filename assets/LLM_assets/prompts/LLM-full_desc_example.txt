@@ -1,0 +1,46 @@
+THIS IS AN EXAMPLE:
+
+## DESCRIPCIÓN:
+
+*   **Detalles de la Parcela:** La imagen muestra una parcela de tamaño mediano, con una forma irregular, subdividida en varias áreas. Se distinguen claramente: 
+una zona principal de cultivo con líneas de cultivo visibles (TA - Tierras Arables), una zona de pastos con arbolado disperso (PA - Pasto con arbolado), una zona de agua (AG - Corrientes y Superficies de Agua) y unas edificaciones (ED - Edificaciones). Las vías de acceso y caminos se encuentran a lo largo del límite de la parcela.
+*   **Vegetación:** La vegetación en las zonas de cultivo (TA - Tierras Arables) presenta un tono marrón terroso, lo cual sugiere que los cultivos se encuentran cosechados o en estado de barbecho en la fecha de la imagen (10/01/2025). El pasto con arbolado (PA - Pasto con arbolado) muestra una vegetación de tono verde y las copas de los árboles presentan un color más oscuro.
+*   **Patrones/Estructuras:** Se observan líneas de cultivo en las tierras arables (TA - Tierras Arables), lo que indica la posible práctica de cultivos anuales. La presencia de árboles dispersos en la zona de pastos con arbolado (PA - Pasto con arbolado) junto con una zona de agua (AG - Corrientes y Superficies de Agua) y unas edificaciones (ED - Edificaciones).
+*   **Prácticas Agrícolas:** El color marrón del suelo en las zonas de cultivo indica que la tierra está, muy probablemente, en barbecho o se ha realizado la cosecha. El pasto arbolado muestra un aspecto irregular en la altura de la vegetación, lo que podría sugerir pastoreo.
+
+## POSIBLE(S) ECORREGÍMEN(ES):
+
+### P1 - Pastoreo extensivo.
+*   **Justificación** La presencia de pasto con arbolado (PA - Pasto con arbolado) y el aspecto de la vegetación, sugieren la posibilidad de pastoreo. El pastoreo extensivo es una práctica que se puede aplicar en superficies de pastos (P.4.32).
+*   **Limitaciones:** La imagen no permite confirmar la actividad de pastoreo ni determinar la carga ganadera ni la duración del pastoreo. Se requiere el historial de pastoreo.
+*   **Impacto de la Resolución:** No es posible identificar visualmente la actividad ganadera.
+*   **Gaps de Datos Auxiliares:** Es indispensable obtener información sobre la actividad ganadera, el tipo de ganado y su duración, así como los datos de inscripción en el REGA.
+*   **Ambigüedad Visual:** El aspecto de la vegetación puede interpretarse como pastoreo, pero también podría ser producto de otras prácticas.
+
+### *P3 - Rotación de cultivos con especies mejorantes.
+*   **Justificación:** Aunque es 10 de enero y los cultivos se encuentran cosechados, si se demuestra rotación con especies mejorantes en el año anterior (2024) y se vuelve a demostrar en este año (2025), podría ser posible.  La "NOTA ACLARATORIA" no indica directamente cómo evaluar visualmente la rotación, pero el cumplimiento de esta práctica se refiere a la declaración de los cultivos, no a la observación visual (P.4.5).
+*   **Limitaciones:** Imposible confirmar visualmente la rotación de cultivos ni la presencia de especies mejorantes. Se requiere el historial de cultivo de la parcela.
+*   **Impacto de la Resolución: **No se puede inferir con certeza el cumplimiento de esta práctica dado que no podemos ver los cultivos en el momento presente.
+*   **Gaps de Datos Auxiliares:** Es indispensable conocer el historial de cultivos y la declaración de las prácticas agrícolas realizadas en la parcela, incluyendo especies utilizadas.
+*   **Ambigüedad Visual:** Los tonos terrosos del suelo arado son ambiguos, ya que no permiten saber los cultivos sembrados en el pasado.
+
+### *P4 - Siembra Directa.
+*   **Justificación:** El color marrón del suelo podría indicar que la práctica de siembra directa, al mantener la cobertura del suelo, sea viable. Para ello, se requiere información sobre la práctica de siembra directa y la rotación de cultivos en la parcela.
+*   **Limitaciones:** Imposible confirmar visualmente la siembra directa, el tipo de manejo del rastrojo (si se ha mantenido o eliminado), y la rotación de cultivos. Se requiere la declaración de las prácticas agrícolas.
+*   **Impacto de la Resolución:** No se puede discernir el método de siembra.
+*   **Gaps de Datos Auxiliares:** Se necesita información sobre las prácticas de gestión del suelo y el tipo de siembra implementada.
+*   **Ambigüedad Visual:** La imagen no permite distinguir si se han realizado labores de labranza.
+
+### *P5 - Espacios de biodiversidad.
+*   **Justificación:** La presencia de zonas de agua, árboles dispersos y las propias zonas de pasto arbolado, se pueden considerar como elementos no productivos. Se requiere conocer el porcentaje de tierras arables, pastos y cultivos permanentes (si los hubiera) para determinar el porcentaje de espacios de biodiversidad necesarios (P.4.25).
+*   **Limitaciones:** La imagen no permite determinar la cantidad exacta de espacios de biodiversidad ni su distribución, ni la clasificación SIGPAC, requerida para la evaluación detallada. Tampoco se puede identificar la superficie exacta de cada tipo de cultivo, pasto o elemento del paisaje para calcular el porcentaje de espacios de biodiversidad necesario para cumplir con el ecorrégimen.
+*   **Impacto de la Resolución:** La resolución de la imagen limita la contabilización precisa de elementos del paisaje, como la anchura de márgenes, y la superficie de los espacios de biodiversidad.
+*   **Gaps de Datos Auxiliares:** Se necesita información sobre la clasificación SIGPAC de la parcela, los tipos de cultivo y la superficie total de la explotación para determinar el porcentaje requerido.
+*   **Ambigüedad Visual:** No es posible saber si las superficies improductivas cumplen con los requisitos para su clasificación y contabilización dentro de este ecorrégimen (por ejemplo, márgenes de biodiversidad con características específicas).
+
+### *P6 - Cubierta vegetal espontánea o sembrada.
+*   **Justificación:** El estado de barbecho de la parcela (en el momento de la imagen) permitiría la cobertura vegetal.
+*   **Limitaciones:** No se puede confirmar la presencia de la cubierta vegetal.
+*   **Impacto de la Resolución:** La resolución de la imagen no permite confirmar si hay cubierta.
+*   **Gaps de Datos Auxiliares:** Se requiere información sobre las prácticas de gestión del suelo y el tipo de siembra implementada.
+*   **Ambigüedad Visual:** No se puede saber si hay cubierta.
