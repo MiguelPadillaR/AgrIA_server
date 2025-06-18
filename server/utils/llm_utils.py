@@ -1,42 +1,48 @@
-from ..config.constants import BASE_CONTEXT_PATH, BASE_PROMPTS_PATH
+from ..config.constants import BASE_CONTEXT_PATH, BASE_PROMPTS_PATH, FULL_DESC_TRIGGER, SHORT_DESC_TRIGGER
 from server.services.llm_services import upload_context_document
-from google.genai import types
 import json
 import os
 
-def generate_initial_history(documents_json_path: str, role_json_path: str) -> list:
+def generate_system_instructions(documents_json_path: str, prompt_json_path: str):
     """
-    Generates the initial chat history with system instructions and context documents.
+    Sets up the initial model's system instructions and context documents for the chat.
     
     Args:
-        documents_json_path (str): JSO filepath containing paths to the actual context documents.
+        documents_json_path (str): JSON filepath containing paths to the actual context documents.
         role_json_path (str): JSON filepath containing paths to the actual text file with the role prompt.
     
     Returns:
         list: A list containing the system instruction and context documents info as dictionaries.
     """
-    initial_history = []
-    # Send mock user message (firt message in history must always be user's)
-    initial_history.append(types.UserContent(parts=[types.Part(text="Hello! Please, briefly acknowledge your role and context documents.")]))
-    # Get and set model's role
-    system_instructions = load_prompt_from_json(role_json_path)
-    initial_history.append(types.ModelContent(parts=[types.Part(text=system_instructions)]))
-    # Get and load context documents
-    context_documents = load_documents_from_json(documents_json_path)   
+    # Upload files and read role and description files
+    role_prompt = load_prompt_from_json(prompt_json_path)
+    short_description_prompt = load_prompt_from_json(prompt_json_path,is_image_desc_prompt= True, is_detailed_description=False)
+    full_description_prompt = load_prompt_from_json(prompt_json_path, is_image_desc_prompt= True, is_detailed_description=True)
+    context_documents = load_documents_from_json(documents_json_path)
+    documents_uris =[]
+
     for doc in context_documents:
         if doc:
-            # Upload the document and get its relative path
+            # Upload the document and get its relative uploaded path
             uploaded_doc = upload_context_document(doc)
             if uploaded_doc:
-                initial_history.append(types.ModelContent(parts=[uploaded_doc]))
+                documents_uris.append(uploaded_doc.uri)
             else:
                 print(f"Failed to upload document: {doc}")
         else:
             print("No document content found.")
 
-    return initial_history
+    # Compose system insrtuctions from files' URI and role text data
+    documents_instructions = "\n\nUse these files as your context documents for the task:"
+    short_description_instruction = "\n\nThis is the description instructions, format and example for the short image description. You will use these to describe it whenever you are prompted with an image and the tokens '" + SHORT_DESC_TRIGGER +"' and date and crop info:\n\n" + short_description_prompt
+    long_description_instruction = "\n\nThis is the description instructions, format and example for the long image description. You will use these to describe it whenever you are prompted with an image and the tokens '" + FULL_DESC_TRIGGER +"' and date and crop info:\n\n" + full_description_prompt
 
-def load_prompt_from_json(json_path: str, base_path: str = BASE_PROMPTS_PATH, is_image_desc_prompt: bool = False, get_short_description: bool = True) -> dict:
+    system_instructions = role_prompt + documents_instructions + str(documents_uris) + short_description_instruction + long_description_instruction
+
+    return system_instructions
+
+
+def load_prompt_from_json(json_path: str, base_path: str = BASE_PROMPTS_PATH, is_image_desc_prompt: bool = False, is_detailed_description: bool = False) -> dict:
     """
     Reads a JSON file to get the prompt description and returns the content of the specified prompt file.
     Args:
@@ -53,19 +59,39 @@ def load_prompt_from_json(json_path: str, base_path: str = BASE_PROMPTS_PATH, is
     with open(full_json_path, 'r', encoding='utf-8') as json_file:
         meta = json.load(json_file)
     if is_image_desc_prompt:
-        desc_type = meta.get('short') if get_short_description else meta.get('long')
+        prompt_type = 'short' if not is_detailed_description else 'long'
     else:
-        desc_type = meta.get('role')
+        prompt_type = 'role'
 
-    desc_filename = desc_type["prompt_filepath"]
+    print("PROMPT TYPE: ", prompt_type.capitalize())
 
-    # Read desc file and get content
-    prompt_file = os.path.join(base_path, desc_filename).replace("\\", "/")
-    with open(prompt_file, 'r', encoding='utf-8') as prompt_file:
-        content = prompt_file.read()
-
+    prompt_data = meta.get(prompt_type)
+    content = get_description_prompt(base_path, prompt_data, is_image_desc_prompt)
     meta['content'] = content
-    del desc_filename
+
+    return content
+
+def get_description_prompt(base_path, prompt_data, is_image_desc_prompt):
+    """
+    Get the full description prompt from both the instructions and example files.
+    Args:
+        base_path (str): Base path where all prompt related files are located.
+        prompt_data (str): The type of description the prompt is (`long`, `short`, or `role`).
+        is_image_desc_prompt (bool): Whether the prompt is for image description or not.
+    Returns:
+        content (str): The full constructed description prompt to pass to the LLM.
+    """
+    desc_filename = prompt_data["prompt_filepath"]
+    prompt_path = os.path.join(base_path, desc_filename).replace("\\", "/")
+
+    with open(prompt_path, 'r', encoding='utf-8') as pf:
+        content = pf.read()
+
+    if is_image_desc_prompt:
+        prompt_example_path = os.path.join(base_path, prompt_data["example"]).replace("\\", "/")
+        with open(prompt_example_path, 'r', encoding='utf-8') as ef:
+            content += "\n" + ef.read()
+
     return content
 
 def load_documents_from_json(json_path: str, base_path: str = BASE_CONTEXT_PATH) -> list:

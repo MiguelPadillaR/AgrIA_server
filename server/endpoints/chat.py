@@ -21,11 +21,11 @@ def send_user_input():
 def send_image():
     try:
         file = request.files.get('image')
-        print("Image file", file)
+        is_detailed_description: bool = "true" in str(request.form.get("isDetailedDescription")).lower()
         if not file:
             return jsonify({'error': 'No image file provided'}), 400
         
-        response_text = get_image_description(file)
+        response_text = get_image_description(file, is_detailed_description)
 
         return jsonify({'response': response_text})
     except Exception as e:
@@ -37,9 +37,19 @@ def send_parcel_info_to_chat():
         image_date = request.form.get('imageDate')
         image_crops = json.loads(request.form.get('imageCrops'))
         image_filename = request.form.get('imageFilename')
+        is_detailed_description: bool = "true" in str(request.form.get("isDetailedDescription")).lower()
         
-        response = get_parcel_description(image_date, image_crops, image_filename)
+        response = get_parcel_description(image_date, image_crops, image_filename, is_detailed_description)
 
+        return jsonify({'response': response})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+@chat_bp.route('/get-input-suggestion', methods=['GET'])
+def get_input_suggestion():
+    try:
+        chat_history = chat.get_history()
+        response = get_suggestion_for_chat(chat_history)
         return jsonify({'response': response})
     except Exception as e:
         return jsonify({'error': str(e)}), 500

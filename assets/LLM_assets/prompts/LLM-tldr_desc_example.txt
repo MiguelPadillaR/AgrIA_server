@@ -1,0 +1,22 @@
+THIS IS AN EXAMPLE:
+
+**DESCRIPCIÓN:**
+
+>La imagen muestra una finca agrícola dividida en parcelas, predominando tierras arables y pastos con arbolado. Se observa un cuerpo de agua y edificaciones en la zona. Los campos, en tonos marrones y ocres, sugieren una etapa de descanso o cultivo de invierno, con variaciones de color que podrían indicar manejo diferenciado. Se aprecian caminos y arbolado disperso.
+
+***
+
+**POSIBLE(S) ECORREGÍMEN(ES):**
+
+* **P1 - Pastoreo extensivo:** Moderadamente probable. La presencia de pastos con arbolado sugiere la posibilidad de esta práctica. La superficie de pasto con arbolado (PA) indica el uso del pastoreo, que es un requisito para la aplicación de esta práctica.
+
+    * **Limitaciones:** No se puede confirmar visualmente la carga ganadera, los periodos de pastoreo, o la gestión de la siega sostenible.
+
+* **P4 - Siembra directa:** Probable. La apariencia de las tierras arables (TA) podría indicar una siembra directa, o en preparación para la siembra. El estado del suelo es clave para la aplicación de esta práctica.
+
+    * **Limitaciones:** El tipo de cultivo y la práctica de la siembra directa debe ser confirmada, así como la rotación, los requisitos, y la gestión sostenible.
+
+* **P5 - Espacios de biodiversidad en tierras de cultivo y cultivos permanentes:** Moderadamente probable. La presencia de elementos improductivos (IM), junto con el arbolado disperso y las zonas de agua, sugiere la posibilidad de acogerse a este régimen. La gestión de los márgenes y zonas no cosechadas para la biodiversidad es un requerimiento.
+
+    * **Limitaciones:**  No es posible determinar la extensión de las superficies de biodiversidad y su cumplimiento de los requisitos.
+

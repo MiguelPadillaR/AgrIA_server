@@ -1,5 +1,4 @@
 import os
-import shutil
 from ..utils.parcel_finder_utils import *
 from flask import Blueprint, request, jsonify, send_from_directory
 from server.config.constants import TEMP_UPLOADS_PATH
@@ -16,7 +15,7 @@ def find_parcel():
     The function performs the following steps:
         1. Validates the presence of required form data.
         2. Retrieves the parcel's geometry and metadata using the cadastral reference.
-        3. (TODO) Integrates with the S2DR3 service to obtain a super-resolved image for the parcel and date.
+        3. (TODO) Integrates with the super-resolution service to obtain a super-resolved image for the parcel and date.
         4. (Mock) Copies a sample super-resolved image to the upload directory.
         5. Constructs a response containing the cadastral reference, geometry, image URL, and metadata.
     Returns:
