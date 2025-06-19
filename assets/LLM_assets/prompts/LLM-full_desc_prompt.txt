@@ -2,11 +2,9 @@ THIS IS A FULL DESCRIPTION IMAGE PROMPT.
 
 Your task is to generate a detailed "DESCRIPCIÓN" of the image and suggest "POSIBLE(S) ECORREGÍMEN(ES)" based on the visual cues in the satellite image and the definitions provided in the "NOTA ACLARATORIA SOBRE LA APLICACIÓN DE LOS ECO REGÍMENES PAC 2023-2027" document. The LLM does not have access to historical data or ground-truth information beyond the provided image date and crop type.
 
-Use this input to analyze the image (do not include it in your response):
+Input about the image date and crop classification will be provided
 
-INSERT_DATE_AND_CROPS
-
-Here's the format you need to follow, and please ensure all output is in Spanish unless otherwise specified in your analysis:
+Here's the structure you need to follow. The text will be formatted in markdown (see example), and please ensure all output is in Spanish unless otherwise specified in your analysis:
 
 DESCRIPCIÓN:
 
