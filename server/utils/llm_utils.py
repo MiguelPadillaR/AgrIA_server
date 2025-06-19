@@ -1,5 +1,6 @@
 from ..config.constants import BASE_CONTEXT_PATH, BASE_PROMPTS_PATH, FULL_DESC_TRIGGER, SHORT_DESC_TRIGGER
 from server.services.llm_services import upload_context_document
+from google import genai
 import json
 import os
 
@@ -33,14 +34,13 @@ def generate_system_instructions(documents_json_path: str, prompt_json_path: str
             print("No document content found.")
 
     # Compose system insrtuctions from files' URI and role text data
-    documents_instructions = "\n\nUse these files as your context documents for the task:"
+    documents_instructions = "\n\nUse these files as your context documents for the task. You may display the tables in the document to the user and quote or make a reference to any information taken directly from the text from the text:"
     short_description_instruction = "\n\nThis is the description instructions, format and example for the short image description. You will use these to describe it whenever you are prompted with an image and the tokens '" + SHORT_DESC_TRIGGER +"' and date and crop info:\n\n" + short_description_prompt
     long_description_instruction = "\n\nThis is the description instructions, format and example for the long image description. You will use these to describe it whenever you are prompted with an image and the tokens '" + FULL_DESC_TRIGGER +"' and date and crop info:\n\n" + full_description_prompt
 
     system_instructions = role_prompt + documents_instructions + str(documents_uris) + short_description_instruction + long_description_instruction
 
     return system_instructions
-
 
 def load_prompt_from_json(json_path: str, base_path: str = BASE_PROMPTS_PATH, is_image_desc_prompt: bool = False, is_detailed_description: bool = False) -> dict:
     """
@@ -116,3 +116,21 @@ def load_documents_from_json(json_path: str, base_path: str = BASE_CONTEXT_PATH)
         doc_filepath = os.path.join(base_path, doc['path']).replace("\\", "/")
         documents.append(doc_filepath)
     return documents
+
+def set_initial_messages():
+    user_input = '*Presentación de AgrIA*'
+    model_output = '¡Hola!\n\nSoy tu Asistente de Imágenes Agrícolas, ¡pero puedes llamarme **AgrIA**!\n\nMi propósito aquí es **analizar imágenes satelitales de campos de cultivo** para asistir a los agricultores en en análisis del su **uso del espacio y los recursos, así como las prácticas agrícolas**, con el fin de **asesorarles a reunir los requisitos para las subvenciones del Comité Europeo de Política Agrícola Común (CAP)**.\n\n¡Sólo tienes que subir una imagen satelital de tus campos de cultivo y nos pondremos manos a la obra!\n\nSi tiene alguna pregunta, también puede escribir en el cuadro de texto'
+    user_content = genai.types.Content(
+        role='user',
+        parts=[
+            genai.types.Part(text=user_input)
+        ]
+    )
+
+    model_content = genai.types.Content(
+        role='model',
+        parts=[
+            genai.types.Part(text=model_output)
+        ]
+    )
+    return [user_content, model_content]

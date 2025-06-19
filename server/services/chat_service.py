@@ -36,6 +36,13 @@ def get_image_description(file, is_detailed_description):
 def get_parcel_description(image_date, image_crops, image_filename, is_detailed_description):
     """
     Handles the parcel information reading and description.
+    Args:
+        image_date (str): Date of the image.
+        image_crops (list[dict]): List of crops detected in the image.
+        image_filename (str): Name of the image file.
+        is_detailed_description (bool): If True, generates a detailed description; otherwise, a short one.
+    Returns:
+        response (dict:{text:str, imagedesc:str}): Contains the text response and image description.
     """
     try:
         # Build image context prompt
@@ -99,14 +106,7 @@ def get_summarised_chat(chat_history):
         summarised_chat.text (str): The summary of the history.
     """
     try:
-        # Get only role and text from chat_history
-        chat_message_history = []
-        for content in chat_history:
-            role = content.role if content.role is not None else "unknown"
-            for part in content.parts:
-                if part.text is not None:
-                    chat_message_history.append({"role": role, "text": part.text})
-
+        chat_message_history = get_role_and_content(chat_history)
         summarised_chat = client.models.generate_content(
             model="gemini-2.0-flash",
             contents=[
@@ -119,3 +119,19 @@ def get_summarised_chat(chat_history):
         print("Error while summarising chat:\t",e)
 
 
+def get_role_and_content(chat_history):
+    """
+    Extracts role and text content of chat history.
+    Args:
+        chat_history (list[genai.types.Content]): Chat history.
+    Returns:
+        chat_message_history (list[dict:{role:str, content:str}]): Chat history formatted.
+    """
+    # Get only role and text content from chat_history
+    chat_message_history = []
+    for content in chat_history:
+        role = content.role if content.role is not None else "unknown"
+        for part in content.parts:
+            if part.text is not None:
+                chat_message_history.append({"role": role, "content": part.text})
+    return chat_message_history

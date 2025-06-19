@@ -53,3 +53,12 @@ def get_input_suggestion():
         return jsonify({'response': response})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+@chat_bp.route('/load-active-chat-history', methods=['GET'])
+def load_active_chat_history():
+    try:
+        chat_history = chat.get_history()
+        response = get_role_and_content(chat_history)
+        return jsonify({'response': response})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
