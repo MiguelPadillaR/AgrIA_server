@@ -11,3 +11,14 @@ TEMP_UPLOADS_PATH = Path('temp/uploads')
 
 FULL_DESC_TRIGGER = '###DESCRIBE_LONG_IMAGE###'
 SHORT_DESC_TRIGGER = '###DESCRIBE_SHORT_IMAGE###'
+
+MIME_TYPES = {
+    'txt': 'text/plain',
+    'md': 'text/markdown',
+    'pdf': 'application/pdf',
+    'json': 'application/json',
+    'csv': 'text/csv',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'jpg': 'image/jpeg',
+    'png': 'image/png',
+}
