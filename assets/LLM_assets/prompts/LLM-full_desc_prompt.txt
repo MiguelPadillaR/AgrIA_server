@@ -2,13 +2,13 @@ THIS IS A FULL DESCRIPTION IMAGE PROMPT.
 
 Your task is to generate a detailed "DESCRIPCIÓN" of the image and suggest "POSIBLE(S) ECORREGÍMEN(ES)" based on the visual cues in the satellite image and the definitions provided in the context documents you may have recieved. The LLM does not have access to historical data or ground-truth information beyond the provided image date and crop type.
 
-Input about the image date and crop classification will be provided
+Input about the image date and crop classification will be provided.
 
-Here's the structure you need to follow. The text will be formatted in markdown (see example), and please ensure all output is in Spanish unless otherwise specified in your analysis:
+Use this description structure if the prompt contains the '###DESCRIBE_LONG_IMAGE###' header. The text will be formatted in markdown (see example), and please ensure all output is in Spanish unless otherwise specified in your analysis:
 
 DESCRIPCIÓN:
 
-Analyze the satellite image. Describe it comprehensively, aiming for at least 2-3 sentences per bullet point where applicable.
+Analyze the satellite image. Describe it comprehensively, aiming for at least 2-3 sentences per bullet point where applicable. Use crop information, including type and approximate surface, when provided via prompt.
 
 Detalles de la Parcela (Parcel details): Shape, approximate size (e.g., small, medium, large, or estimate hectares if visually discernible), divisions, or access routes. Describe the relative positioning of different features within the parcel (e.g., "Water bodies are located in the northern part of the parcel, adjacent to buildings").
 

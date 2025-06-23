@@ -51,16 +51,16 @@ def get_parcel_description(image_date, image_crops, image_filename, is_detailed_
             image_context_prompt+= f'\n- Tipo: {crop["uso_sigpac"]}\n- Superficie (m2): {crop["dn_surface"]}\n'
         
         # Insert image context prompt and read image desc file
-        image_desc_prompt =  "###DESCRIBE_LONG_IMAGE###\n" if is_detailed_description else "###DESCRIBE_SHORT_IMAGE###\n"
+        image_desc_prompt =  FULL_DESC_TRIGGER if is_detailed_description else SHORT_DESC_TRIGGER
         image_desc_prompt += image_context_prompt
-        print("PF", image_desc_prompt)
+        print(image_desc_prompt)
         
         # Open image from path
         image_path = Path(os.path.join(TEMP_UPLOADS_PATH, image_filename))
         image = Image.open(image_path)
 
         response = {
-            "text": chat.send_message([image, "Estas son las características de la imagen y la parcela:\n\n" + image_desc_prompt],).text,
+            "text": chat.send_message([image, "Usa las siguientes características de la imagen y la parcela para el análisis:\n\n" + image_desc_prompt],).text,
             "imageDesc":image_context_prompt
         }
 
