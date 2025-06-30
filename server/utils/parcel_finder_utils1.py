@@ -1,34 +1,17 @@
+from ..config.constants import TEMP_UPLOADS_PATH
+from ..config.minio_client import minioClient, bucket_name
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dateutil.relativedelta import relativedelta
+from minio.error import S3Error
+from dotenv import load_dotenv
+from shapely import ops
+from shapely.geometry import GeometryCollection, MultiPolygon, Polygon, shape
+from rasterio.mask import mask
 import datetime
 import os
 import tempfile
-from dateutil.relativedelta import relativedelta
-from minio import Minio
-from minio.error import S3Error
-from dotenv import load_dotenv
 import geopandas as gpd
-from shapely import ops
-from shapely.geometry import GeometryCollection, MultiPolygon, Polygon, shape
 import rasterio
-from rasterio.mask import mask
-
-from ..config.constants import TEMP_UPLOADS_PATH
-
-####
-load_dotenv()
-
-MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT")
-MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY")
-MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY")
-bucket_name = os.getenv("bucket_name")
-
-minioClient = Minio(
-    endpoint=MINIO_ENDPOINT,
-    access_key=MINIO_ACCESS_KEY,
-    secret_key=MINIO_SECRET_KEY,
-    secure=False,
-)
-####
 
 def extract_polygons_2d(geometry):
     if isinstance(geometry, GeometryCollection):
@@ -92,56 +75,70 @@ def download_tiles_rgb_bands(utm_zones, year, month):
 
     return downloaded_files
 
-def download_tile_rgb_images(utm_zones, year, month):
+def download_tile_rgb_images(utm_zones, year, month_folder):
     """
     Download and merge RGB band tiles (.tif) into one image mosaic per band for later parcel clipping.
-    Returns list of paths to merged B02, B03, B04 images.
+    Arguments:
+        utm_zones
+        year (str): year
+        month (str): month
+    Returns:
+        merged_paths (str[]): list of paths to merged B02, B03, B04 images.
     """
-    year_month_pairs = generate_date_range_last_n_months(year, month)
+    # Generate date range and sort in reverse to get most recent first
+    year_month_pairs = sorted(generate_date_range_last_n_months(year, month_folder), key=lambda x: (x[0], x[1]), reverse=True)
     image_bands = ["B02_20m", "B03_20m", "B04_20m"]
     merged_paths = []
 
     download_tasks = []
     with ThreadPoolExecutor(max_workers=10) as executor:
         for zone in utm_zones:
-            for year, month_folder in year_month_pairs:
-                composites_path = f"{zone}/{year}/{month_folder}/composites/"
+            for y, month_folder in year_month_pairs:
+                composites_path = f"{zone}/{y}/{month_folder}/composites/"
                 try:
                     files_list = minioClient.list_objects(bucket_name, prefix=composites_path, recursive=True)
                     for file in files_list:
                         if file.object_name.endswith(".tif") and "raw" in file.object_name:
                             band = file.object_name.split("/")[-1].split(".")[0]
                             if band in image_bands:
-                                download_dir = os.path.join(TEMP_UPLOADS_PATH, str(year), band, month_folder)
+                                download_dir = os.path.join(TEMP_UPLOADS_PATH, str(y), band, month_folder)
                                 os.makedirs(download_dir, exist_ok=True)
-                                local_file_path = os.path.join(download_dir, f"{zone}.tif")
+                                local_file_path = os.path.join(download_dir, os.path.basename(file.object_name))
                                 task = executor.submit(download_image_file, minioClient, file, local_file_path)
                                 download_tasks.append(task)
                 except S3Error as exc:
                     print(f"Error when accessing {composites_path}: {exc}")
 
+        # Wait for all downloads to complete
         for task in as_completed(download_tasks):
-            task.result()
+            try:
+                task.result()
+            except Exception as exc:
+                print(f"Download task generated an exception: {exc}")
 
-    # Only use the most recent year/month combo that has data
-    for year, month_folder in year_month_pairs:
-        all_exist = True
+    # Process year/month combos from most recent to oldest
+    for y, month_folder in year_month_pairs:
+        all_bands_exist_for_month = True
+        current_merged_paths_for_month = []
         for band in image_bands:
-            band_folder = os.path.join(TEMP_UPLOADS_PATH, str(year), band, month_folder)
+            band_folder = os.path.join(TEMP_UPLOADS_PATH, str(y), band, month_folder)
+            # Check if folder exists and contains any files
             if not os.path.exists(band_folder) or not os.listdir(band_folder):
-                all_exist = False
-                break
+                all_bands_exist_for_month = False
+                break # This month does not have all required band data
 
-        if all_exist:
+        if all_bands_exist_for_month:
+            # If all bands exist for this month, then merge and append
             for band in image_bands:
-                band_folder = os.path.join(TEMP_UPLOADS_PATH, str(year), band, month_folder)
-                merge_path = merge_tifs(band_folder, year, band, month_folder)
+                band_folder = os.path.join(TEMP_UPLOADS_PATH, str(y), band, month_folder)
+                merge_path = merge_tifs(band_folder, y, band, month_folder)
                 if merge_path:
-                    merged_paths.append(merge_path)
-            break  # Stop after first full match
+                    current_merged_paths_for_month.append(merge_path)
+            # If most recent complete set found then stop
+            merged_paths.extend(current_merged_paths_for_month)
+            break
 
     return merged_paths
-
 
 def generate_date_range_last_n_months(year, month, month_range=2):
     """
@@ -197,6 +194,128 @@ def merge_tifs(input_dir, year, band, month_number):
     with rasterio.open(merged_image_path, "w", **out_meta) as dest:
         dest.write(mosaic)
     return merged_image_path
+
+def rgb(rutas_mergeadas):
+    salida_dir = tempfile.mkdtemp()
+    rutas_png = []
+    rutas_tif_rgb = []
+
+    agrupadas = {}
+    for ruta in rutas_mergeadas:
+        nombre = os.path.basename(ruta)
+        nombre_sin_ext = os.path.splitext(nombre)[0]
+        partes = nombre_sin_ext.split("_")
+        year = partes[1]
+        mes_tif = partes[2]
+        banda = partes[3] + "_" + partes[4]
+        clave = (year, mes_tif)
+        if clave not in agrupadas:
+            agrupadas[clave] = {}
+        agrupadas[clave][banda] = ruta
+
+    frames = []
+
+    for (year, month_number), bandas_dict in agrupadas.items():
+        try:
+            ruta_banda_2 = bandas_dict["B02_20m"]
+            ruta_banda_3 = bandas_dict["B03_20m"]
+            ruta_banda_4 = bandas_dict["B04_20m"]
+        except KeyError:
+            continue
+
+        with rasterio.open(ruta_banda_4) as src4, \
+             rasterio.open(ruta_banda_3) as src3, \
+             rasterio.open(ruta_banda_2) as src2:
+
+            red = handle_nodata(src4.read(1), src4.nodata)
+            green = handle_nodata(src3.read(1), src3.nodata)
+            blue = handle_nodata(src2.read(1), src2.nodata)
+
+            profile = src4.profile
+            profile.update(count=3, dtype=rasterio.uint16, nodata=None)
+            nombre_tif = os.path.join(salida_dir, f"RGB_{year}_{month_number}.tif")
+
+            with rasterio.open(nombre_tif, 'w', **profile) as dst:
+                dst.write(red, 1)
+                dst.write(green, 2)
+                dst.write(blue, 3)
+
+            rutas_tif_rgb.append((nombre_tif, year, month_number))
+
+    for ruta_rgb, year, month_number in rutas_tif_rgb:
+        with rasterio.open(ruta_rgb) as src:
+            red = handle_nodata(src.read(1), src.nodata)
+            green = handle_nodata(src.read(2), src.nodata)
+            blue = handle_nodata(src.read(3), src.nodata)
+
+            red_norm = normalize(red)
+            green_norm = normalize(green)
+            blue_norm = normalize(blue)
+
+            alpha = np.where(
+                (red_norm == 0) & (green_norm == 0) & (blue_norm == 0),
+                0,
+                255
+            ).astype(np.uint8)
+
+            rgb_image = np.stack([red_norm, green_norm, blue_norm], axis=-1)
+            rgb_image = gamma_correction(rgb_image, gamma=1.5)
+            rgba_image = np.dstack([rgb_image, alpha])
+
+            img_pil = Image.fromarray(rgba_image, mode="RGBA")
+
+            escala = 8
+            img_grande = img_pil.resize(
+                (img_pil.width * escala, img_pil.height * escala),
+                resample=Image.BICUBIC
+            )
+
+            overlay = Image.new("RGBA", img_grande.size, (255, 255, 255, 0))
+            draw = ImageDraw.Draw(overlay)
+
+            mes_nombre = MESES.get(month_number, month_number)
+            texto = f"{mes_nombre} {year}"
+
+            font_size = max(24, img_grande.width // 40)
+            try:
+                font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size)
+            except:
+                font = ImageFont.load_default()
+
+            try:
+                bbox = draw.textbbox((0, 0), texto, font=font)
+                text_w = bbox[2] - bbox[0]
+                text_h = bbox[3] - bbox[1]
+            except AttributeError:
+                text_w, text_h = font.getsize(texto)
+
+            padding = 10
+            fondo_padding = int(font_size * 0.6)  
+
+            x, y = fondo_padding, fondo_padding
+
+            draw.rectangle(
+                [x - fondo_padding, y - fondo_padding, x + text_w + fondo_padding, y + text_h + fondo_padding],
+                fill=(0, 0, 0, 160)
+            )
+
+            sombra_offset = int(font_size * 0.08)
+            draw.text((x + sombra_offset, y + sombra_offset), texto, font=font, fill=(0, 0, 0, 200))
+
+            draw.text((x, y), texto, font=font, fill=(255, 255, 255, 255))
+            final_img = Image.alpha_composite(img_grande, overlay)
+
+            nombre_png = os.path.join(salida_dir, f"{year}_{month_number}.png")
+            final_img.save(nombre_png)
+            rutas_png.append(nombre_png)
+            frames.append(final_img)
+
+    output_gif = os.path.join(tempfile.gettempdir(), "animation.gif")
+    if frames:
+        frames[0].save(output_gif, save_all=True, append_images=frames[1:], duration=1000, loop=0)
+
+    return salida_dir, rutas_png, rutas_tif_rgb, output_gif
+    
 
 ## Different file
 
