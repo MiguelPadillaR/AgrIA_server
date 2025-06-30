@@ -1,7 +1,9 @@
 import os
+
+from ..config.constants import TEMP_UPLOADS_PATH
+from ..services.parcel_finder_service import get_parcel_image
 from ..utils.parcel_finder_utils import *
 from flask import Blueprint, request, jsonify, send_from_directory
-from server.config.constants import TEMP_UPLOADS_PATH
 
 parcel_finder_bp = Blueprint('find_parcel', __name__)
 
@@ -30,13 +32,14 @@ def find_parcel():
         if not selected_date:
             return jsonify({'error': 'No date provided'}), 400
         
-        geometry, metadata = find_from_cadastral_registry(cadastral_reference)
 
         # TODO: Pass geometry and date to S2DR3 and save super-resolved image
         #get_s2dr3_image()
         
         # Get super-resolved image and store it for analyzing and display
-        url_image_address = get_s2dr3_image_url()
+        url_image_address = get_s2dr3_image_url_demo()
+
+        geometry, metadata, url_image_address = get_parcel_image(cadastral_reference)
         response = { 
             "cadastralReference": cadastral_reference,
             "geometry": geometry,

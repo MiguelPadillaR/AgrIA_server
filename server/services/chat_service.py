@@ -69,7 +69,6 @@ def get_parcel_description(image_date, image_crops, image_filename, is_detailed_
         print(e)
         return ''
 
-
 def get_suggestion_for_chat(chat_history: list[Content]):
     """
     Provides a suggested input for the model's last chat output.
@@ -117,7 +116,6 @@ def get_summarised_chat(chat_history):
         return summarised_chat.text
     except Exception as e:
         print("Error while summarising chat:\t",e)
-
 
 def get_role_and_content(chat_history):
     """
