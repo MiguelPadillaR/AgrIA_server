@@ -50,19 +50,6 @@ def find_parcel():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
-
-@parcel_finder_bp.route('/get-crop-classification', methods=['GET'])  
-def get_crop_classification():
-    try:
-        classification_df = get_crop_classification()
-        if classification_df.empty:
-            return jsonify({'error': 'No crop classification data found'}), 404
-        print(classification_df)
-        return jsonify({"classification": classification_df.to_dict(orient='records')}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500  
-
-
 @parcel_finder_bp.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(os.path.join(os.getcwd(), TEMP_UPLOADS_PATH), filename)
