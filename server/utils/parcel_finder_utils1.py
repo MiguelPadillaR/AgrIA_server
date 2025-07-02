@@ -1,3 +1,4 @@
+from collections import defaultdict
 from ..config.constants import TEMP_UPLOADS_PATH
 from ..config.minio_client import minioClient, bucket_name
 from dotenv import load_dotenv
@@ -9,6 +10,8 @@ from PIL import Image
 from shapely import ops
 from shapely.geometry import GeometryCollection, MultiPolygon, Polygon, shape
 from rasterio.mask import mask
+from rasterio.merge import merge
+from rasterio.warp import calculate_default_transform, reproject, Resampling
 import numpy as np
 import geopandas as gpd
 import os
@@ -185,7 +188,7 @@ def check_and_merge_bands(year_month_pairs, image_bands):
 
 def merge_tifs(input_dir, year, band, month_number):
     """
-    Merges all red, green and blue band images into one, creating an RGB image.
+    Merges all same-band images into one mosaic, reprojecting to a common CRS if needed.
     Arguments:
         input_dir (str): Local directory where band images are stored.
         year (str): Year of the desired image.
@@ -193,30 +196,87 @@ def merge_tifs(input_dir, year, band, month_number):
         month_number (str): Month of the desired image (number as string, e.g., "02").
     Returns:
         merged_image_path (str): Local file path to the resulting merged image.
-
     """
     files = [os.path.join(input_dir, f) for f in os.listdir(input_dir) if f.endswith(".tif")]
-    print("FILES", files) if files else None
+    if not files:
+        print("No .tif files found in:", input_dir)
+        return None
+
+    print("FILES:", files)
+    crs_groups = defaultdict(list)
+
     for f in files:
         with rasterio.open(f) as src:
-            print(f, src.crs)
+            print(f"File: {f} CRS: {src.crs}")
+            crs_groups[str(src.crs)].append(f)
 
-    if not files:
-        return None
-    mosaic, out_transform = merge([rasterio.open(f) for f in files])
-    out_meta = rasterio.open(files[0]).meta.copy()
+    # If all files share the same CRS → use directly
+    if len(crs_groups) == 1:
+        all_files = files
+    else:
+        print("Multiple CRS detected, reprojection needed...")
+        # Pick the CRS of the first file as the target
+        with rasterio.open(files[0]) as src:
+            target_crs = src.crs
+
+        reprojected_files = []
+
+        for crs, group_files in crs_groups.items():
+            for f in group_files:
+                with rasterio.open(f) as src:
+                    transform, width, height = calculate_default_transform(
+                        src.crs, target_crs, src.width, src.height, *src.bounds)
+                    kwargs = src.meta.copy()
+                    kwargs.update({
+                        'crs': target_crs,
+                        'transform': transform,
+                        'width': width,
+                        'height': height
+                    })
+
+                    # Create new path for reprojected version
+                    reprojected_path = f.replace(".tif", "_reprojected.tif")
+                    print(f"Reprojecting {f} → {reprojected_path}")
+
+                    with rasterio.open(reprojected_path, 'w', **kwargs) as dst:
+                        for i in range(1, src.count + 1):
+                            reproject(
+                                source=rasterio.band(src, i),
+                                destination=rasterio.band(dst, i),
+                                src_transform=src.transform,
+                                src_crs=src.crs,
+                                dst_transform=transform,
+                                dst_crs=target_crs,
+                                resampling=Resampling.nearest
+                            )
+                    reprojected_files.append(reprojected_path)
+
+        all_files = reprojected_files
+
+    # Now merge all files (original or reprojected)
+    src_files_to_mosaic = [rasterio.open(f) for f in all_files]
+    mosaic, out_transform = merge(src_files_to_mosaic)
+
+    out_meta = src_files_to_mosaic[0].meta.copy()
     out_meta.update({
         "driver": "GTiff",
         "height": mosaic.shape[1],
         "width": mosaic.shape[2],
         "transform": out_transform
     })
+
     out_path = os.path.join(TEMP_UPLOADS_PATH, str(year), band)
     os.makedirs(out_path, exist_ok=True)
     merged_image_path = f"{out_path}/RGB_{year}_{month_number}_{band}.tif"
-    print("MERGED IMAGE PATH:", merged_image_path) if merged_image_path else None
+
+    print("MERGED IMAGE PATH:", merged_image_path)
     with rasterio.open(merged_image_path, "w", **out_meta) as dest:
         dest.write(mosaic)
+
+    # Clean up open files
+    for src in src_files_to_mosaic:
+        src.close()
+
     return merged_image_path
 
 def generate_date_range_last_n_months(year, month, month_range=2):
