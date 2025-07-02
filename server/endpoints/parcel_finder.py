@@ -3,6 +3,7 @@ import os
 from ..config.constants import TEMP_UPLOADS_PATH
 from ..services.parcel_finder_service import get_parcel_image
 from ..utils.parcel_finder_utils import *
+from ..services.parcel_finder_service import get_parcel_image
 from flask import Blueprint, request, jsonify, send_from_directory
 
 parcel_finder_bp = Blueprint('find_parcel', __name__)
@@ -32,14 +33,16 @@ def find_parcel():
         if not selected_date:
             return jsonify({'error': 'No date provided'}), 400
         
+        print("cadastral_reference", cadastral_reference)
+        print("selected_date", selected_date)
 
         # TODO: Pass geometry and date to S2DR3 and save super-resolved image
         #get_s2dr3_image()
         
         # Get super-resolved image and store it for analyzing and display
         url_image_address = get_s2dr3_image_url_demo()
+        geometry, metadata, url_image_address = get_parcel_image(cadastral_reference, selected_date)
 
-        geometry, metadata, url_image_address = get_parcel_image(cadastral_reference)
         response = { 
             "cadastralReference": cadastral_reference,
             "geometry": geometry,
@@ -50,19 +53,6 @@ def find_parcel():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
-
-@parcel_finder_bp.route('/get-crop-classification', methods=['GET'])  
-def get_crop_classification():
-    try:
-        classification_df = get_crop_classification()
-        if classification_df.empty:
-            return jsonify({'error': 'No crop classification data found'}), 404
-        print(classification_df)
-        return jsonify({"classification": classification_df.to_dict(orient='records')}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500  
-
-
 @parcel_finder_bp.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(os.path.join(os.getcwd(), TEMP_UPLOADS_PATH), filename)

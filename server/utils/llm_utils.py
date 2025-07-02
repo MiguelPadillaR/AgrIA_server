@@ -10,11 +10,10 @@ def generate_system_instructions(prompt_json_path: str):
     Sets up the initial model's system instructions and context documents for the chat.
     
     Args:
-        documents_json_path (str): JSON filepath containing paths to the actual context documents.
-        role_json_path (str): JSON filepath containing paths to the actual text file with the role prompt.
+        prompt_json_path (str): JSON filepath containing paths to the actual prompts.
     
     Returns:
-        list: A list containing the system instruction and context documents info as dictionaries.
+        system_instructions (str): All system instructions for AgrIA as raw text.
     """
     # Upload files and read role and description files
     role_prompt = load_prompt_from_json(prompt_json_path)
@@ -34,9 +33,9 @@ def load_prompt_from_json(json_path: str, base_path: str = BASE_PROMPTS_PATH, is
     Reads a JSON file to get the prompt description and returns the content of the specified prompt file.
     Args:
         json_path (str): Path to the JSON file containing prompt metadata.
-        base_path (str): Base path where the JSON and prompt files are located.
-        is_image_desc_prompt (bool): If True, retrieves reads filea as the image description prompt; otherwise, reads it as role prompt.
-        get_short_description (bool): If True, retrieves the short description; otherwise, retrieves the long description.
+        base_path (str): Base path where the JSON and prompt files are located. Default: `BASE_PROMPTS_PATH`.
+        is_image_desc_prompt (bool): If True, reads files as the image description prompt; otherwise, it reads them as role prompts. Default: `False`.
+        is_detailed_description (bool): If True, sends trigger for long description, other wise sends short desc. trigger. Default: `False`.
     Returns:
         str: The content of the prompt file specified in the JSON.
     """
@@ -86,11 +85,11 @@ def load_documents_from_json(json_path: str, base_path: str = BASE_CONTEXT_PATH)
     Reads a JSON file to get the document metadata and returns a list of document contents.
     
     Args:
-        json_path (str): Path to the JSON file containing document metadata.
-        base_path (str): Base path where the JSON and document files are located.
+        json_path (`str`): Path to the JSON file containing document metadata.
+        base_path (`str`): Base path where the JSON and document files are located. Default: `BASE_CONTEXT_PATH`.
     
     Returns:
-        list: A list of document contents.
+        documents (list of `str`): A list of document contents.
     """
     full_json_path = os.path.join(base_path, json_path).replace("\\", "/")
 

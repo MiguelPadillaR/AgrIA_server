@@ -1,17 +1,27 @@
+from collections import defaultdict
 from ..config.constants import TEMP_UPLOADS_PATH
 from ..config.minio_client import minioClient, bucket_name
+from dotenv import load_dotenv
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dateutil.relativedelta import relativedelta
+from datetime import datetime
 from minio.error import S3Error
-from dotenv import load_dotenv
+from PIL import Image
 from shapely import ops
 from shapely.geometry import GeometryCollection, MultiPolygon, Polygon, shape
 from rasterio.mask import mask
-import datetime
-import os
-import tempfile
+from rasterio.merge import merge
+from rasterio.warp import calculate_default_transform, reproject, Resampling
+import numpy as np
 import geopandas as gpd
+import os
 import rasterio
+import cv2
+from rasterio.merge import merge
+
+load_dotenv()
+
+GEOMETRY_FILE = os.getenv("GEOMETRY_FILE")
 
 def extract_polygons_2d(geometry):
     if isinstance(geometry, GeometryCollection):
@@ -28,9 +38,9 @@ def extract_polygons_2d(geometry):
     return None
 
 def get_tiles_polygons(geojson):
-    geojson_grande = gpd.read_file(
-        "./S2A_OPER_GIP_TILPAR_MPC__20151209T095117_V20150622T000000_21000101T000000_B00.kml"
-    )
+    if not GEOMETRY_FILE or not os.path.exists(GEOMETRY_FILE):
+        raise FileNotFoundError(f"GEOMETRY_FILE is not set or does not exist: {GEOMETRY_FILE}")
+    geojson_grande = gpd.read_file(GEOMETRY_FILE)
     if geojson_grande.crs != geojson.crs:
         geojson = geojson.to_crs(geojson_grande.crs)
 
@@ -50,11 +60,15 @@ def download_tiles_rgb_bands(utm_zones, year, month):
     image_bands = ["B02_20m", "B03_20m", "B04_20m"]
     downloaded_files = {band: [] for band in image_bands}
 
+    print("YEAR-MONTH PAIRS GENERATED!") if year_month_pairs else None
+    print(year_month_pairs) if year_month_pairs else None
+
     download_tasks = []
     with ThreadPoolExecutor(max_workers=10) as executor:
         for zone in utm_zones:
             for year, month_folder in year_month_pairs:
                 composites_path = f"{zone}/{year}/{month_folder}/composites/"
+                print("\nCOMPOSITES PATH:", composites_path) if composites_path else None
                 try:
                     composites_dir = minioClient.list_objects(bucket_name, prefix=composites_path, recursive=True)
                     for file in composites_dir:
@@ -64,6 +78,7 @@ def download_tiles_rgb_bands(utm_zones, year, month):
                                 download_dir = os.path.join(TEMP_UPLOADS_PATH, str(year), band, month_folder)
                                 os.makedirs(download_dir, exist_ok=True)
                                 local_file_path = os.path.join(download_dir, f"{zone}.tif")
+                                print("DOWNLOAD FILE FOUND:", local_file_path) if local_file_path else None
                                 task = executor.submit(download_image_file, minioClient, file, local_file_path)
                                 download_tasks.append((task, band, local_file_path))
                 except S3Error as exc:
@@ -72,10 +87,27 @@ def download_tiles_rgb_bands(utm_zones, year, month):
         for task, band, local_file_path in download_tasks:
             task.result()
             downloaded_files[band].append(local_file_path)
+    
+    merged_paths = []
+    for band, file_list in downloaded_files.items():
+        if not file_list:
+            continue
 
-    return downloaded_files
+        # Get most recent downloaded file
+        recent_file = file_list[-1]
+        print("CHOSEN FILE:", recent_file) if recent_file else None
+        # E.g. .../TEMP_UPLOADS_PATH/2025/B02_20m/05/utm33n.tif
+        input_dir = os.path.dirname(recent_file)
+        # Get month folder name from path
+        month_folder = os.path.basename(input_dir)
+        month_number = datetime.strptime(month_folder, "%B").month
+        merge_path = merge_tifs(input_dir, year, band, month_number)
+        if merge_path:
+            merged_paths.append(merge_path)
 
-def download_tile_rgb_images(utm_zones, year, month_folder):
+    return merged_paths
+
+def download_tiles_rgb_images(utm_zones, year, month_folder):
     """
     Download and merge RGB band tiles (.tif) into one image mosaic per band for later parcel clipping.
     Arguments:
@@ -88,7 +120,6 @@ def download_tile_rgb_images(utm_zones, year, month_folder):
     # Generate date range and sort in reverse to get most recent first
     year_month_pairs = sorted(generate_date_range_last_n_months(year, month_folder), key=lambda x: (x[0], x[1]), reverse=True)
     image_bands = ["B02_20m", "B03_20m", "B04_20m"]
-    merged_paths = []
 
     download_tasks = []
     with ThreadPoolExecutor(max_workers=10) as executor:
@@ -102,6 +133,7 @@ def download_tile_rgb_images(utm_zones, year, month_folder):
                             band = file.object_name.split("/")[-1].split(".")[0]
                             if band in image_bands:
                                 download_dir = os.path.join(TEMP_UPLOADS_PATH, str(y), band, month_folder)
+                                print("DOWNLOAD DIR", download_dir) if download_dir else None
                                 os.makedirs(download_dir, exist_ok=True)
                                 local_file_path = os.path.join(download_dir, os.path.basename(file.object_name))
                                 task = executor.submit(download_image_file, minioClient, file, local_file_path)
@@ -115,18 +147,33 @@ def download_tile_rgb_images(utm_zones, year, month_folder):
                 task.result()
             except Exception as exc:
                 print(f"Download task generated an exception: {exc}")
+    
+    merged_paths = check_and_merge_bands(year_month_pairs, image_bands)
+    
+    return merged_paths
 
+def check_and_merge_bands(year_month_pairs, image_bands):
+    """
+    Checks for the existence of all required image bands and merges the bands if all are present.
+    Arguments:
+        year_month_pairs (list of tuple): List of (year, month_folder) pairs to check, ordered from most recent to oldest.
+        image_bands (list of str): List of band names to check for each month.
+        merged_paths (list): List to append the merged file paths for the first complete set found.
+    Returns:
+        merged_paths (list of str): Returns local filepath to merged images.
+    """
+    merged_paths = []
     # Process year/month combos from most recent to oldest
     for y, month_folder in year_month_pairs:
         all_bands_exist_for_month = True
         current_merged_paths_for_month = []
         for band in image_bands:
-            band_folder = os.path.join(TEMP_UPLOADS_PATH, str(y), band, month_folder)
+            band_folder = os.path.join(TEMP_UPLOADS_PATH, str(y), band, str(month_folder))
             # Check if folder exists and contains any files
             if not os.path.exists(band_folder) or not os.listdir(band_folder):
                 all_bands_exist_for_month = False
                 break # This month does not have all required band data
-
+            print("BAND FOLDER:", band_folder) if band_folder else None
         if all_bands_exist_for_month:
             # If all bands exist for this month, then merge and append
             for band in image_bands:
@@ -137,8 +184,100 @@ def download_tile_rgb_images(utm_zones, year, month_folder):
             # If most recent complete set found then stop
             merged_paths.extend(current_merged_paths_for_month)
             break
-
     return merged_paths
+
+def merge_tifs(input_dir, year, band, month_number):
+    """
+    Merges all same-band images into one mosaic, reprojecting to a common CRS if needed.
+    Arguments:
+        input_dir (str): Local directory where band images are stored.
+        year (str): Year of the desired image.
+        band (str): Band name.
+        month_number (str): Month of the desired image (number as string, e.g., "02").
+    Returns:
+        merged_image_path (str): Local file path to the resulting merged image.
+    """
+    files = [os.path.join(input_dir, f) for f in os.listdir(input_dir) if f.endswith(".tif")]
+    if not files:
+        print("No .tif files found in:", input_dir)
+        return None
+
+    print("FILES:", files)
+    crs_groups = defaultdict(list)
+
+    for f in files:
+        with rasterio.open(f) as src:
+            print(f"File: {f} CRS: {src.crs}")
+            crs_groups[str(src.crs)].append(f)
+
+    # If all files share the same CRS → use directly
+    if len(crs_groups) == 1:
+        all_files = files
+    else:
+        print("Multiple CRS detected, reprojection needed...")
+        # Pick the CRS of the first file as the target
+        with rasterio.open(files[0]) as src:
+            target_crs = src.crs
+
+        reprojected_files = []
+
+        for crs, group_files in crs_groups.items():
+            for f in group_files:
+                with rasterio.open(f) as src:
+                    transform, width, height = calculate_default_transform(
+                        src.crs, target_crs, src.width, src.height, *src.bounds)
+                    kwargs = src.meta.copy()
+                    kwargs.update({
+                        'crs': target_crs,
+                        'transform': transform,
+                        'width': width,
+                        'height': height
+                    })
+
+                    # Create new path for reprojected version
+                    reprojected_path = f.replace(".tif", "_reprojected.tif")
+                    print(f"Reprojecting {f} → {reprojected_path}")
+
+                    with rasterio.open(reprojected_path, 'w', **kwargs) as dst:
+                        for i in range(1, src.count + 1):
+                            reproject(
+                                source=rasterio.band(src, i),
+                                destination=rasterio.band(dst, i),
+                                src_transform=src.transform,
+                                src_crs=src.crs,
+                                dst_transform=transform,
+                                dst_crs=target_crs,
+                                resampling=Resampling.nearest
+                            )
+                    reprojected_files.append(reprojected_path)
+
+        all_files = reprojected_files
+
+    # Now merge all files (original or reprojected)
+    src_files_to_mosaic = [rasterio.open(f) for f in all_files]
+    mosaic, out_transform = merge(src_files_to_mosaic)
+
+    out_meta = src_files_to_mosaic[0].meta.copy()
+    out_meta.update({
+        "driver": "GTiff",
+        "height": mosaic.shape[1],
+        "width": mosaic.shape[2],
+        "transform": out_transform
+    })
+
+    out_path = os.path.join(TEMP_UPLOADS_PATH, str(year), band)
+    os.makedirs(out_path, exist_ok=True)
+    merged_image_path = f"{out_path}/RGB_{year}_{month_number}_{band}.tif"
+
+    print("MERGED IMAGE PATH:", merged_image_path)
+    with rasterio.open(merged_image_path, "w", **out_meta) as dest:
+        dest.write(mosaic)
+
+    # Clean up open files
+    for src in src_files_to_mosaic:
+        src.close()
+
+    return merged_image_path
 
 def generate_date_range_last_n_months(year, month, month_range=2):
     """
@@ -152,8 +291,12 @@ def generate_date_range_last_n_months(year, month, month_range=2):
     Returns:
         date_range (list): List of tuples (year, month name).
     """
+    print("YEAR: ", year, "\nMONTH: ", month) if year else None
     current_date = datetime.strptime(f"{year}-{month.zfill(2)}", "%Y-%m")
+    print("CURRENT DATE", current_date) if current_date else None
     start_date = current_date - relativedelta(months=month_range)
+    
+    print("DATE FORMATTED") if start_date else None
 
     date_range = []
     while start_date <= current_date:
@@ -165,67 +308,54 @@ def generate_date_range_last_n_months(year, month, month_range=2):
 def download_image_file(client, file, local_file_path):
     client.fget_object(bucket_name, file.object_name, local_file_path)
 
-def merge_tifs(input_dir, year, band, month_number):
+def rgb(merged_paths):
     """
-    Merges all red, green and blue band images into one, creating an RGB image.
-    Arguments:
-        input_dir (str): Local directory where band images are stored.
-        year (str): Year of the desired image.
-        band (str): Band name.
-        month_number (str): Month of the desired image (number as string, e.g., "02").
+    Generates RGB composite images from a list of merged band file paths, saves them as GeoTIFF and PNG files, and returns their paths.
+    This function groups input file paths by year and month, combines the corresponding red, green, and blue bands into RGB GeoTIFF images, normalizes and applies gamma correction, then saves enlarged PNG images with alpha transparency. It also creates an animated sequence if multiple frames are generated.
+    Args:
+        merged_paths (list of str): List of file paths to band images, expected to follow a naming convention including year, month, and band identifiers.
     Returns:
-        merged_image_path (str): Local file path to the resulting merged image.
-
+        tuple:
+            out_dir (str): Output directory where images are saved.
+            png_paths (list of str): List of file paths to the generated PNG images.
+            rgb_tif_paths (list of tuple): List of tuples containing (GeoTIFF file path, year, month) for each generated RGB composite.
     """
-    files = [os.path.join(input_dir, f) for f in os.listdir(input_dir) if f.endswith(".tif")]
-    if not files:
-        return None
-    mosaic, out_transform = rasterio.merge.merge([rasterio.open(f) for f in files])
-    out_meta = rasterio.open(files[0]).meta.copy()
-    out_meta.update({
-        "driver": "GTiff",
-        "height": mosaic.shape[1],
-        "width": mosaic.shape[2],
-        "transform": out_transform
-    })
-    out_path = f"data/merge/{year}/{band}"
-    os.makedirs(out_path, exist_ok=True)
-    merged_image_path = f"{out_path}/RGB_{year}_{month_number}_{band}.tif"
-    with rasterio.open(merged_image_path, "w", **out_meta) as dest:
-        dest.write(mosaic)
-    return merged_image_path
 
-def rgb(rutas_mergeadas):
-    salida_dir = tempfile.mkdtemp()
-    rutas_png = []
-    rutas_tif_rgb = []
+    out_dir = TEMP_UPLOADS_PATH
+    png_paths = []
+    rgb_tif_paths = []
 
-    agrupadas = {}
-    for ruta in rutas_mergeadas:
-        nombre = os.path.basename(ruta)
-        nombre_sin_ext = os.path.splitext(nombre)[0]
-        partes = nombre_sin_ext.split("_")
-        year = partes[1]
-        mes_tif = partes[2]
-        banda = partes[3] + "_" + partes[4]
-        clave = (year, mes_tif)
-        if clave not in agrupadas:
-            agrupadas[clave] = {}
-        agrupadas[clave][banda] = ruta
+    print("MERGED PATHS:", merged_paths) if merged_paths else None
+
+    grouped = {}
+    for file in merged_paths:
+        filename = os.path.basename(file)
+        print("FILENAME", filename) if filename else None
+        filename_no_ext = os.path.splitext(filename)[0]
+        filename_parts = filename_no_ext.split("_")
+        year = filename_parts[1]
+        month_tif = filename_parts[2]
+        band = filename_parts[3] + "_" + filename_parts[4]
+        id = (year, month_tif)
+        if id not in grouped:
+            grouped[id] = {}
+        grouped[id][band] = file
+
+    print("GROUPED FILES:", grouped) if grouped else None
 
     frames = []
 
-    for (year, month_number), bandas_dict in agrupadas.items():
+    for (year, month_number), bands_dict in grouped.items():
         try:
-            ruta_banda_2 = bandas_dict["B02_20m"]
-            ruta_banda_3 = bandas_dict["B03_20m"]
-            ruta_banda_4 = bandas_dict["B04_20m"]
+            red_band_02 = bands_dict["B02_20m"]
+            green_band_03 = bands_dict["B03_20m"]
+            blue_band_04 = bands_dict["B04_20m"]
         except KeyError:
             continue
 
-        with rasterio.open(ruta_banda_4) as src4, \
-             rasterio.open(ruta_banda_3) as src3, \
-             rasterio.open(ruta_banda_2) as src2:
+        with rasterio.open(blue_band_04) as src4, \
+             rasterio.open(green_band_03) as src3, \
+             rasterio.open(red_band_02) as src2:
 
             red = handle_nodata(src4.read(1), src4.nodata)
             green = handle_nodata(src3.read(1), src3.nodata)
@@ -233,17 +363,17 @@ def rgb(rutas_mergeadas):
 
             profile = src4.profile
             profile.update(count=3, dtype=rasterio.uint16, nodata=None)
-            nombre_tif = os.path.join(salida_dir, f"RGB_{year}_{month_number}.tif")
+            nombre_tif = os.path.join(out_dir, f"RGB_{year}_{month_number}.tif")
 
             with rasterio.open(nombre_tif, 'w', **profile) as dst:
                 dst.write(red, 1)
                 dst.write(green, 2)
                 dst.write(blue, 3)
 
-            rutas_tif_rgb.append((nombre_tif, year, month_number))
+            rgb_tif_paths.append((nombre_tif, year, month_number))
 
-    for ruta_rgb, year, month_number in rutas_tif_rgb:
-        with rasterio.open(ruta_rgb) as src:
+    for rgb_tif_path, year, month_number in rgb_tif_paths:
+        with rasterio.open(rgb_tif_path) as src:
             red = handle_nodata(src.read(1), src.nodata)
             green = handle_nodata(src.read(2), src.nodata)
             blue = handle_nodata(src.read(3), src.nodata)
@@ -271,51 +401,45 @@ def rgb(rutas_mergeadas):
             )
 
             overlay = Image.new("RGBA", img_grande.size, (255, 255, 255, 0))
-            draw = ImageDraw.Draw(overlay)
-
-            mes_nombre = MESES.get(month_number, month_number)
-            texto = f"{mes_nombre} {year}"
-
-            font_size = max(24, img_grande.width // 40)
-            try:
-                font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size)
-            except:
-                font = ImageFont.load_default()
-
-            try:
-                bbox = draw.textbbox((0, 0), texto, font=font)
-                text_w = bbox[2] - bbox[0]
-                text_h = bbox[3] - bbox[1]
-            except AttributeError:
-                text_w, text_h = font.getsize(texto)
-
-            padding = 10
-            fondo_padding = int(font_size * 0.6)  
-
-            x, y = fondo_padding, fondo_padding
-
-            draw.rectangle(
-                [x - fondo_padding, y - fondo_padding, x + text_w + fondo_padding, y + text_h + fondo_padding],
-                fill=(0, 0, 0, 160)
-            )
-
-            sombra_offset = int(font_size * 0.08)
-            draw.text((x + sombra_offset, y + sombra_offset), texto, font=font, fill=(0, 0, 0, 200))
-
-            draw.text((x, y), texto, font=font, fill=(255, 255, 255, 255))
             final_img = Image.alpha_composite(img_grande, overlay)
 
-            nombre_png = os.path.join(salida_dir, f"{year}_{month_number}.png")
+            nombre_png = os.path.join(out_dir, f"{year}_{month_number}.png")
             final_img.save(nombre_png)
-            rutas_png.append(nombre_png)
+            png_paths.append(nombre_png)
             frames.append(final_img)
 
-    output_gif = os.path.join(tempfile.gettempdir(), "animation.gif")
     if frames:
-        frames[0].save(output_gif, save_all=True, append_images=frames[1:], duration=1000, loop=0)
+        frames[0].save(final_img, save_all=True, append_images=frames[1:], duration=1000, loop=0)
 
-    return salida_dir, rutas_png, rutas_tif_rgb, output_gif
+    return out_dir, png_paths, rgb_tif_paths
     
+def handle_nodata(array, nodata_value):
+    """
+    Handles null/none data values in arrays
+    """
+    if nodata_value is not None:
+        array = np.where(array == nodata_value, 0, array)
+    array = np.where(np.isnan(array), 0, array)
+    return array
+
+def normalize(array):
+    """
+    Normalizes tif images pixel values to 0-255 RGB values
+    """
+    valid_pixels = array[array > 0]
+    if len(valid_pixels) == 0:
+        return np.zeros_like(array, dtype=np.uint8)
+    array_min, array_max = np.percentile(valid_pixels, [2, 99.999])
+    if array_max - array_min == 0:
+        return np.zeros_like(array, dtype=np.uint8)
+    norm_array = (array - array_min) / (array_max - array_min)
+    norm_array = np.clip(norm_array * 255, 0, 255)
+    return norm_array.astype(np.uint8)
+
+def gamma_correction(image, gamma=1.5):
+    inv_gamma = 1.0 / gamma
+    table = np.array([(i / 255.0) ** inv_gamma * 255 for i in np.arange(0, 256)]).astype("uint8")
+    return cv2.LUT(image, table)
 
 ## Different file
 
@@ -373,11 +497,14 @@ def cut_from_geometry(gdf_parcel, format, image_paths, geometry_id):
             parcela_crs = gdf_parcel.get("CRS", {"init": "epsg:4326"})
             gdf_parcel = gpd.GeoDataFrame(geometry=[parcela_geometry], crs=parcela_crs)
 
-        cropped_images = []
+        cropped_parcel_masks = []
+        print("IMAGE PATHS:", image_paths) if image_paths else None
         valid_files = [f for f in image_paths if f.endswith(f".{format}")]
         if not valid_files:
             raise FileNotFoundError(f"No files found with the .{format} format.")
-
+        
+        print("VALID FILES:", valid_files) if valid_files else None
+        
         for image_path in valid_files:
             original_filename = os.path.basename(image_path)
             timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3]
@@ -388,15 +515,16 @@ def cut_from_geometry(gdf_parcel, format, image_paths, geometry_id):
                     continue
 
                 geometries = [gdf_parcel.geometry.iloc[0]]
+                print(f"\nGEOMETRY FOR {image_path} is\t{geometries}") if geometries else None
                 out_image, out_transform = mask(src, geometries, crop=True)
                 extension = format.lower()
                 filename = original_filename.replace(".tif", f"_{geometry_id}.{extension}").replace(".jp2", f"_{geometry_id}.{extension}")
-                temp_file = os.path.join(tempfile.gettempdir(), filename)
+                temp_file = os.path.join(TEMP_UPLOADS_PATH, filename)
 
                 save_raster(out_image, temp_file, src, out_transform, format)
-                cropped_images.append(temp_file)
+                cropped_parcel_masks.append(temp_file)
 
-        return cropped_images
+        return cropped_parcel_masks
 
     except FileNotFoundError as e:
         print(str(e))
