@@ -1,7 +1,7 @@
 from ..config.constants import TEMP_UPLOADS_PATH
 from ..config.minio_client import minioClient, bucket_name
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
 from dotenv import load_dotenv
@@ -98,82 +98,30 @@ def download_tiles_rgb_bands(utm_zones, year, month):
 
     return merged_paths
 
-def download_tiles_rgb_images(utm_zones, year, month_folder):
+def generate_date_range_last_n_months(year, month, month_range=2):
     """
-    Download and merge RGB band tiles (.tif) into one image mosaic per band for later parcel clipping.
+    Takes a year and a month and generates a list of tuples with the year and the last N months (including the current month).
+
     Arguments:
-        utm_zones
-        year (str): year
-        month (str): month
+        year (str): Year of the desired image.
+        month (str): Month of the desired image (number as string, e.g., "02").
+        months_range (int): Number of months before the current one to include. Default is 2
+
     Returns:
-        merged_paths (str[]): list of paths to merged B02, B03, B04 images.
+        date_range (list): List of tuples (year, month name).
     """
-    # Generate date range and sort in reverse to get most recent first
-    year_month_pairs = sorted(generate_date_range_last_n_months(year, month_folder), key=lambda x: (x[0], x[1]), reverse=True)
-    image_bands = ["B02_20m", "B03_20m", "B04_20m"]
-
-    download_tasks = []
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        for zone in utm_zones:
-            for y, month_folder in year_month_pairs:
-                composites_path = f"{zone}/{y}/{month_folder}/composites/"
-                try:
-                    files_list = minioClient.list_objects(bucket_name, prefix=composites_path, recursive=True)
-                    for file in files_list:
-                        if file.object_name.endswith(".tif") and "raw" in file.object_name:
-                            band = file.object_name.split("/")[-1].split(".")[0]
-                            if band in image_bands:
-                                download_dir = os.path.join(TEMP_UPLOADS_PATH, str(y), band, month_folder)
-                                os.makedirs(download_dir, exist_ok=True)
-                                local_file_path = os.path.join(download_dir, os.path.basename(file.object_name))
-                                task = executor.submit(download_image_file, minioClient, file, local_file_path)
-                                download_tasks.append(task)
-                except S3Error as exc:
-                    print(f"Error when accessing {composites_path}: {exc}")
-
-        # Wait for all downloads to complete
-        for task in as_completed(download_tasks):
-            try:
-                task.result()
-            except Exception as exc:
-                print(f"Download task generated an exception: {exc}")
+    current_date = datetime.strptime(f"{year}-{month.zfill(2)}", "%Y-%m")
+    start_date = current_date - relativedelta(months=month_range)
     
-    merged_paths = check_and_merge_bands(year_month_pairs, image_bands)
-    
-    return merged_paths
+    date_range = []
+    while start_date <= current_date:
+        date_range.append((start_date.year, start_date.strftime("%B")))
+        start_date += relativedelta(months=1)
 
-def check_and_merge_bands(year_month_pairs, image_bands):
-    """
-    Checks for the existence of all required image bands and merges the bands if all are present.
-    Arguments:
-        year_month_pairs (list of tuple): List of (year, month_folder) pairs to check, ordered from most recent to oldest.
-        image_bands (list of str): List of band names to check for each month.
-        merged_paths (list): List to append the merged file paths for the first complete set found.
-    Returns:
-        merged_paths (list of str): Returns local filepath to merged images.
-    """
-    merged_paths = []
-    # Process year/month combos from most recent to oldest
-    for y, month_folder in year_month_pairs:
-        all_bands_exist_for_month = True
-        current_merged_paths_for_month = []
-        for band in image_bands:
-            band_folder = os.path.join(TEMP_UPLOADS_PATH, str(y), band, str(month_folder))
-            # Check if folder exists and contains any files
-            if not os.path.exists(band_folder) or not os.listdir(band_folder):
-                all_bands_exist_for_month = False
-                break # This month does not have all required band data
-        if all_bands_exist_for_month:
-            # If all bands exist for this month, then merge and append
-            for band in image_bands:
-                band_folder = os.path.join(TEMP_UPLOADS_PATH, str(y), band, month_folder)
-                merge_path = merge_tifs(band_folder, y, band, month_folder)
-                if merge_path:
-                    current_merged_paths_for_month.append(merge_path)
-            # If most recent complete set found then stop
-            merged_paths.extend(current_merged_paths_for_month)
-            break
-    return merged_paths
+    return date_range
+
+def download_image_file(client, file, local_file_path):
+    client.fget_object(bucket_name, file.object_name, local_file_path)
 
 def merge_tifs(input_dir, year, band, month_number):
     """
@@ -186,12 +134,46 @@ def merge_tifs(input_dir, year, band, month_number):
     Returns:
         merged_image_path (str): Local file path to the resulting merged image.
     """
+    all_files = reproject_tiles(input_dir)
+
+    # Now merge all files (original or reprojected)
+    src_files_to_mosaic = [rasterio.open(f) for f in all_files]
+    mosaic, out_transform = merge(src_files_to_mosaic)
+
+    out_meta = src_files_to_mosaic[0].meta.copy()
+    out_meta.update({
+        "driver": "GTiff",
+        "height": mosaic.shape[1],
+        "width": mosaic.shape[2],
+        "transform": out_transform
+    })
+
+    out_path = os.path.join(TEMP_UPLOADS_PATH, str(year), band)
+    os.makedirs(out_path, exist_ok=True)
+    merged_image_path = f"{out_path}/RGB_{year}_{month_number}_{band}.tif"
+
+    with rasterio.open(merged_image_path, "w", **out_meta) as dest:
+        dest.write(mosaic)
+
+    # Clean up open files
+    for src in src_files_to_mosaic:
+        src.close()
+
+    return merged_image_path
+
+def reproject_tiles(input_dir):
+    """
+    Reproject tile files with different Cooridinates Reference System before merging them.
+    Arguments:
+        input_dir (`str`): Input directory where the files are
+    Returns:
+        reprojected_files (list of `str`): list of reporjected file paths
+    """
     files = [os.path.join(input_dir, f) for f in os.listdir(input_dir) if f.endswith(".tif")]
     if not files:
         print("No .tif files found in:", input_dir)
         return None
 
-    print("FILES:", files)
     crs_groups = defaultdict(list)
 
     for f in files:
@@ -240,58 +222,7 @@ def merge_tifs(input_dir, year, band, month_number):
                             )
                     reprojected_files.append(reprojected_path)
 
-        all_files = reprojected_files
-
-    # Now merge all files (original or reprojected)
-    src_files_to_mosaic = [rasterio.open(f) for f in all_files]
-    mosaic, out_transform = merge(src_files_to_mosaic)
-
-    out_meta = src_files_to_mosaic[0].meta.copy()
-    out_meta.update({
-        "driver": "GTiff",
-        "height": mosaic.shape[1],
-        "width": mosaic.shape[2],
-        "transform": out_transform
-    })
-
-    out_path = os.path.join(TEMP_UPLOADS_PATH, str(year), band)
-    os.makedirs(out_path, exist_ok=True)
-    merged_image_path = f"{out_path}/RGB_{year}_{month_number}_{band}.tif"
-
-    print("MERGED IMAGE PATH:", merged_image_path)
-    with rasterio.open(merged_image_path, "w", **out_meta) as dest:
-        dest.write(mosaic)
-
-    # Clean up open files
-    for src in src_files_to_mosaic:
-        src.close()
-
-    return merged_image_path
-
-def generate_date_range_last_n_months(year, month, month_range=2):
-    """
-    Takes a year and a month and generates a list of tuples with the year and the last N months (including the current month).
-
-    Arguments:
-        year (str): Year of the desired image.
-        month (str): Month of the desired image (number as string, e.g., "02").
-        months_range (int): Number of months before the current one to include. Default is 2
-
-    Returns:
-        date_range (list): List of tuples (year, month name).
-    """
-    current_date = datetime.strptime(f"{year}-{month.zfill(2)}", "%Y-%m")
-    start_date = current_date - relativedelta(months=month_range)
-    
-    date_range = []
-    while start_date <= current_date:
-        date_range.append((start_date.year, start_date.strftime("%B")))
-        start_date += relativedelta(months=1)
-
-    return date_range
-
-def download_image_file(client, file, local_file_path):
-    client.fget_object(bucket_name, file.object_name, local_file_path)
+    return reprojected_files
 
 def rgb(merged_paths):
     """
@@ -415,8 +346,6 @@ def gamma_correction(image, gamma=1.5):
     table = np.array([(i / 255.0) ** inv_gamma * 255 for i in np.arange(0, 256)]).astype("uint8")
     return cv2.LUT(image, table)
 
-## Different file
-
 def save_raster(image, temp_file, src, transform, format):
     """Saves a raster image to a temporary file.
 
@@ -502,8 +431,6 @@ def cut_from_geometry(gdf_parcel, format, image_paths, geometry_id):
     except Exception as e:
         print(f"An error occurred: {str(e)}")
         raise
-
-## Different file
 
 def get_geojson_data(geometry, metadata):
     

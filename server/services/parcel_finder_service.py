@@ -1,3 +1,4 @@
+import time
 from sigpac_tools.find import find_from_cadastral_registry
 from ..utils.parcel_finder_utils import *
 import os
@@ -37,9 +38,10 @@ def get_parcel_image( cadastral_reference: str, date: str) -> tuple:
     
     sigpac_image_name = png_paths.pop()  # there should only be one file
 
-    sigpac_image_url = f"{os.getenv('API_URL')}/uploads/{os.path.basename(sigpac_image_name)}"
+    # Upload and fetch latest image
+    sigpac_image_url = f"{os.getenv('API_URL')}/uploads/{os.path.basename(sigpac_image_name)}?v={int(time.time())}"
 
-    return geometry, metadata, sigpac_image_url
+    return geometry, metadata, sigpac_image_url.split("?")[0]
 
 def get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path_values):
     """
@@ -77,7 +79,6 @@ def get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path_valu
         geometry = feature["geometry"]
         geometry_id = cadastral_reference
         cropped_parcel_masks_paths.extend(cut_from_geometry(geometry, unique_formats[0], rgb_images_path_values, geometry_id))
-    print("CROPPED IMAGES GENERATED!", cropped_parcel_masks_paths)
     
     unique_masks = set(cropped_parcel_masks_paths)
 

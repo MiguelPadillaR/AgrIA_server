@@ -1,4 +1,5 @@
 import os
+import shutil
 
 from ..config.constants import TEMP_UPLOADS_PATH
 from ..services.parcel_finder_service import get_parcel_image
@@ -24,7 +25,16 @@ def find_parcel():
     Returns:
         Flask Response: A JSON response with the parcel data or an error message and appropriate HTTP status code.
     """
+    # Clear uploaded files adn dirs
+    if os.path.exists(TEMP_UPLOADS_PATH):
+        for file in os.listdir(TEMP_UPLOADS_PATH):
+            file_path = os.path.join(os.getcwd(), TEMP_UPLOADS_PATH, file)
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
 
+    init = datetime.now()
     try:
         cadastral_reference = request.form.get('cadastralReference')
         selected_date = request.form.get('selectedDate')
@@ -33,11 +43,11 @@ def find_parcel():
         if not selected_date:
             return jsonify({'error': 'No date provided'}), 400
         
-        # Get super-resolved image and store it for analyzing and display
+        # Get image and store it for display
         geometry, metadata, url_image_address = get_parcel_image(cadastral_reference, selected_date)
         
-        # TODO: Pass geometry and date to S2DR3 and save super-resolved image
-        #get_s2dr3_image()
+        # TODO: Pass image to super-resolution module and save super-resolved image
+        #get_sr_image()
 
         response = { 
             "cadastralReference": cadastral_reference,
@@ -45,6 +55,7 @@ def find_parcel():
             "imagePath": url_image_address,
             "metadata": metadata,
         }
+        print("TIME TAKEN:", datetime.now() - init)
         return jsonify({'response': response})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
