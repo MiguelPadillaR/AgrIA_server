@@ -47,9 +47,12 @@ def get_parcel_image( cadastral_reference: str, date: str) -> tuple:
     print("rgb_tif_paths", rgb_tif_paths) if rgb_tif_paths else None
 
     #TODO: Get image from geometry (image-workflow.pptx)
-    sigpac_image_name = ''
+    
+    sigpac_image_name = png_paths.pop()  # there should only be one file
 
-    sigpac_image_url = f"{os.getenv('API_URL')}/uploads/{sigpac_image_name}"
+    print("SIGPAC IMAGE NAME!", sigpac_image_name) if sigpac_image_name else None
+
+    sigpac_image_url = f"{os.getenv('API_URL')}/uploads/{os.path.basename(sigpac_image_name)}"
 
     return geometry, metadata, sigpac_image_url
 

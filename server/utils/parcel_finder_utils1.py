@@ -1,10 +1,10 @@
-from collections import defaultdict
 from ..config.constants import TEMP_UPLOADS_PATH
 from ..config.minio_client import minioClient, bucket_name
-from dotenv import load_dotenv
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
+from dotenv import load_dotenv
 from minio.error import S3Error
 from PIL import Image
 from shapely import ops
@@ -12,12 +12,11 @@ from shapely.geometry import GeometryCollection, MultiPolygon, Polygon, shape
 from rasterio.mask import mask
 from rasterio.merge import merge
 from rasterio.warp import calculate_default_transform, reproject, Resampling
-import numpy as np
+import cv2
 import geopandas as gpd
+import numpy as np
 import os
 import rasterio
-import cv2
-from rasterio.merge import merge
 
 load_dotenv()
 
@@ -343,8 +342,6 @@ def rgb(merged_paths):
 
     print("GROUPED FILES:", grouped) if grouped else None
 
-    frames = []
-
     for (year, month_number), bands_dict in grouped.items():
         try:
             red_band_02 = bands_dict["B02_20m"]
@@ -403,13 +400,12 @@ def rgb(merged_paths):
             overlay = Image.new("RGBA", img_grande.size, (255, 255, 255, 0))
             final_img = Image.alpha_composite(img_grande, overlay)
 
-            nombre_png = os.path.join(out_dir, f"{year}_{month_number}.png")
-            final_img.save(nombre_png)
-            png_paths.append(nombre_png)
-            frames.append(final_img)
+            png_file = os.path.join(out_dir, f"{year}_{month_number}.png")
+            
+            print("PNG FILENAME:", png_file) if png_file else None
 
-    if frames:
-        frames[0].save(final_img, save_all=True, append_images=frames[1:], duration=1000, loop=0)
+            final_img.save(png_file)
+            png_paths.append(png_file)
 
     return out_dir, png_paths, rgb_tif_paths
     
