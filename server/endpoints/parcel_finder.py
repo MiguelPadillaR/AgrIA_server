@@ -33,15 +33,11 @@ def find_parcel():
         if not selected_date:
             return jsonify({'error': 'No date provided'}), 400
         
-        print("cadastral_reference", cadastral_reference)
-        print("selected_date", selected_date)
-
+        # Get super-resolved image and store it for analyzing and display
+        geometry, metadata, url_image_address = get_parcel_image(cadastral_reference, selected_date)
+        
         # TODO: Pass geometry and date to S2DR3 and save super-resolved image
         #get_s2dr3_image()
-        
-        # Get super-resolved image and store it for analyzing and display
-        url_image_address = get_s2dr3_image_url_demo()
-        geometry, metadata, url_image_address = get_parcel_image(cadastral_reference, selected_date)
 
         response = { 
             "cadastralReference": cadastral_reference,
