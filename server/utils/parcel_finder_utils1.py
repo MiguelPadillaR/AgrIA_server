@@ -1,19 +1,27 @@
-import numpy as np
+from collections import defaultdict
 from ..config.constants import TEMP_UPLOADS_PATH
 from ..config.minio_client import minioClient, bucket_name
+from dotenv import load_dotenv
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dateutil.relativedelta import relativedelta
+from datetime import datetime
 from minio.error import S3Error
 from PIL import Image
 from shapely import ops
 from shapely.geometry import GeometryCollection, MultiPolygon, Polygon, shape
 from rasterio.mask import mask
-import datetime
-import os
-import tempfile
+from rasterio.merge import merge
+from rasterio.warp import calculate_default_transform, reproject, Resampling
+import numpy as np
 import geopandas as gpd
+import os
 import rasterio
 import cv2
+from rasterio.merge import merge
+
+load_dotenv()
+
+GEOMETRY_FILE = os.getenv("GEOMETRY_FILE")
 
 def extract_polygons_2d(geometry):
     if isinstance(geometry, GeometryCollection):
@@ -30,9 +38,9 @@ def extract_polygons_2d(geometry):
     return None
 
 def get_tiles_polygons(geojson):
-    geojson_grande = gpd.read_file(
-        "./S2A_OPER_GIP_TILPAR_MPC__20151209T095117_V20150622T000000_21000101T000000_B00.kml"
-    )
+    if not GEOMETRY_FILE or not os.path.exists(GEOMETRY_FILE):
+        raise FileNotFoundError(f"GEOMETRY_FILE is not set or does not exist: {GEOMETRY_FILE}")
+    geojson_grande = gpd.read_file(GEOMETRY_FILE)
     if geojson_grande.crs != geojson.crs:
         geojson = geojson.to_crs(geojson_grande.crs)
 
@@ -52,11 +60,15 @@ def download_tiles_rgb_bands(utm_zones, year, month):
     image_bands = ["B02_20m", "B03_20m", "B04_20m"]
     downloaded_files = {band: [] for band in image_bands}
 
+    print("YEAR-MONTH PAIRS GENERATED!") if year_month_pairs else None
+    print(year_month_pairs) if year_month_pairs else None
+
     download_tasks = []
     with ThreadPoolExecutor(max_workers=10) as executor:
         for zone in utm_zones:
             for year, month_folder in year_month_pairs:
                 composites_path = f"{zone}/{year}/{month_folder}/composites/"
+                print("\nCOMPOSITES PATH:", composites_path) if composites_path else None
                 try:
                     composites_dir = minioClient.list_objects(bucket_name, prefix=composites_path, recursive=True)
                     for file in composites_dir:
@@ -66,6 +78,7 @@ def download_tiles_rgb_bands(utm_zones, year, month):
                                 download_dir = os.path.join(TEMP_UPLOADS_PATH, str(year), band, month_folder)
                                 os.makedirs(download_dir, exist_ok=True)
                                 local_file_path = os.path.join(download_dir, f"{zone}.tif")
+                                print("DOWNLOAD FILE FOUND:", local_file_path) if local_file_path else None
                                 task = executor.submit(download_image_file, minioClient, file, local_file_path)
                                 download_tasks.append((task, band, local_file_path))
                 except S3Error as exc:
@@ -74,10 +87,27 @@ def download_tiles_rgb_bands(utm_zones, year, month):
         for task, band, local_file_path in download_tasks:
             task.result()
             downloaded_files[band].append(local_file_path)
+    
+    merged_paths = []
+    for band, file_list in downloaded_files.items():
+        if not file_list:
+            continue
 
-    return downloaded_files
+        # Get most recent downloaded file
+        recent_file = file_list[-1]
+        print("CHOSEN FILE:", recent_file) if recent_file else None
+        # E.g. .../TEMP_UPLOADS_PATH/2025/B02_20m/05/utm33n.tif
+        input_dir = os.path.dirname(recent_file)
+        # Get month folder name from path
+        month_folder = os.path.basename(input_dir)
+        month_number = datetime.strptime(month_folder, "%B").month
+        merge_path = merge_tifs(input_dir, year, band, month_number)
+        if merge_path:
+            merged_paths.append(merge_path)
 
-def download_tile_rgb_images(utm_zones, year, month_folder):
+    return merged_paths
+
+def download_tiles_rgb_images(utm_zones, year, month_folder):
     """
     Download and merge RGB band tiles (.tif) into one image mosaic per band for later parcel clipping.
     Arguments:
@@ -90,7 +120,6 @@ def download_tile_rgb_images(utm_zones, year, month_folder):
     # Generate date range and sort in reverse to get most recent first
     year_month_pairs = sorted(generate_date_range_last_n_months(year, month_folder), key=lambda x: (x[0], x[1]), reverse=True)
     image_bands = ["B02_20m", "B03_20m", "B04_20m"]
-    merged_paths = []
 
     download_tasks = []
     with ThreadPoolExecutor(max_workers=10) as executor:
@@ -104,6 +133,7 @@ def download_tile_rgb_images(utm_zones, year, month_folder):
                             band = file.object_name.split("/")[-1].split(".")[0]
                             if band in image_bands:
                                 download_dir = os.path.join(TEMP_UPLOADS_PATH, str(y), band, month_folder)
+                                print("DOWNLOAD DIR", download_dir) if download_dir else None
                                 os.makedirs(download_dir, exist_ok=True)
                                 local_file_path = os.path.join(download_dir, os.path.basename(file.object_name))
                                 task = executor.submit(download_image_file, minioClient, file, local_file_path)
@@ -118,11 +148,11 @@ def download_tile_rgb_images(utm_zones, year, month_folder):
             except Exception as exc:
                 print(f"Download task generated an exception: {exc}")
     
-    merged_paths = check_and_merge_bands(year_month_pairs, image_bands, merged_paths)
+    merged_paths = check_and_merge_bands(year_month_pairs, image_bands)
     
     return merged_paths
 
-def check_and_merge_bands(year_month_pairs, image_bands, merged_paths):
+def check_and_merge_bands(year_month_pairs, image_bands):
     """
     Checks for the existence of all required image bands and merges the bands if all are present.
     Arguments:
@@ -132,18 +162,18 @@ def check_and_merge_bands(year_month_pairs, image_bands, merged_paths):
     Returns:
         merged_paths (list of str): Returns local filepath to merged images.
     """
-
+    merged_paths = []
     # Process year/month combos from most recent to oldest
     for y, month_folder in year_month_pairs:
         all_bands_exist_for_month = True
         current_merged_paths_for_month = []
         for band in image_bands:
-            band_folder = os.path.join(TEMP_UPLOADS_PATH, str(y), band, month_folder)
+            band_folder = os.path.join(TEMP_UPLOADS_PATH, str(y), band, str(month_folder))
             # Check if folder exists and contains any files
             if not os.path.exists(band_folder) or not os.listdir(band_folder):
                 all_bands_exist_for_month = False
                 break # This month does not have all required band data
-
+            print("BAND FOLDER:", band_folder) if band_folder else None
         if all_bands_exist_for_month:
             # If all bands exist for this month, then merge and append
             for band in image_bands:
@@ -158,7 +188,7 @@ def check_and_merge_bands(year_month_pairs, image_bands, merged_paths):
 
 def merge_tifs(input_dir, year, band, month_number):
     """
-    Merges all red, green and blue band images into one, creating an RGB image.
+    Merges all same-band images into one mosaic, reprojecting to a common CRS if needed.
     Arguments:
         input_dir (str): Local directory where band images are stored.
         year (str): Year of the desired image.
@@ -166,24 +196,87 @@ def merge_tifs(input_dir, year, band, month_number):
         month_number (str): Month of the desired image (number as string, e.g., "02").
     Returns:
         merged_image_path (str): Local file path to the resulting merged image.
-
     """
     files = [os.path.join(input_dir, f) for f in os.listdir(input_dir) if f.endswith(".tif")]
     if not files:
+        print("No .tif files found in:", input_dir)
         return None
-    mosaic, out_transform = rasterio.merge.merge([rasterio.open(f) for f in files])
-    out_meta = rasterio.open(files[0]).meta.copy()
+
+    print("FILES:", files)
+    crs_groups = defaultdict(list)
+
+    for f in files:
+        with rasterio.open(f) as src:
+            print(f"File: {f} CRS: {src.crs}")
+            crs_groups[str(src.crs)].append(f)
+
+    # If all files share the same CRS → use directly
+    if len(crs_groups) == 1:
+        all_files = files
+    else:
+        print("Multiple CRS detected, reprojection needed...")
+        # Pick the CRS of the first file as the target
+        with rasterio.open(files[0]) as src:
+            target_crs = src.crs
+
+        reprojected_files = []
+
+        for crs, group_files in crs_groups.items():
+            for f in group_files:
+                with rasterio.open(f) as src:
+                    transform, width, height = calculate_default_transform(
+                        src.crs, target_crs, src.width, src.height, *src.bounds)
+                    kwargs = src.meta.copy()
+                    kwargs.update({
+                        'crs': target_crs,
+                        'transform': transform,
+                        'width': width,
+                        'height': height
+                    })
+
+                    # Create new path for reprojected version
+                    reprojected_path = f.replace(".tif", "_reprojected.tif")
+                    print(f"Reprojecting {f} → {reprojected_path}")
+
+                    with rasterio.open(reprojected_path, 'w', **kwargs) as dst:
+                        for i in range(1, src.count + 1):
+                            reproject(
+                                source=rasterio.band(src, i),
+                                destination=rasterio.band(dst, i),
+                                src_transform=src.transform,
+                                src_crs=src.crs,
+                                dst_transform=transform,
+                                dst_crs=target_crs,
+                                resampling=Resampling.nearest
+                            )
+                    reprojected_files.append(reprojected_path)
+
+        all_files = reprojected_files
+
+    # Now merge all files (original or reprojected)
+    src_files_to_mosaic = [rasterio.open(f) for f in all_files]
+    mosaic, out_transform = merge(src_files_to_mosaic)
+
+    out_meta = src_files_to_mosaic[0].meta.copy()
     out_meta.update({
         "driver": "GTiff",
         "height": mosaic.shape[1],
         "width": mosaic.shape[2],
         "transform": out_transform
     })
-    out_path = f"data/merge/{year}/{band}"
+
+    out_path = os.path.join(TEMP_UPLOADS_PATH, str(year), band)
     os.makedirs(out_path, exist_ok=True)
     merged_image_path = f"{out_path}/RGB_{year}_{month_number}_{band}.tif"
+
+    print("MERGED IMAGE PATH:", merged_image_path)
     with rasterio.open(merged_image_path, "w", **out_meta) as dest:
         dest.write(mosaic)
+
+    # Clean up open files
+    for src in src_files_to_mosaic:
+        src.close()
+
     return merged_image_path
 
 def generate_date_range_last_n_months(year, month, month_range=2):
@@ -198,8 +291,12 @@ def generate_date_range_last_n_months(year, month, month_range=2):
     Returns:
         date_range (list): List of tuples (year, month name).
     """
+    print("YEAR: ", year, "\nMONTH: ", month) if year else None
     current_date = datetime.strptime(f"{year}-{month.zfill(2)}", "%Y-%m")
+    print("CURRENT DATE", current_date) if current_date else None
     start_date = current_date - relativedelta(months=month_range)
+    
+    print("DATE FORMATTED") if start_date else None
 
     date_range = []
     while start_date <= current_date:
@@ -228,9 +325,12 @@ def rgb(merged_paths):
     png_paths = []
     rgb_tif_paths = []
 
+    print("MERGED PATHS:", merged_paths) if merged_paths else None
+
     grouped = {}
     for file in merged_paths:
         filename = os.path.basename(file)
+        print("FILENAME", filename) if filename else None
         filename_no_ext = os.path.splitext(filename)[0]
         filename_parts = filename_no_ext.split("_")
         year = filename_parts[1]
@@ -240,6 +340,8 @@ def rgb(merged_paths):
         if id not in grouped:
             grouped[id] = {}
         grouped[id][band] = file
+
+    print("GROUPED FILES:", grouped) if grouped else None
 
     frames = []
 
@@ -395,11 +497,14 @@ def cut_from_geometry(gdf_parcel, format, image_paths, geometry_id):
             parcela_crs = gdf_parcel.get("CRS", {"init": "epsg:4326"})
             gdf_parcel = gpd.GeoDataFrame(geometry=[parcela_geometry], crs=parcela_crs)
 
-        cropped_images = []
+        cropped_parcel_masks = []
+        print("IMAGE PATHS:", image_paths) if image_paths else None
         valid_files = [f for f in image_paths if f.endswith(f".{format}")]
         if not valid_files:
             raise FileNotFoundError(f"No files found with the .{format} format.")
-
+        
+        print("VALID FILES:", valid_files) if valid_files else None
+        
         for image_path in valid_files:
             original_filename = os.path.basename(image_path)
             timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3]
@@ -410,15 +515,16 @@ def cut_from_geometry(gdf_parcel, format, image_paths, geometry_id):
                     continue
 
                 geometries = [gdf_parcel.geometry.iloc[0]]
+                print(f"\nGEOMETRY FOR {image_path} is\t{geometries}") if geometries else None
                 out_image, out_transform = mask(src, geometries, crop=True)
                 extension = format.lower()
                 filename = original_filename.replace(".tif", f"_{geometry_id}.{extension}").replace(".jp2", f"_{geometry_id}.{extension}")
-                temp_file = os.path.join(tempfile.gettempdir(), filename)
+                temp_file = os.path.join(TEMP_UPLOADS_PATH, filename)
 
                 save_raster(out_image, temp_file, src, out_transform, format)
-                cropped_images.append(temp_file)
+                cropped_parcel_masks.append(temp_file)
 
-        return cropped_images
+        return cropped_parcel_masks
 
     except FileNotFoundError as e:
         print(str(e))
