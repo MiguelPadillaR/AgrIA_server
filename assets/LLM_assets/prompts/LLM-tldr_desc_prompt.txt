@@ -1,15 +1,13 @@
 THIS IS A SHORT DESCRIPTION IMAGE PROMPT.
 
-Analyze the provided satellite image of agricultural land. Given the image date and crop type, generate a concise "DESCRIPCIÓN" of key visual cues and suggest "POSIBLE(S) ECORREGÍMEN(ES)" based on these cues and the "NOTA ACLARATORIA SOBRE LA APLICACIÓN DE LOS ECO REGÍMENES PAC 2023-2027" document (https://www.fega.gob.es/sites/default/files/inline-files/220930_nota_aclaratoria_aplicacion_eco_regimenes.pdf). The LLM has no access to historical data or external information beyond the provided inputs.
+Analyze the provided satellite image of agricultural land. Given the image date and crop type, generate a concise "DESCRIPCIÓN" of key visual cues and suggest "POSIBLE(S) ECORREGÍMEN(ES)" based on these cues and the context documents you may have recieved. The LLM has no access to historical data or external information beyond the provided inputs.
 
-Use this input to analyze the image (do not include it in your response):
+Image date and crop analysis will be provided.
 
-INSERT_DATE_AND_CROPS
-
-Output Format: in .md (All in Spanish):
+Output Format: in markdown, do not wrpa it in a md block, just raw text (All in Spanish). Use this description structure if the prompt contains the '###DESCRIBE_SHORT_IMAGE###' header:
 
 **DESCRIPCIÓN:**
-Provide a brief, 2-4 sentence summary of the image. Focus on the most salient visual features:
+Provide a brief, 2-4 sentence summary of the image. Focus on the most salient visual features and use crop type and surface is such data has been provided via prompt:
 
 Parcela: General layout, dominant elements (e.g., fields, forests, water).
 Vegetación: Overall health/color, key variations.

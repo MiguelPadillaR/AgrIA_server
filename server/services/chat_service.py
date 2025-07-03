@@ -36,24 +36,31 @@ def get_image_description(file, is_detailed_description):
 def get_parcel_description(image_date, image_crops, image_filename, is_detailed_description):
     """
     Handles the parcel information reading and description.
+    Args:
+        image_date (str): Date of the image.
+        image_crops (list[dict]): List of crops detected in the image.
+        image_filename (str): Name of the image file.
+        is_detailed_description (bool): If True, generates a detailed description; otherwise, a short one.
+    Returns:
+        response (dict:{text:str, imagedesc:str}): Contains the text response and image description.
     """
     try:
         # Build image context prompt
-        image_context_prompt =f'FECHA DE IMAGEN: {image_date}\nCULTIVOS DETECTADOS: {len(image_crops)}'
+        image_context_prompt =f'FECHA DE IMAGEN: {image_date}\nCULTIVOS DETECTADOS: {len(image_crops)}\n'
         for crop in image_crops:
-            image_context_prompt+= f'\nTipo: {crop["uso_sigpac"]}\nSuperficie (m2): {crop["dn_surface"]}'
+            image_context_prompt+= f'\n- Tipo: {crop["uso_sigpac"]}\n- Superficie (m2): {crop["dn_surface"]}\n'
         
         # Insert image context prompt and read image desc file
-        image_desc_prompt =  "###DESCRIBE_LONG_IMAGE###\n" if is_detailed_description else "###DESCRIBE_SHORT_IMAGE###\n"
+        image_desc_prompt =  FULL_DESC_TRIGGER if is_detailed_description else SHORT_DESC_TRIGGER
         image_desc_prompt += image_context_prompt
-        print("PF", image_desc_prompt)
+        print(image_desc_prompt)
         
         # Open image from path
         image_path = Path(os.path.join(TEMP_UPLOADS_PATH, image_filename))
         image = Image.open(image_path)
 
         response = {
-            "text": chat.send_message([image, image_desc_prompt],).text,
+            "text": chat.send_message([image, "Usa las siguientes características de la imagen y la parcela para el análisis:\n\n" + image_desc_prompt],).text,
             "imageDesc":image_context_prompt
         }
 
@@ -61,7 +68,6 @@ def get_parcel_description(image_date, image_crops, image_filename, is_detailed_
     except Exception as e:
         print(e)
         return ''
-
 
 def get_suggestion_for_chat(chat_history: list[Content]):
     """
@@ -99,14 +105,7 @@ def get_summarised_chat(chat_history):
         summarised_chat.text (str): The summary of the history.
     """
     try:
-        # Get only role and text from chat_history
-        chat_message_history = []
-        for content in chat_history:
-            role = content.role if content.role is not None else "unknown"
-            for part in content.parts:
-                if part.text is not None:
-                    chat_message_history.append({"role": role, "text": part.text})
-
+        chat_message_history = get_role_and_content(chat_history)
         summarised_chat = client.models.generate_content(
             model="gemini-2.0-flash",
             contents=[
@@ -118,4 +117,19 @@ def get_summarised_chat(chat_history):
     except Exception as e:
         print("Error while summarising chat:\t",e)
 
-
+def get_role_and_content(chat_history):
+    """
+    Extracts role and text content of chat history.
+    Args:
+        chat_history (list[genai.types.Content]): Chat history.
+    Returns:
+        chat_message_history (list[dict:{role:str, content:str}]): Chat history formatted.
+    """
+    # Get only role and text content from chat_history
+    chat_message_history = []
+    for content in chat_history:
+        role = content.role if content.role is not None else "unknown"
+        for part in content.parts:
+            if part.text is not None:
+                chat_message_history.append({"role": role, "content": part.text})
+    return chat_message_history

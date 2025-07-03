@@ -1,16 +1,14 @@
 THIS IS A FULL DESCRIPTION IMAGE PROMPT.
 
-Your task is to generate a detailed "DESCRIPCIÓN" of the image and suggest "POSIBLE(S) ECORREGÍMEN(ES)" based on the visual cues in the satellite image and the definitions provided in the "NOTA ACLARATORIA SOBRE LA APLICACIÓN DE LOS ECO REGÍMENES PAC 2023-2027" document. The LLM does not have access to historical data or ground-truth information beyond the provided image date and crop type.
+Your task is to generate a detailed "DESCRIPCIÓN" of the image and suggest "POSIBLE(S) ECORREGÍMEN(ES)" based on the visual cues in the satellite image and the definitions provided in the context documents you may have recieved. The LLM does not have access to historical data or ground-truth information beyond the provided image date and crop type.
 
-Use this input to analyze the image (do not include it in your response):
+Input about the image date and crop classification will be provided.
 
-INSERT_DATE_AND_CROPS
-
-Here's the format you need to follow, and please ensure all output is in Spanish unless otherwise specified in your analysis:
+Use this description structure if the prompt contains the '###DESCRIBE_LONG_IMAGE###' header. The text will be formatted in markdown (see example), and please ensure all output is in Spanish unless otherwise specified in your analysis:
 
 DESCRIPCIÓN:
 
-Analyze the satellite image. Describe it comprehensively, aiming for at least 2-3 sentences per bullet point where applicable.
+Analyze the satellite image. Describe it comprehensively, aiming for at least 2-3 sentences per bullet point where applicable. Use crop information, including type and approximate surface, when provided via prompt.
 
 Detalles de la Parcela (Parcel details): Shape, approximate size (e.g., small, medium, large, or estimate hectares if visually discernible), divisions, or access routes. Describe the relative positioning of different features within the parcel (e.g., "Water bodies are located in the northern part of the parcel, adjacent to buildings").
 
@@ -22,11 +20,11 @@ Prácticas Agrícolas (Agricultural practices): Visible cues like vegetation bet
 
 POSIBLE(S) ECORREGÍMEN(ES):
 
-In this section, present the 3 most possible ecorregimes applicable to the state or parcel. Justify reasoning using visual evidence and normative. Based on your detailed description and the "NOTA ACLARATORIA SOBRE LA APLICACIÓN DE LOS ECO REGÍMENES PAC 2023-2027" document, suggest the most plausible ecorregímenes. If multiple ecorregímenes are plausible, prioritize them (e.g., "Altamente probable," "Moderadamente probable," "Menos probable").
+In this section, present the 3 most possible ecorregimes applicable to the state or parcel. Justify reasoning using visual evidence and normative. Based on your detailed description and the context documents you may have recieved, suggest the most plausible ecorregímenes. If multiple ecorregímenes are plausible, prioritize them (e.g., "Altamente probable," "Moderadamente probable," "Menos probable").
 
 [P-number] - [Full Name of Ecorregímen] (e.g., P1 - Pastoreo extensivo, P2A - Establecimiento de islas de biodiversidad, P2B - Siega sostenible, P3 - Rotación de cultivos con especies mejorantes, P4 - Siembra Directa, P5 - Espacios de biodiversidad, P6 - Cubierta vegetal espontánea o sembrada, P7 - Cubierta inerte (restos de poda) en cultivos leñosos).
 
-Justificación: Explain why this ecorregímen is plausible based on specific image evidence and criteria from the "NOTA ACLARATORIA" document. Refer to specific sections or criteria within the document if known (e.g., "Según los criterios de la Sección X del documento...").
+Justificación: Explain why this ecorregímen is plausible based on specific image evidence and criteria your provided sources. Refer to specific sections or criteria within the document if known (e.g., "Según los criterios de la Sección X del documento...").
 
 Limitaciones: State what cannot be confirmed visually.Confirmaciones Imposibles: Exact percentages, specific periods (e.g., "confirmar si una cubierta vegetal ha estado presente durante un período definido"), precise composition of cover crops (e.g., "identificación de especies específicas"), or detailed species identification.
 

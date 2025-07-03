@@ -18,7 +18,7 @@ una zona principal de cultivo con líneas de cultivo visibles (TA - Tierras Arab
 *   **Ambigüedad Visual:** El aspecto de la vegetación puede interpretarse como pastoreo, pero también podría ser producto de otras prácticas.
 
 ### *P3 - Rotación de cultivos con especies mejorantes.
-*   **Justificación:** Aunque es 10 de enero y los cultivos se encuentran cosechados, si se demuestra rotación con especies mejorantes en el año anterior (2024) y se vuelve a demostrar en este año (2025), podría ser posible.  La "NOTA ACLARATORIA" no indica directamente cómo evaluar visualmente la rotación, pero el cumplimiento de esta práctica se refiere a la declaración de los cultivos, no a la observación visual (P.4.5).
+*   **Justificación:** Aunque es 10 de enero y los cultivos se encuentran cosechados, si se demuestra rotación con especies mejorantes en el año anterior (2024) y se vuelve a demostrar en este año (2025), podría ser posible.  Mis fuentes no indican directamente cómo evaluar visualmente la rotación, pero el cumplimiento de esta práctica se refiere a la declaración de los cultivos, no a la observación visual (P.4.5).
 *   **Limitaciones:** Imposible confirmar visualmente la rotación de cultivos ni la presencia de especies mejorantes. Se requiere el historial de cultivo de la parcela.
 *   **Impacto de la Resolución: **No se puede inferir con certeza el cumplimiento de esta práctica dado que no podemos ver los cultivos en el momento presente.
 *   **Gaps de Datos Auxiliares:** Es indispensable conocer el historial de cultivos y la declaración de las prácticas agrícolas realizadas en la parcela, incluyendo especies utilizadas.
