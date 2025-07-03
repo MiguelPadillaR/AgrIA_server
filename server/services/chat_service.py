@@ -46,22 +46,21 @@ def get_parcel_description(image_date, image_crops, image_filename, is_detailed_
     """
     try:
         # Build image context prompt
-        image_context_prompt =f'FECHA DE IMAGEN: {image_date}\nCULTIVOS DETECTADOS: {len(image_crops)}\n'
+        image_context_data =f'FECHA DE IMAGEN: {image_date}\nCULTIVOS DETECTADOS: {len(image_crops)}\n'
         for crop in image_crops:
-            image_context_prompt+= f'\n- Tipo: {crop["uso_sigpac"]}\n- Superficie (m2): {crop["dn_surface"]}\n'
+            image_context_data+= f'\n- Tipo: {crop["uso_sigpac"]}\n- Superficie (m2): {crop["dn_surface"]}\n'
         
         # Insert image context prompt and read image desc file
         image_desc_prompt =  FULL_DESC_TRIGGER if is_detailed_description else SHORT_DESC_TRIGGER
-        image_desc_prompt += image_context_prompt
-        print(image_desc_prompt)
+        image_desc_prompt += image_context_data
         
         # Open image from path
         image_path = Path(os.path.join(TEMP_UPLOADS_PATH, image_filename))
         image = Image.open(image_path)
 
         response = {
-            "text": chat.send_message([image, "Usa las siguientes características de la imagen y la parcela para el análisis:\n\n" + image_desc_prompt],).text,
-            "imageDesc":image_context_prompt
+            "text": chat.send_message([image, "Estas son las características de la parcela cuya imagen te acabo de pasar. Tenlo en cuenta para tu descripción:\n\n" + image_desc_prompt],).text,
+            "imageDesc":image_context_data
         }
 
         return response

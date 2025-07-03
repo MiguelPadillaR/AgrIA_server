@@ -5,7 +5,7 @@ from ..config.constants import TEMP_UPLOADS_PATH
 from ..services.parcel_finder_service import get_parcel_image
 from ..utils.parcel_finder_utils import *
 from ..services.parcel_finder_service import get_parcel_image
-from flask import Blueprint, request, jsonify, send_from_directory
+from flask import Blueprint, make_response, request, jsonify, send_from_directory
 
 parcel_finder_bp = Blueprint('find_parcel', __name__)
 
@@ -62,4 +62,13 @@ def find_parcel():
     
 @parcel_finder_bp.route('/uploads/<filename>')
 def uploaded_file(filename):
-    return send_from_directory(os.path.join(os.getcwd(), TEMP_UPLOADS_PATH), filename)
+    response = make_response(
+        send_from_directory(
+            os.path.join(os.getcwd(), TEMP_UPLOADS_PATH),
+            filename
+        )
+    )
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response

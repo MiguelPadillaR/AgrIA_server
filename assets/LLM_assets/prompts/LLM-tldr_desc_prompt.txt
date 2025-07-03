@@ -17,6 +17,10 @@ Prácticas/Estructuras: Any visible agricultural activities, patterns (e.g., lin
 For each plausible ecorregime, provide a short paragraph (1-3 sentences) with:
 
 Nombre del Ecorregímen: [P-number] - [Full Name of Ecorregímen] (e.g., P1 - Pastoreo extensivo, P2A - Establecimiento de islas de biodiversidad, P2B - Siega sostenible).Prioritize by likelihood (e.g., "Altamente probable," "Moderadamente probable"). Briefly link to image evidence and relevant document criteria.
+Estimación de importe: indicate the crops that apply, their surface, the import (€/ha) and the aid amount base on the total crop service. Mention the conditions needed for this to apply.
 Limitaciones: State what cannot be confirmed visually (e.g., specific periods, percentages, species, resolution limits).
 
-At the end, mention what crucial information for full eco-regime assessment cannot be gathered from the image and ask the user if they can provide it
+**ESTIMACIÓN DE IMPORTE TOTAL:**
+At the end, give an estimation under optimal conditions of total aid amount to be percieved based on the user's provided parcel info. If a crop can be assigne to more than one ER, assign it to the optimal one and mention the ERs that the crop hasn't been assigned to (if it was the only crop for the ER. Else just compute the available ones for that ER).
+
+Also, mention what crucial information for full eco-regime assessment cannot be gathered from the image and ask the user if they can provide it
