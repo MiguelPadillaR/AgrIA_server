@@ -1,7 +1,11 @@
 import os
+import shutil
+
+from ..config.constants import TEMP_UPLOADS_PATH
+from ..services.parcel_finder_service import get_parcel_image
 from ..utils.parcel_finder_utils import *
+from ..services.parcel_finder_service import get_parcel_image
 from flask import Blueprint, request, jsonify, send_from_directory
-from server.config.constants import TEMP_UPLOADS_PATH
 
 parcel_finder_bp = Blueprint('find_parcel', __name__)
 
@@ -21,7 +25,16 @@ def find_parcel():
     Returns:
         Flask Response: A JSON response with the parcel data or an error message and appropriate HTTP status code.
     """
+    # Clear uploaded files adn dirs
+    if os.path.exists(TEMP_UPLOADS_PATH):
+        for file in os.listdir(TEMP_UPLOADS_PATH):
+            file_path = os.path.join(os.getcwd(), TEMP_UPLOADS_PATH, file)
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
 
+    init = datetime.now()
     try:
         cadastral_reference = request.form.get('cadastralReference')
         selected_date = request.form.get('selectedDate')
@@ -30,36 +43,23 @@ def find_parcel():
         if not selected_date:
             return jsonify({'error': 'No date provided'}), 400
         
-        geometry, metadata = find_from_cadastral_registry(cadastral_reference)
-
-        # TODO: Pass geometry and date to S2DR3 and save super-resolved image
-        #get_s2dr3_image()
+        # Get image and store it for display
+        geometry, metadata, url_image_address = get_parcel_image(cadastral_reference, selected_date)
         
-        # Get super-resolved image and store it for analyzing and display
-        url_image_address = get_s2dr3_image_url()
+        # TODO: Pass image to super-resolution module and save super-resolved image
+        #get_sr_image()
+
         response = { 
             "cadastralReference": cadastral_reference,
             "geometry": geometry,
             "imagePath": url_image_address,
             "metadata": metadata,
         }
+        print("TIME TAKEN:", datetime.now() - init)
         return jsonify({'response': response})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
-
-@parcel_finder_bp.route('/get-crop-classification', methods=['GET'])  
-def get_crop_classification():
-    try:
-        classification_df = get_crop_classification()
-        if classification_df.empty:
-            return jsonify({'error': 'No crop classification data found'}), 404
-        print(classification_df)
-        return jsonify({"classification": classification_df.to_dict(orient='records')}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500  
-
-
 @parcel_finder_bp.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(os.path.join(os.getcwd(), TEMP_UPLOADS_PATH), filename)
