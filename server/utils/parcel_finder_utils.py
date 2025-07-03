@@ -163,11 +163,11 @@ def merge_tifs(input_dir, year, band, month_number):
 
 def reproject_tiles(input_dir):
     """
-    Reproject tile files with different Cooridinates Reference System before merging them.
+    Reproject tile files to the same Cooridinates Reference System (CRS) if needed.
     Arguments:
         input_dir (`str`): Input directory where the files are
     Returns:
-        reprojected_files (list of `str`): list of reporjected file paths
+        all_files (list of `str`): list of reporjected / default file paths
     """
     files = [os.path.join(input_dir, f) for f in os.listdir(input_dir) if f.endswith(".tif")]
     if not files:
@@ -221,8 +221,8 @@ def reproject_tiles(input_dir):
                                 resampling=Resampling.nearest
                             )
                     reprojected_files.append(reprojected_path)
-
-    return reprojected_files
+        all_files = reprojected_files
+    return all_files
 
 def rgb(merged_paths):
     """
@@ -303,14 +303,16 @@ def rgb(merged_paths):
 
             img_pil = Image.fromarray(rgba_image, mode="RGBA")
 
-            escala = 8
-            img_grande = img_pil.resize(
-                (img_pil.width * escala, img_pil.height * escala),
-                resample=Image.BICUBIC
-            )
+            # Calculate new size
+            width, height = img_pil.size
+            scale_factor = max(1, 240 / min(width, height))
+            new_width = int(width * scale_factor)
+            new_height = int(height * scale_factor)
+            upscaled_image = img_pil.resize((new_width, new_height), resample=Image.BICUBIC)
 
-            overlay = Image.new("RGBA", img_grande.size, (255, 255, 255, 0))
-            final_img = Image.alpha_composite(img_grande, overlay)
+
+            overlay = Image.new("RGBA", upscaled_image.size, (255, 255, 255, 0))
+            final_img = Image.alpha_composite(upscaled_image, overlay)
 
             png_file = os.path.join(out_dir, f"{year}_{month_number}.png")
             final_img.save(png_file)
