@@ -46,11 +46,19 @@ def get_parcel_description(image_date, image_crops, image_filename, is_detailed_
     """
     try:
         # Build image context prompt
-        image_context_data =f'FECHA DE IMAGEN: {image_date}\nCULTIVOS DETECTADOS: {len(image_crops)}\n'
+        image_context_data =f'FECHA DE IMAGEN: {image_date}\nPARCELAS DETECTADAS: {len(image_crops)}\n'
+        total_surface = 0.0
         for crop in image_crops:
-            image_context_data+= f'\n- Tipo: {crop["uso_sigpac"]}\n- Superficie (m2): {crop["dn_surface"]}\n'
-        
+            parcel_id = crop["recinto"]
+            type = crop["uso_sigpac"]
+            surface = round(float(crop["superficie_admisible"] or crop["dn_surface"]),3)
+            irrigation = crop["coef_regadio"] if int(crop["coef_regadio"]) > 0 else None
+            total_surface += surface
+            image_context_data+= f'\n- Recinto: {parcel_id}\n- Tipo: {type}\n- Superficie admisible (m2): {surface}\n'
+            if irrigation:  image_context_data+=f'Coef. regadío: {irrigation}%\n'
+
         # Insert image context prompt and read image desc file
+        image_context_data += f'\nSUPERFICIE ADMISIBLE TOTAL (m2): {round(total_surface,3)}'
         image_desc_prompt =  FULL_DESC_TRIGGER if is_detailed_description else SHORT_DESC_TRIGGER
         image_desc_prompt += image_context_data
         
@@ -59,7 +67,7 @@ def get_parcel_description(image_date, image_crops, image_filename, is_detailed_
         image = Image.open(image_path)
 
         response = {
-            "text": chat.send_message([image, "Estas son las características de la parcela cuya imagen te acabo de pasar. Tenlo en cuenta para tu descripción:\n\n" + image_desc_prompt],).text,
+            "text": chat.send_message([image, "Estas son las características de la parcela cuya imagen te paso. Tenlo en cuenta para tu descripción:\n\n" + image_desc_prompt],).text,
             "imageDesc":image_context_data
         }
 

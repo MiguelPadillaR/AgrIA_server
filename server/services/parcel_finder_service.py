@@ -40,7 +40,6 @@ def get_parcel_image( cadastral_reference: str, date: str) -> tuple:
 
     # Upload and fetch latest image
     sigpac_image_url = f"{os.getenv('API_URL')}/uploads/{os.path.basename(sigpac_image_name)}?v={int(time.time())}"
-    print("SIGPAC IMAGE URL", sigpac_image_url) if sigpac_image_url else None
     return geometry, metadata, sigpac_image_url.split("?")[0]
 
 def get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path_values):
