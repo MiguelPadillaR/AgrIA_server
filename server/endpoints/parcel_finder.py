@@ -1,6 +1,5 @@
 import os
 import shutil
-
 from ..config.constants import TEMP_UPLOADS_PATH
 from ..services.parcel_finder_service import get_parcel_image
 from ..utils.parcel_finder_utils import *
@@ -23,7 +22,7 @@ def find_parcel():
         4. (Mock) Copies a sample super-resolved image to the upload directory.
         5. Constructs a response containing the cadastral reference, geometry, image URL, and metadata.
     Returns:
-        Flask Response: A JSON response with the parcel data or an error message and appropriate HTTP status code.
+        response: A JSON response with the parcel data or an error message and appropriate HTTP status code.
     """
     # Clear uploaded files adn dirs
     if os.path.exists(TEMP_UPLOADS_PATH):

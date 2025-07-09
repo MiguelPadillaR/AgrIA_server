@@ -3,9 +3,10 @@
 This is the server side of the Agricultural Imaging Assistant (AgrIA). It includes information on how to setup and run the server side of AgrIA.
 
 ## Requirements:
-You will need to create a virtual environment with`conda` since it simplifies the package handling of some libraries, so having `conda` already installed is a must.
-
-You will need access to KHAOS' [`sigpac-tools`](https://github.com/KhaosResearch/sigpac-tools.git@07145bcaebcdf37bc5b24191950a3f0a666841b4) repository in order to be able to fully run AgrIA's server. **To access the repository, contact [KHAOS Research](https://khaos.uma.es/?page_id=101) group.**
+- Python 3.10+
+- `conda`, for simplified virtual environment package managing
+- Access to KHAOS' [`sigpac-tools`](https://github.com/KhaosResearch/sigpac-tools.git@07145bcaebcdf37bc5b24191950a3f0a666841b4) repository.
+    - **To access the repository, contact [KHAOS Research](https://khaos.uma.es/?page_id=101) group.**
 
 ## Installation & Setup
 
@@ -17,7 +18,7 @@ conda activate agria_server_env
 ```
 
 ### System environment setup:
-You will need to rename the `.env_example` file to `env` and fill it with your own data.
+You will need to rename the `.env_example` file to `env` and complete it with your own data.
 
 **Content of your `.env` file:**
 ```bash
@@ -38,7 +39,7 @@ GEOMETRY_FILE = geometry-file.kml
 **To get credentials to access the MinIO image database, contact [KHAOS Research](https://khaos.uma.es/?page_id=101) group.**
 
 ## Server initialization:
-After activating and setting up all environments, run the server by simply using:
+After activating and setting up all environment, run the server by simply using:
 
 ```bash
 python run.py
@@ -107,7 +108,7 @@ Agria_server:.
         test_user_input.py
 ```
 
-### Components overview:
+### Directory overview:
 This is a brief overview of each main directory in the project structure:
 - `assets`: All resources the server uses are stored here.
   - `geojson_assets`: Ideally, where you'd put your `GEOMETRY_FILE`, but as long as you assign the variable the correct path to the `.kml` file, it doesn't matter.
@@ -115,6 +116,6 @@ This is a brief overview of each main directory in the project structure:
 - `server`: Contains all server's main logic components and directories:
   - `config`: Holds configuration-related files: from constants used all-over to initialization configuration.
   - `endpoints`: Keeps all endpoints access and methods to a single file for each UI component.
-  - `services`: Maintains files with all the methods that call external services outside of our project scope.
+  - `services`: Stores files with all the methods that call external services outside of our project scope.
   - `utils`: An assortment of functions and methods that  help  all the data processing that mainly comes from endpoint input requests.
-- `tests`: A baterry of integration tests for the server **(TODO)**.
+- `tests`: A batery of integration tests for the server **(TODO)**.
