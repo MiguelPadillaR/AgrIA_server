@@ -55,7 +55,7 @@ def get_parcel_description(image_date, image_crops, image_filename, is_detailed_
             irrigation = crop["coef_regadio"] if int(crop["coef_regadio"]) > 0 else None
             total_surface += surface
             image_context_data+= f'\n- Recinto: {parcel_id}\n- Tipo: {type}\n- Superficie admisible (m2): {surface}\n'
-            if irrigation:  image_context_data+=f'Coef. regadío: {irrigation}%\n'
+            if irrigation:  image_context_data+=f'- Coef. regadío: {irrigation}%\n'
 
         # Insert image context prompt and read image desc file
         image_context_data += f'\nSUPERFICIE ADMISIBLE TOTAL (m2): {round(total_surface,3)}'
