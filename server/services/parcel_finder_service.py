@@ -1,4 +1,5 @@
 import time
+from flask import abort
 from sigpac_tools.find import find_from_cadastral_registry
 from ..utils.parcel_finder_utils import *
 import os
@@ -29,9 +30,11 @@ def get_parcel_image( cadastral_reference: str, date: str) -> tuple:
     rgb_images_path = download_tiles_rgb_bands(list_zones_utm, year, month)
     
     if not rgb_images_path:
-        print("No images are available for the selected date, images are processed at the end of each month.")
-        return None, None
-
+        error_message = "No images are available for the selected date, images are processed at the end of each month."
+        print(error_message)
+        # Option A: Using abort (simpler for direct errors)
+        abort(404, description=error_message) # Or 400 if it's a "bad request" from the user
+        
     out_dir, png_paths, rgb_tif_paths = get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path)
 
     #TODO: Get image from geometry (image-workflow.pptx)
