@@ -1,0 +1,47 @@
+**DESCRIPTION:**
+
+The image shows a plot with an irregular shape and a variety of land uses. Extensive areas of grassland with trees (PA) and arable land (TA) stand out, along with unproductive zones (IM), buildings (ED) and a watercourse (AG). The varied coloration suggests different states of the vegetation.
+
+**POSSIBLE ECO-SCHEMES:**
+
+*   **P1 - Extensive grazing:** Moderately likely. The presence of pasture with trees (PA) suggests the possibility of applying this regime.
+    *   **Estimated amount:**
+        *   **Without multi-annuality:** PA (Pasture with Trees): (80639.031 m2 + 52325.453 m2) / 10000 \* 35.89 €/ha = **476.56 €** (Peninsula)
+        *   **Without multi-annuality:** PA (Pasture with Trees): (80639.031 m2 + 52325.453 m2) / 10000 \* 57.89 €/ha = **769.03 €** (Insular)
+        *   **Condition**: Maintain an adequate livestock load and respect a minimum grazing period of 120 days per year.
+    *   **Limitations:** The livestock load and compliance with the grazing period cannot be visually confirmed.
+*   **P2A - Establishment of biodiversity islands:** Possible. The presence of pasture with trees (PA) may allow compliance with this regime.
+    *   **Estimated amount:** Cannot be estimated directly from the image, but is based on 7% of the pasture area (PA) without mowing between January 1 and August 31.
+        *   **Condition**: Leave 7% of the pasture area (PA) unmown during the specified period.
+    *   **Limitations:** It cannot be visually determined whether the requirements are met.
+*   **P2B - Sustainable mowing:** Possible. The presence of pasture with trees (PA) may allow compliance with this regime.
+    *   **Estimated amount:** Cannot be estimated directly from the image, but is based on meeting an unproductive period of 60 consecutive days between June, July and August.
+        *   **Condition**: Comply with the unproductive period of 60 consecutive days and a maximum number of cuts depending on the altitude.
+    *   **Limitations:** It cannot be visually determined whether the requirements are met.
+*   **P3 - Crop rotation with improving species:** Moderately likely. The presence of arable land (TA) opens up the possibility of adhering to this regime.
+    *   **Estimated amount:**
+        *   **Without multi-annuality:** TA (Arable Land): (300623.759 m2 + 821.643 m2) / 10000 \* 45.94 €/ha = **1384.66 €**
+        *   **With multi-annuality:** TA (Arable Land): (300623.759 m2 + 821.643 m2) / 10000 \* 70.94 €/ha = **2138.76 €**
+        *   **Condition**: Rotation and improving species must be demonstrated.
+    *   **Limitations:** Rotation and the use of improving species cannot be visually confirmed.
+*   **P4 - No-till:** Possible. Given the image information, it cannot be deduced that this practice is being carried out, but it cannot be ruled out.
+    *   **Estimated amount:**
+        *   **Without multi-annuality:** TA (Arable Land): (300623.759 m2 + 821.643 m2) / 10000 \* 45.94 €/ha = **1384.66 €**
+        *   **With multi-annuality:** TA (Arable Land): (300623.759 m2 + 821.643 m2) / 10000 \* 70.94 €/ha = **2138.76 €**
+        *   **Condition**: Conservation agriculture (no-till) is required on at least 40% of the area requested, with rotation.
+    *   **Limitations:** It is not possible to visually determine the no-till practice, nor the required rotation.
+*   **P5 - Biodiversity spaces in arable land and permanent crops:** Moderately likely. The presence of pasture with trees, unproductive areas and watercourses could contribute to this regime.
+    *   **Estimated amount:** Estimated area of non-productive elements (IM + AG): (3272.529 m2 + 1633.265 m2) / 10000 \* 48.56 €/ha = **23.98 €**
+        *   **Condition**: It is required to comply with the necessary percentages for biodiversity spaces.
+    *   **Limitations:** It is not possible to determine the extent of the biodiversity areas.
+
+**TOTAL AMOUNT ESTIMATE:**
+
+*   **P1 (Extensive grazing):**  **476.56 €** (Peninsula, without multi-annuality) / **769.03 €** (Insular, without multi-annuality).
+*   **P2A (Establishment of biodiversity islands):** Cannot be estimated directly from the image.
+*   **P2B (Sustainable mowing):** Cannot be estimated directly from the image.
+*   **P3 (Rotation with improving species):** Not assigned (without multi-annuality) / **2,138.76 €** (with multi-annuality).
+*   **P4 (No-till):** TA has already been assigned to another ER.
+*   **P5 (Biodiversity Spaces):** **23.98 €** (does not apply multi-annuality).
+
+**Total : 1,885.20 € / 2,938.77 € (Peninsula, without multi-annuality) / (with multi-annuality) / 2,178.23 € / 3,231.74 € (Insular, without multi-annuality) / (with multi-annuality)**
