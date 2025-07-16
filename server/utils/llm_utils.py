@@ -1,6 +1,5 @@
 from ..config.constants import BASE_CONTEXT_PATH, BASE_PROMPTS_PATH, FULL_DESC_TRIGGER, MIME_TYPES, SHORT_DESC_TRIGGER
 from server.services.llm_services import upload_context_document
-from google import genai
 from google.genai.types import Content, Part
 import json
 import os
@@ -74,9 +73,11 @@ def get_description_prompt(base_path, prompt_data, is_image_desc_prompt):
         content = pf.read()
 
     if is_image_desc_prompt:
-        prompt_example_path = os.path.join(base_path, prompt_data["example"]).replace("\\", "/")
-        with open(prompt_example_path, 'r', encoding='utf-8') as ef:
-            content += "\n" + ef.read()
+        prompt_example_dir = os.path.join(base_path, prompt_data["examples"]).replace("\\", "/")
+        for prompt_example_path in os.listdir(prompt_example_dir):
+            prompt_example_path = os.path.join(prompt_example_dir, prompt_example_path)
+            with open(prompt_example_path, 'r', encoding='utf-8') as ef:
+                content += "\n" + ef.read()
 
     return content
 

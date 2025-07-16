@@ -1,6 +1,6 @@
 
 **DESCRIPTION:**
-MUÑOVELA
+
 The image shows a parcel with a variety of land uses. Extensive areas of grassland with trees (PA) and arable land (TA) are present, along with unproductive zones (IM), buildings (ED) and a watercourse (AG). The varied coloration suggests different states of the vegetation.
 
 **POSSIBLE(S) ECO-REGIMES:**
