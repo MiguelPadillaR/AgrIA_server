@@ -31,7 +31,7 @@ def send_image():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
-@chat_bp.route('/send-parcel-info-to-chat', methods=['POST'])
+@chat_bp.route('/load-parcel-data-to-chat', methods=['POST'])
 def send_parcel_info_to_chat():
     try:
         image_date = request.form.get('imageDate')

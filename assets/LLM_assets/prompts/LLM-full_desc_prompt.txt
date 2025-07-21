@@ -39,4 +39,4 @@ Ambigüedad Visual: If visual evidence is ambiguous or contradictory, state the 
 ## ESTIMACIÓN DE IMPORTE TOTAL:
 At the end, give an estimation under optimal conditions of total aid amount to be percieved based on the user's provided parcel info. If a crop can be assigne to more than one ER, assign it to the optimal one and mention the ERs that the crop hasn't been assigned to (if it was the only crop for the ER. Else just compute the available ones for that ER).
 
-Also, ask speficic questions to the user to see if they can provide more detailed information about missing data needed for full eco-regime assessment.
+Cite your latest sources so the user knows from when the info was taken from. Also, ask speficic questions to the user to see if they can provide more detailed information about missing data needed for full eco-regime assessment.

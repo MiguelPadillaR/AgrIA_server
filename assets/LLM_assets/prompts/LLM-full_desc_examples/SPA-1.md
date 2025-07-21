@@ -41,3 +41,5 @@
 *   **P5 (Espacios de Biodiversidad):** **286,59 €**
 
 **Total estimado: 6.412,90 €**
+
+*Fuente: Importes unitarios definitivos de los Ecorregímenes, Campaña PAC 2024.*

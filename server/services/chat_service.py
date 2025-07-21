@@ -52,10 +52,10 @@ def get_parcel_description(image_date, image_crops, image_filename, is_detailed_
             parcel_id = crop["recinto"]
             type = crop["uso_sigpac"]
             surface = round(float(crop["superficie_admisible"] or crop["dn_surface"]),3)
-            irrigation = crop["coef_regadio"] if int(crop["coef_regadio"]) > 0 else None
+            irrigation = crop["coef_regadio"] if crop["coef_regadio"] is not None else 0
             total_surface += surface
             image_context_data+= f'\n- Recinto: {parcel_id}\n- Tipo: {type}\n- Superficie admisible (m2): {surface}\n'
-            if irrigation:  image_context_data+=f'- Coef. regadío: {irrigation}%\n'
+            if irrigation > 0:  image_context_data+=f'- Coef. regadío: {irrigation}%\n'
 
         # Insert image context prompt and read image desc file
         image_context_data += f'\nSUPERFICIE ADMISIBLE TOTAL (m2): {round(total_surface,3)}'
@@ -73,8 +73,7 @@ def get_parcel_description(image_date, image_crops, image_filename, is_detailed_
 
         return response
     except Exception as e:
-        print(e)
-        return ''
+        print("Error while getting parcel description: " + e)
 
 def get_suggestion_for_chat(chat_history: list[Content]):
     """
@@ -101,7 +100,6 @@ def get_suggestion_for_chat(chat_history: list[Content]):
         return suggestion.text
     except Exception as e:
         print("Error getting suggestion:\t", e)
-        return ''
 
 def get_summarised_chat(chat_history):
     """

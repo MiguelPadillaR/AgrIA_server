@@ -23,4 +23,4 @@ Limitaciones: State what cannot be confirmed visually (e.g., specific periods, p
 **ESTIMACIÓN DE IMPORTE TOTAL:**
 At the end, give an estimation under optimal conditions of total aid amount to be percieved based on the user's provided parcel info. If a crop can be assigne to more than one ER, assign it to the optimal one and mention the ERs that the crop hasn't been assigned to (if it was the only crop for the ER. Else just compute the available ones for that ER).
 
-Also, mention what crucial information for full eco-regime assessment cannot be gathered from the image and ask the user if they can provide it
+Cite your latest sources so the user knows from when the info was taken from. Also, mention what crucial information for full eco-regime assessment cannot be gathered from the image and ask the user if they can provide it

@@ -3,12 +3,12 @@
     "long":{
         "name": "long",
         "prompt_filepath": "LLM-full_desc_prompt.txt",
-        "example": "LLM-full_desc_example.txt"
+        "examples": "LLM-full_desc_examples"
     },
     "short": {
         "name": "short",
         "prompt_filepath": "LLM-tldr_desc_prompt.txt",
-        "example": "LLM-tldr_desc_example.txt"
+        "examples": "LLM-tldr_desc_examples"
     },
     "role": {
         "name": "role",
