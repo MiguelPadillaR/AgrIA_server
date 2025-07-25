@@ -35,14 +35,11 @@ def get_parcel_image( cadastral_reference: str, date: str, is_from_cadastral_ref
         
     # Get GeoJSON data and dataframe and list of UTM zones
     geojson_data, gdf = get_geojson_data(geometry, metadata)
-    print("GEOJSON & DF GOT:",  geojson_data, gdf) if geojson_data and gdf else None
     zones_utm = get_tiles_polygons(gdf)
     list_zones_utm = list(zones_utm)
-    print("UTM ZONES LISTED:",  list_zones_utm) if list_zones_utm else None
 
     # Download RGB image:
     rgb_images_path = download_tiles_rgb_bands(list_zones_utm, year, month)
-    print("RGB IMAGES OBTAINED:",  rgb_images_path) if rgb_images_path else None
     
     if not rgb_images_path:
         error_message = "No images are available for the selected date, images are processed at the end of each month."
