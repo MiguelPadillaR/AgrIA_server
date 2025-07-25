@@ -1,15 +1,19 @@
+import json
 import time
 from flask import abort
 from sigpac_tools.find import find_from_cadastral_registry
 from ..utils.parcel_finder_utils import *
 import os
 
-def get_parcel_image( cadastral_reference: str, date: str) -> tuple:
+def get_parcel_image( cadastral_reference: str, date: str, is_from_cadastral_reference: bool= True, parcel_geometry: str  = None, parcel_metadata: str = None ) -> tuple:
     """
     Retrieves a SIGPAC image and data for a specific parcel.
     Arguments:
         cadastral_reference (str): The cadastral reference of the parcel to search for.
         date (str): The date for which the parcel data is requested, in 'DD-MM-YYYY' format.
+        is_from_cadastral_reference (bool): If `True`, uses the cadastral reference to find the parcel; otherwise, uses the provided `parcel_geometry`.
+        parcel_geometry (str): _Optional_; GeoJSON data of the parcel's polygon to use if `is_from_cadastral_reference` is `False`.
+        parcel_metadata (str): _Optional_; User input metadata associated with the parcel to use if `is_from_cadastral_reference` is `False`.
     Returns:
         geometry (dict): GeoJSON geometry with the parcel's limits.
         metadata (dict): Metadata associated with the parcel.
@@ -19,8 +23,16 @@ def get_parcel_image( cadastral_reference: str, date: str) -> tuple:
     month = date.split("-")[1]
     
     # Get parcel data
-    geometry, metadata = find_from_cadastral_registry(cadastral_reference)
-    
+    if is_from_cadastral_reference:
+        geometry, metadata = find_from_cadastral_registry(cadastral_reference)
+    else:
+        if not parcel_geometry:
+            raise ValueError("GeoJSON data must be provided when not using cadastral reference.")
+        if not parcel_metadata:
+            raise ValueError("Parcel metadata data must be provided when not using cadastral reference.")
+        geometry = json.loads(parcel_geometry)
+        metadata = json.loads(parcel_metadata)
+        
     # Get GeoJSON data and dataframe and list of UTM zones
     geojson_data, gdf = get_geojson_data(geometry, metadata)
     zones_utm = get_tiles_polygons(gdf)
