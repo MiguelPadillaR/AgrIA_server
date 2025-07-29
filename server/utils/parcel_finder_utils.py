@@ -1,3 +1,4 @@
+from pyproj import Transformer
 from ..config.constants import TEMP_UPLOADS_PATH
 from ..config.minio_client import minioClient, bucket_name
 from collections import defaultdict
@@ -7,10 +8,11 @@ from datetime import datetime
 from dotenv import load_dotenv
 from minio.error import S3Error
 from PIL import Image
-from shapely import ops
-from shapely.geometry import GeometryCollection, MultiPolygon, Polygon, shape
+from shapely import Point, ops, unary_union
+from shapely.geometry import GeometryCollection, MultiPolygon, Polygon, shape, mapping
 from rasterio.mask import mask
 from rasterio.merge import merge
+from shapely.ops import transform as shapely_transform
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 import cv2
 import geopandas as gpd
@@ -39,13 +41,13 @@ def extract_polygons_2d(geometry):
 def get_tiles_polygons(geojson):
     if not GEOMETRY_FILE or not os.path.exists(GEOMETRY_FILE):
         raise FileNotFoundError(f"GEOMETRY_FILE is not set or does not exist: {GEOMETRY_FILE}")
-    geojson_grande = gpd.read_file(GEOMETRY_FILE)
-    if geojson_grande.crs != geojson.crs:
-        geojson = geojson.to_crs(geojson_grande.crs)
+    base_geojson = gpd.read_file(GEOMETRY_FILE)
+    if base_geojson.crs != geojson.crs:
+        geojson = geojson.to_crs(base_geojson.crs)
 
-    geojson_grande["geometry"] = geojson_grande["geometry"].apply(extract_polygons_2d)
+    base_geojson["geometry"] = base_geojson["geometry"].apply(extract_polygons_2d)
 
-    interseccion = gpd.overlay(geojson_grande, geojson, how="intersection")
+    interseccion = gpd.overlay(base_geojson, geojson, how="intersection")
 
     tiles_zones_list = set(list(interseccion["Name"]))
 
@@ -95,7 +97,6 @@ def download_tiles_rgb_bands(utm_zones, year, month):
         merge_path = merge_tifs(input_dir, year, band, month_number)
         if merge_path:
             merged_paths.append(merge_path)
-
     return merged_paths
 
 def generate_date_range_last_n_months(year, month, month_range=2):
@@ -445,6 +446,78 @@ def get_geojson_data(geometry, metadata):
     properties = [feature["properties"] for feature in features]
 
     gdf = gpd.GeoDataFrame(properties, geometry=geometries)
-    gdf = gdf.set_crs(geojson_data["features"][0]["geometry"].get("CRS", ""))
+    gdf = gdf.set_crs("EPSG:4326")  # Set CRS explicitly
 
     return geojson_data, gdf
+
+def find_nearest_feature_to_point(feature_collection: dict, lat: float, lng: float) -> dict | None:
+    """
+    Finds the feature in the GeoJSON FeatureCollection nearest to a given point.
+
+    Args:
+        feature_collection (dict): GeoJSON FeatureCollection.
+        lat (float): Latitude of the point.
+        lng (float): Longitude of the point.
+
+    Returns:
+        dict or None: The closest feature (unaltered except geometry transformed to EPSG:4326), or None.
+    """
+    point = Point(lng, lat)
+    min_dist = float("inf")
+    closest_feature = None
+
+    # Parse current CRS and set up transformer to EPSG:4326
+    current_crs = f"{feature_collection['crs']['type']}:{feature_collection['crs']['properties']['code']}"
+    transformer = Transformer.from_crs(current_crs, "EPSG:4326", always_xy=True)
+
+    for feature in feature_collection.get("features", []):
+        geom = feature.get("geometry")
+        if not geom:
+            continue
+
+        shapely_geom = shape(geom)
+        transformed_geom = shapely_transform(lambda x, y, z=None: transformer.transform(x, y), shapely_geom)
+
+        dist = transformed_geom.distance(point)
+        if dist < min_dist:
+            min_dist = dist
+            closest_feature = {
+                **feature,
+                "geometry": geojson_with_crs(mapping(transformed_geom), "epsg:4326")
+            }
+
+    return closest_feature
+
+
+def geojson_with_crs(geometry_dict: dict, crs: str = "epsg:4326") -> dict:
+    """
+    Adds a CRS field to a geometry dict, mimicking custom GeoJSON with CRS.
+    """
+    geometry_dict["CRS"] = crs
+    return geometry_dict
+def merge_and_convert_to_geometry(feature_collection: dict) -> dict:
+    """
+    Takes a set of FeatureCollection features and generates a single geometry multipolygon object that contains all of the features.
+    """
+    features = feature_collection.get("features", [])
+    if not features:
+        raise ValueError("FeatureCollection contains no features.")
+
+    # Setup coordinate transformer: EPSG:3857 ➜ EPSG:4326
+    current_crs = f"{feature_collection['crs']['type']}:{feature_collection['crs']['properties']['code']}"
+    transformer = Transformer.from_crs(current_crs, "EPSG:4326", always_xy=True)
+
+    # Step 1: Convert each polygon from GeoJSON to shapely geometry
+    polygons = []
+    for feature in features:
+        geom = shape(feature["geometry"])  # Still in 3857
+        # Transform coordinates to 4326
+        transformed = shapely_transform(lambda x, y, z= None: transformer.transform(x, y), geom)
+        polygons.append(transformed)
+
+    # Step 2: Merge/dissolve all polygons
+    merged = unary_union(polygons)
+
+    # Step 3: Return as plain geometry dict (not Feature or FeatureCollection)
+    del transformer
+    return mapping(merged) 

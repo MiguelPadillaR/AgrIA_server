@@ -38,9 +38,9 @@ def find_parcel():
         cadastral_reference = request.form.get('cadastralReference')
         selected_date = request.form.get('selectedDate')
         is_from_cadastral_reference = "True" in request.form.get('isFromCadastralReference')
-        print("is_from_cadastral_reference", is_from_cadastral_reference) if True else None
-        parcel_geometry = request.form.get('parcelGeometry')
+        parcel_geometry = None if request.form.get('parcelGeometry') == 'None' else request.form.get('parcelGeometry')
         parcel_metadata = request.form.get('parcelMetadata')
+        coordinates = None if request.form.get('coordinates') is None else list(map(float, request.form.get('coordinates').split(',')))
 
         if is_from_cadastral_reference and not cadastral_reference:
             return jsonify({'error': 'No cadastral reference provided'}), 400
@@ -53,7 +53,8 @@ def find_parcel():
             selected_date,
             is_from_cadastral_reference,
             parcel_geometry,
-            parcel_metadata
+            parcel_metadata,
+            coordinates
             )
 
         # TODO: Pass image to super-resolution module and save super-resolved image
