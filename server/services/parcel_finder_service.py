@@ -5,7 +5,7 @@ from sigpac_tools.find import find_from_cadastral_registry, geometry_from_coords
 from ..utils.parcel_finder_utils import *
 import os
 
-def get_parcel_image( cadastral_reference: str, date: str, is_from_cadastral_reference: bool= True, parcel_geometry: str  = None, parcel_metadata: str = None, coordinates: list[float] = None ) -> tuple:
+def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_reference: bool= True, parcel_geometry: str  = None, parcel_metadata: str = None, coordinates: list[float] = None) -> tuple:
     """
     Retrieves a SIGPAC image and data for a specific parcel.
     Arguments:
@@ -23,14 +23,14 @@ def get_parcel_image( cadastral_reference: str, date: str, is_from_cadastral_ref
     year, month, _ = date.split("-")
 
     # Get parcel data
-    if is_from_cadastral_reference:
+    if cadastral_reference:
         geometry, metadata = find_from_cadastral_registry(cadastral_reference)
-    else:
+    elif not is_from_cadastral_reference:
         # Generate metadata from user input
         metadata = json.loads(parcel_metadata)
 
         if not parcel_geometry and not coordinates:
-            raise ValueError("GeoJSON data or parcel coordiantes must be provided when not using cadastral reference.")
+            raise ValueError("GeoJSON data or parcel coordinates must be provided when not using cadastral reference.")
         elif parcel_geometry:
             # Retrieve geometry from map drawing geometry
             geometry = json.loads(parcel_geometry)
@@ -50,6 +50,8 @@ def get_parcel_image( cadastral_reference: str, date: str, is_from_cadastral_ref
             else:
                 # Only one parcel found
                 geometry = feature_collection
+    else:
+        raise ValueError("Cadastral reference missing. Reference must be provided when not using location or GeoJSON/coordinates")
 
     # Get GeoJSON data and dataframe and list of UTM zones
     geojson_data, gdf = get_geojson_data(geometry, metadata)
@@ -65,8 +67,6 @@ def get_parcel_image( cadastral_reference: str, date: str, is_from_cadastral_ref
         
     out_dir, png_paths, rgb_tif_paths = get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path)
 
-    #TODO: Get image from geometry (image-workflow.pptx)
-    
     sigpac_image_name = png_paths.pop()  # there should only be one file
 
     # Upload and fetch latest image
@@ -115,4 +115,3 @@ def get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path_valu
     out_dir, png_paths, rgb_tif_paths = rgb(unique_masks)
 
     return out_dir, png_paths, rgb_tif_paths
-

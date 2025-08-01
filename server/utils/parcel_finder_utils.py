@@ -1,3 +1,4 @@
+import shutil
 from pyproj import Transformer
 from ..config.constants import TEMP_UPLOADS_PATH
 from ..config.minio_client import minioClient, bucket_name
@@ -444,7 +445,6 @@ def get_geojson_data(geometry, metadata):
     features = geojson_data["features"]
     geometries = [shape(feature["geometry"]) for feature in features]
     properties = [feature["properties"] for feature in features]
-
     gdf = gpd.GeoDataFrame(properties, geometry=geometries)
     gdf = gdf.set_crs("EPSG:4326")  # Set CRS explicitly
 
@@ -521,3 +521,58 @@ def merge_and_convert_to_geometry(feature_collection: dict) -> dict:
     # Step 3: Return as plain geometry dict (not Feature or FeatureCollection)
     del transformer
     return mapping(merged) 
+
+def reset_temp_dir():
+    # Clear uploaded files and dirs
+    if os.path.exists(TEMP_UPLOADS_PATH):
+        for file in os.listdir(TEMP_UPLOADS_PATH):
+            file_path = os.path.join(os.getcwd(), TEMP_UPLOADS_PATH, file)
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+
+def build_cadastral_reference(province: str, municipality: str, polygon: str, parcel_id: str):
+    """
+    Retrieves a SIGPAC image and data for a specific parcel when provided its address location.
+    Arguments:
+        province (str): The numerical ID and province name in 'ID-NAME' format.
+        municipality (str): The numerical ID and municipality name in 'ID-NAME' format.
+        polygon (int): The polygon numerical ID where the parcel is at. 3 digits max
+        parcel_id (id):Parcel numerical ID. 5 digist max
+        date (str): The date for which the parcel data is requested, in 'DD-MM-YYYY' format.
+    Returns:
+        cadastral_reference (str): The cadastral reference of the parcel to search for.
+    """
+    # Format essential location data
+    location_data = {
+        "province": {
+            "value": province.split('-')[0],
+            "length": 2
+        },
+        "municipality": {
+            "value": municipality.split('-')[0],
+            "length": 3
+        },
+        "polygon": {
+            "value": polygon,
+            "length": 3
+        },
+        "parcel": {
+            "value": parcel_id,
+            "length": 5
+        }
+    }
+
+    # Build partial cadastral reference
+    cadastral_reference = ''
+    for key in location_data.keys():
+        entry = location_data.get(key)
+        # Fill in with 0's from the left
+        padded_value = entry['value'].zfill(entry['length'])
+        cadastral_reference += padded_value
+
+    # Fill with 0 the extra gaps
+    cadastral_reference += '0' * (1 + 4 + 2)
+    print("ARTIFICIAL CADASRTAL REF:", cadastral_reference)
+    return cadastral_reference
