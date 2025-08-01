@@ -36,22 +36,10 @@ def find_parcel():
         municipality = request.form.get('municipality')
         polygon = request.form.get('polygon')
         parcel_id = request.form.get('parcelId')
-
+        
         if is_from_cadastral_reference:
-            if not cadastral_reference:
-                return jsonify({'error': 'No cadastral reference provided'}), 400
-            if not province:
-                return jsonify({'error': 'No parcel address location data provided'}), 400
-            else:
-                # Format data
-                location_data = {
-                    "province": int(province.split('-')[0]),
-                    "municipality": int(municipality.split('-')[0]),
-                    "polygon": int(polygon),
-                    "parcel": int(parcel_id)
-                }
-                # Build cadastral reference
-                cadastral_reference = f'{location_data.pro}'
+            check_cadastral_data(cadastral_reference, province, municipality, polygon, parcel_id)
+
         if not selected_date:
             return jsonify({'error': 'No date provided'}), 400
         
