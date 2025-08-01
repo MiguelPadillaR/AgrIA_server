@@ -38,7 +38,7 @@ def find_parcel():
         parcel_id = request.form.get('parcelId')
         
         if is_from_cadastral_reference:
-            check_cadastral_data(cadastral_reference, province, municipality, polygon, parcel_id)
+            cadastral_reference = check_cadastral_data(cadastral_reference, province, municipality, polygon, parcel_id)
 
         if not selected_date:
             return jsonify({'error': 'No date provided'}), 400
