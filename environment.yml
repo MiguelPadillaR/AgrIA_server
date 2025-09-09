@@ -5,20 +5,23 @@ channels:
 dependencies:
   - python=3.11
   - pyproj
-  - numpy
+  - numpy<2
   - pandas
   - pip
   - pip:
       - Flask
       - flask-cors
+      - geopandas
+      - google.genai
+      - minio
+      - opencv-python<4.12
       - Pillow
       - protobuf
       - pytest
       - python-dotenv
       - requests
-      - google.genai
-      - minio
-      - geopandas
       - rasterio
-      - opencv-python
+      - safetensors
       - sigpac-tools @ git+https://github.com/KhaosResearch/sigpac-tools.git@07145bcaebcdf37bc5b24191950a3f0a666841b4
+      - torch
+      - torchvision
