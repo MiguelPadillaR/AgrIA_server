@@ -60,7 +60,7 @@ def download_tiles_rgb_bands(utm_zones, year, month):
     Download raw RGB band tiles (.tif) for the given UTM zones and date range.
     """
     year_month_pairs = generate_date_range_last_n_months(year, month)
-    image_bands = ["B02_20m", "B03_20m", "B04_20m"]
+    image_bands = ["B02_10m", "B03_10m", "B04_10m"]
     downloaded_files = {band: [] for band in image_bands}
 
     download_tasks = []
@@ -259,9 +259,9 @@ def rgb(merged_paths):
 
     for (year, month_number), bands_dict in grouped.items():
         try:
-            red_band_02 = bands_dict["B02_20m"]
-            green_band_03 = bands_dict["B03_20m"]
-            blue_band_04 = bands_dict["B04_20m"]
+            red_band_02 = bands_dict["B02_10m"]
+            green_band_03 = bands_dict["B03_10m"]
+            blue_band_04 = bands_dict["B04_10m"]
         except KeyError:
             continue
 
@@ -412,7 +412,6 @@ def cut_from_geometry(gdf_parcel, format, image_paths, geometry_id):
         
         for image_path in valid_files:
             original_filename = os.path.basename(image_path)
-            timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3]
             with rasterio.open(image_path) as src:
                 gdf_parcel = gdf_parcel.to_crs(src.crs)
                 if gdf_parcel.is_empty.any():
@@ -535,7 +534,7 @@ def reset_temp_dir():
 
 def check_cadastral_data(cadastral_reference: str, province: str, municipality: str, polygon: str, parcel_id: str):
     """
-    Checks request cadastral data and handles cadastral reference assignment/generation.
+    Checks cadastral data and handles cadastral reference assignment/generation.
     If no cadastral reference is provided, it generates one from the location data.
     
     Arguments:

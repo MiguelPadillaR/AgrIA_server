@@ -83,13 +83,11 @@ def get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path_valu
         rgb_images_path (list of str): List of file paths to the RGB images to be processed.
     Returns:
         tuple:
-            out_dir (str): The output directory where processed images are saved.
-            png_paths (list of str): List of file paths to the generated PNG images.
+            out_dir (str): The output directory where processed images are saved.\n
+            png_paths (list of str): List of file paths to the generated PNG images.\n
             rgb_tif_paths (list of str): List of file paths to the generated RGB TIFF images.
     Raises:
         ValueError: If the input images are not all in the same file format.
-    Note:
-        This function relies on external functions `cut_from_geometry` and `rgb` to perform cropping and image processing.
     """
     unique_formats = list(
         set(
