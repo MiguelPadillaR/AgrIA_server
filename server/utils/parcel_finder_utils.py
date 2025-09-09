@@ -1,3 +1,5 @@
+import shutil
+from flask import jsonify
 from pyproj import Transformer
 from ..config.constants import TEMP_UPLOADS_PATH
 from ..config.minio_client import minioClient, bucket_name
@@ -58,7 +60,7 @@ def download_tiles_rgb_bands(utm_zones, year, month):
     Download raw RGB band tiles (.tif) for the given UTM zones and date range.
     """
     year_month_pairs = generate_date_range_last_n_months(year, month)
-    image_bands = ["B02_20m", "B03_20m", "B04_20m"]
+    image_bands = ["B02_10m", "B03_10m", "B04_10m"]
     downloaded_files = {band: [] for band in image_bands}
 
     download_tasks = []
@@ -257,9 +259,9 @@ def rgb(merged_paths):
 
     for (year, month_number), bands_dict in grouped.items():
         try:
-            red_band_02 = bands_dict["B02_20m"]
-            green_band_03 = bands_dict["B03_20m"]
-            blue_band_04 = bands_dict["B04_20m"]
+            red_band_02 = bands_dict["B02_10m"]
+            green_band_03 = bands_dict["B03_10m"]
+            blue_band_04 = bands_dict["B04_10m"]
         except KeyError:
             continue
 
@@ -410,7 +412,6 @@ def cut_from_geometry(gdf_parcel, format, image_paths, geometry_id):
         
         for image_path in valid_files:
             original_filename = os.path.basename(image_path)
-            timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3]
             with rasterio.open(image_path) as src:
                 gdf_parcel = gdf_parcel.to_crs(src.crs)
                 if gdf_parcel.is_empty.any():
@@ -444,7 +445,6 @@ def get_geojson_data(geometry, metadata):
     features = geojson_data["features"]
     geometries = [shape(feature["geometry"]) for feature in features]
     properties = [feature["properties"] for feature in features]
-
     gdf = gpd.GeoDataFrame(properties, geometry=geometries)
     gdf = gdf.set_crs("EPSG:4326")  # Set CRS explicitly
 
@@ -521,3 +521,111 @@ def merge_and_convert_to_geometry(feature_collection: dict) -> dict:
     # Step 3: Return as plain geometry dict (not Feature or FeatureCollection)
     del transformer
     return mapping(merged) 
+
+def reset_temp_dir():
+    # Clear uploaded files and dirs
+    if os.path.exists(TEMP_UPLOADS_PATH):
+        for file in os.listdir(TEMP_UPLOADS_PATH):
+            file_path = os.path.join(os.getcwd(), TEMP_UPLOADS_PATH, file)
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+
+def check_cadastral_data(cadastral_reference: str, province: str, municipality: str, polygon: str, parcel_id: str):
+    """
+    Checks cadastral data and handles cadastral reference assignment/generation.
+    If no cadastral reference is provided, it generates one from the location data.
+    
+    Arguments:
+        cadastral_reference (str): Alphanumerical 20-character long cadastral reference.
+        province (str): Province data. ID-NAME format.
+        municipality (str): Municipality data. ID-NAME format.
+        polygon (str): Polygon ID. Max: 3 digits.
+        parcel_id (str): Parcel ID. Max: 5 digits.
+
+    Returns:
+        cadastral_reference (str) 
+    """
+    if not cadastral_reference:
+        if not province:
+            return jsonify({'error': 'No cadastral reference nor parcel address location data provided.'}), 400
+        else:
+            # Format data
+            location_data = {
+                "province": int(province.split('-')[0]),
+                "municipality": int(municipality.split('-')[0]),
+                "polygon": int(polygon),
+                "parcel": int(parcel_id)
+            }
+
+            # Build cadastral reference
+            cadastral_reference = build_cadastral_reference(province, municipality, polygon, parcel_id)
+            print("cadastral_reference", cadastral_reference)
+    return cadastral_reference
+
+def build_cadastral_reference(province: str, municipality: str, polygon: str, parcel_id: str):
+    """
+    Build a valid RURAL cadastral reference with calculated control characters.
+    """
+
+    # --- 1. Prepare base components ---
+    # Province (2 chars)
+    prov = province.split('-')[0].zfill(2)
+
+    # Municipality (3 chars)
+    muni = municipality.split('-')[0].zfill(3)
+
+    # Section (1 char) -> Use non-digit (e.g., "X") to ensure RURAL
+    section = "X"
+
+    # Polygon (3 chars)
+    poly = str(polygon).zfill(3)
+
+    # Parcel (5 chars)
+    parcel = str(parcel_id).zfill(5)
+
+    # ID (4 chars) -> usually zero unless you have sub-parcel identifiers
+    parcel_id_4 = "0000"
+
+    # --- 2. Combine without control characters ---
+    partial_ref = prov + muni + section + poly + parcel + parcel_id_4  # 18 chars
+
+    # --- 3. Calculate control characters (positions 19-20) ---
+    res = "MQWERTYUIOPASDFGHJKLBZX"
+    pos = [13, 15, 12, 5, 4, 17, 9, 21, 3, 7, 1]
+
+    separated_ref = list(partial_ref)
+
+    sum_pd1 = 0
+    sum_sd2 = 0
+    mixt1 = 0
+
+    # First 7 characters
+    for i in range(7):
+        ch = separated_ref[i]
+        if ch.isdigit():
+            sum_pd1 += pos[i] * (ord(ch) - 48)
+        else:
+            sum_pd1 += pos[i] * ((ord(ch) - 63) if ord(ch) > 78 else (ord(ch) - 64))
+
+    # Next 7 characters
+    for i in range(7):
+        ch = separated_ref[i + 7]
+        if ch.isdigit():
+            sum_sd2 += pos[i] * (ord(ch) - 48)
+        else:
+            sum_sd2 += pos[i] * ((ord(ch) - 63) if ord(ch) > 78 else (ord(ch) - 64))
+
+    # Mixt calculation (last 4 digits before control)
+    for i in range(4):
+        mixt1 += pos[i + 7] * (ord(separated_ref[i + 14]) - 48)
+
+    code1 = res[(sum_pd1 + mixt1) % 23]
+    code2 = res[(sum_sd2 + mixt1) % 23]
+
+    # --- 4. Final cadastral reference ---
+    cadastral_reference = partial_ref + code1 + code2
+
+    print("FINAL CADASTRAL REF:", cadastral_reference)
+    return cadastral_reference
