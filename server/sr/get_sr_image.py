@@ -42,16 +42,19 @@ def process_directory(input_dir, output_dir=CURR_SCRIPT_DIR / 'sr_5m'):
     all_files = glob.glob(os.path.join(input_dir, "*.tif*"))
     groups = {}
 
+    # Group filenames with respective band file paths
     for f in all_files:
         base = os.path.basename(f)
-        if not any(el in base for el in SR_BANDS):
+        band = next((el for el in SR_BANDS if el in base), None)
+        if band is None:
             continue
         filename, __ = os.path.splitext(base)
-        prefix, band = filename.rsplit("-", 1)
+        prefix = filename.rsplit(band, 1)[0]
         if prefix not in groups:
             groups[prefix] = {}
         groups[prefix][band] = f
 
+    # Perform SR if filename has all SR_BANDS files
     for prefix, band_files in groups.items():
         missing = set(SR_BANDS) - set(band_files.keys())
         if missing:
@@ -79,7 +82,7 @@ def process_directory(input_dir, output_dir=CURR_SCRIPT_DIR / 'sr_5m'):
         )
 
         # Run SR
-        sr_u16 = engine.super_resolve(img_bgrn)
+        sr_u16 = ENGINE.super_resolve(img_bgrn)
 
         # Save PNG
         output_dir.mkdir(parents=True, exist_ok=True)

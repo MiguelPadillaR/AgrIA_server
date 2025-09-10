@@ -1,6 +1,5 @@
 import os
 from ..config.constants import TEMP_UPLOADS_PATH
-from ..services.parcel_finder_service import get_parcel_image
 from ..utils.parcel_finder_utils import *
 from ..services.parcel_finder_service import get_parcel_image
 from flask import Blueprint, make_response, request, jsonify, send_from_directory
@@ -51,7 +50,7 @@ def find_parcel():
             parcel_geometry,
             parcel_metadata,
             coordinates,
-            get_sr_image=False
+            get_sr_image=True
             )
 
         # TODO: Pass image to super-resolution module and save super-resolved image

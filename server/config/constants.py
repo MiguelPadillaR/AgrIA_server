@@ -7,7 +7,7 @@ BASE_PROMPTS_PATH = Path("./assets/LLM_assets/prompts")
 CONTEXT_DOCUMENTS_FILE = "context_document_links.json"
 PROMPT_LIST_FILE = "prompt_list.json"
 
-TEMP_UPLOADS_PATH = Path('temp/uploads')
+TEMP_UPLOADS_PATH = Path('temp/')
 
 FULL_DESC_TRIGGER = '###DESCRIBE_LONG_IMAGE###'
 SHORT_DESC_TRIGGER = '###DESCRIBE_SHORT_IMAGE###'
@@ -24,3 +24,4 @@ MIME_TYPES = {
 }
 
 SR_BANDS = ["B02", "B03", "B04", "B08"]
+BANDS_DIR = TEMP_UPLOADS_PATH / "bands"

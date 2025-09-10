@@ -2,6 +2,8 @@ import json
 import time
 from flask import abort
 from sigpac_tools.find import find_from_cadastral_registry, geometry_from_coords
+
+from ..config.constants import SR_BANDS
 from ..utils.parcel_finder_utils import *
 import os
 
@@ -59,25 +61,24 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
     zones_utm = get_tiles_polygons(gdf)
     list_zones_utm = list(zones_utm)
 
-    # if get_sr_image:
-    #     # Download SR RGB image:
-    #     sigpac_image_url = None    
-    # else:
-    # Download normal RGB image:
-    sigpac_image_url = download_normal_rgb_image(cadastral_reference, geojson_data, list_zones_utm, year, month)
+    # Get bands for RGB/SR processing
+    bands = [b + "_10m" for b in SR_BANDS]
+    if not get_sr_image:
+        # Remove B08 band
+        bands.pop()
 
+    sigpac_image_url = download_parcel_image(cadastral_reference, geojson_data, list_zones_utm, year, month, bands)
     return geometry, metadata, sigpac_image_url
 
-def download_normal_rgb_image(cadastral_reference, geojson_data, list_zones_utm, year, month):
+def download_parcel_image(cadastral_reference, geojson_data, list_zones_utm, year, month, bands):
     # Download RGB image:
-    rgb_images_path = download_tiles_rgb_bands(list_zones_utm, year, month)
+    rgb_images_path = download_tiles_rgb_bands(list_zones_utm, year, month, bands)
     if not rgb_images_path:
         error_message = "No images are available for the selected date, images are processed at the end of each month."
         print(error_message)
         abort(404, description=error_message)
         
     out_dir, png_paths, rgb_tif_paths = get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path)
-
     sigpac_image_name = png_paths.pop()  # there should only be one file
 
     # Upload and fetch latest image
