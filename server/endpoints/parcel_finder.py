@@ -50,7 +50,8 @@ def find_parcel():
             is_from_cadastral_reference,
             parcel_geometry,
             parcel_metadata,
-            coordinates
+            coordinates,
+            get_sr_image=False
             )
 
         # TODO: Pass image to super-resolution module and save super-resolved image

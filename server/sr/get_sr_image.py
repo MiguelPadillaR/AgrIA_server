@@ -1,6 +1,5 @@
 import os
 import glob
-import argparse
 from pathlib import Path
 import cv2
 import numpy as np
@@ -10,19 +9,18 @@ import rasterio
 
 from PIL import Image
 
+from ..config.constants import SR_BANDS
+
 from .utils import percentile_stretch, stack_bgrn, make_grid
 from .L1BSR_wrapper import L1BSR
 
 CURR_SCRIPT_DIR = Path(__file__).resolve().parent
 
-# --- Required bands ---
-bands_order = ["B02", "B03", "B04", "B08"]
-
 # --- Device ---
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # --- Load model ---
-engine = L1BSR(weights_path=CURR_SCRIPT_DIR / "REC_Real_L1B.safetensors", device=device)
+ENGINE = L1BSR(weights_path=CURR_SCRIPT_DIR / "REC_Real_L1B.safetensors", device=DEVICE)
 
 def save_rgb_png(sr, out_path):
     """Save SR result as stretched RGB PNG"""
@@ -45,8 +43,8 @@ def process_directory(input_dir, output_dir=CURR_SCRIPT_DIR / 'sr_5m'):
     groups = {}
 
     for f in all_files:
-        base = os.path.basename(f)  # assumes filenames are: name-band.tif format
-        if "-" not in base:
+        base = os.path.basename(f)
+        if not any(el in base for el in SR_BANDS):
             continue
         filename, __ = os.path.splitext(base)
         prefix, band = filename.rsplit("-", 1)
@@ -55,7 +53,7 @@ def process_directory(input_dir, output_dir=CURR_SCRIPT_DIR / 'sr_5m'):
         groups[prefix][band] = f
 
     for prefix, band_files in groups.items():
-        missing = set(bands_order) - set(band_files.keys())
+        missing = set(SR_BANDS) - set(band_files.keys())
         if missing:
             print(f"Skipping {prefix}, missing bands: {missing}")
             continue

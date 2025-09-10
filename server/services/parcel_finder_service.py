@@ -5,7 +5,7 @@ from sigpac_tools.find import find_from_cadastral_registry, geometry_from_coords
 from ..utils.parcel_finder_utils import *
 import os
 
-def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_reference: bool= True, parcel_geometry: str  = None, parcel_metadata: str = None, coordinates: list[float] = None) -> tuple:
+def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_reference: bool= True, parcel_geometry: str  = None, parcel_metadata: str = None, coordinates: list[float] = None, get_sr_image: bool = True) -> tuple:
     """
     Retrieves a SIGPAC image and data for a specific parcel.
     Arguments:
@@ -15,6 +15,7 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
         parcel_geometry (str): _Optional_; GeoJSON data of the parcel's polygon to use if `is_from_cadastral_reference` is `False`.
         parcel_metadata (str): _Optional_; User input metadata associated with the parcel to use if `is_from_cadastral_reference` is `False`.
         coordinates (list): _Optional_; Coordinates within parcel limits to find the parcel. Only used if `parcel_geometry` is `None` and if `is_from_cadastral_reference` is `False`.
+        get_sr_image (bool): _Optional_; Get the Super-Resolved version of the parcel's image. Default is `True`.
     Returns:
         geometry (dict): GeoJSON geometry with the parcel's limits.
         metadata (dict): Metadata associated with the parcel.
@@ -58,6 +59,16 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
     zones_utm = get_tiles_polygons(gdf)
     list_zones_utm = list(zones_utm)
 
+    # if get_sr_image:
+    #     # Download SR RGB image:
+    #     sigpac_image_url = None    
+    # else:
+    # Download normal RGB image:
+    sigpac_image_url = download_normal_rgb_image(cadastral_reference, geojson_data, list_zones_utm, year, month)
+
+    return geometry, metadata, sigpac_image_url
+
+def download_normal_rgb_image(cadastral_reference, geojson_data, list_zones_utm, year, month):
     # Download RGB image:
     rgb_images_path = download_tiles_rgb_bands(list_zones_utm, year, month)
     if not rgb_images_path:
@@ -71,7 +82,7 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
 
     # Upload and fetch latest image
     sigpac_image_url = f"{os.getenv('API_URL')}/uploads/{os.path.basename(sigpac_image_name)}?v={int(time.time())}"
-    return geometry, metadata, sigpac_image_url.split("?")[0]
+    return sigpac_image_url.split("?")[0]
 
 def get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path_values):
     """

@@ -22,3 +22,5 @@ MIME_TYPES = {
     'jpg': 'image/jpeg',
     'png': 'image/png',
 }
+
+SR_BANDS = ["B02", "B03", "B04", "B08"]
