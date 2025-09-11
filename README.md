@@ -18,7 +18,7 @@ conda activate agria_server_env
 ```
 
 ### System environment setup:
-You will need to rename the `.env_example` file to `env` and complete it with your own data.
+You will need to rename the `.env_example` file to `.env` and complete it with your own data.
 
 **Content of your `.env` file:**
 ```bash
