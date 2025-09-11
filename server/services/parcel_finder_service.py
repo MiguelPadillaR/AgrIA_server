@@ -3,7 +3,7 @@ import time
 from flask import abort
 from sigpac_tools.find import find_from_cadastral_registry, geometry_from_coords
 
-from ..config.constants import SR_BANDS
+from ..config.constants import SR_BANDS, RESOLUTION
 from ..utils.parcel_finder_utils import *
 import os
 
@@ -24,6 +24,7 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
         sigpac_image_url (str): URL of the SIGPAC image.
     """
     year, month, _ = date.split("-")
+    resolution = RESOLUTION
 
     # Get parcel data
     if cadastral_reference:
@@ -62,7 +63,7 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
     list_zones_utm = list(zones_utm)
 
     # Get bands for RGB/SR processing
-    bands = [b + "_10m" for b in SR_BANDS]
+    bands = [b + f"_{resolution}m" for b in SR_BANDS]
     if not get_sr_image:
         # Remove B08 band
         bands.pop()
@@ -72,13 +73,15 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
 
 def download_parcel_image(cadastral_reference, geojson_data, list_zones_utm, year, month, bands):
     # Download RGB image:
-    rgb_images_path = download_tiles_rgb_bands(list_zones_utm, year, month, bands)
+    rgb_images_path = download_tile_bands(list_zones_utm, year, month, bands)
+    print("rgb_images_path", rgb_images_path)
     if not rgb_images_path:
         error_message = "No images are available for the selected date, images are processed at the end of each month."
         print(error_message)
         abort(404, description=error_message)
-        
-    out_dir, png_paths, rgb_tif_paths = get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path)
+
+    __, png_paths, __ = get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path)
+    print('png_paths', png_paths)
     sigpac_image_name = png_paths.pop()  # there should only be one file
 
     # Upload and fetch latest image
@@ -101,27 +104,31 @@ def get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path_valu
     Raises:
         ValueError: If the input images are not all in the same file format.
     """
-    unique_formats = list(
-        set(
-            f.split(".")[-1].lower()
-            for f in rgb_images_path_values
-            if isinstance(f, str) and "." in f
+    try:
+        unique_formats = list(
+            set(
+                f.split(".")[-1].lower()
+                for f in rgb_images_path_values
+                if isinstance(f, str) and "." in f
+            )
         )
-    )
-    if len(unique_formats) > 1:
-        raise ValueError(
-            f"Unsupported format. You must upload images in one unique format."
-        )
-    
-    # Crop the parcel outline using the geomatry available
-    cropped_parcel_masks_paths = []
-    for feature in geojson_data["features"]:
-        geometry = feature["geometry"]
-        geometry_id = cadastral_reference
-        cropped_parcel_masks_paths.extend(cut_from_geometry(geometry, unique_formats[0], rgb_images_path_values, geometry_id))
-    
-    unique_masks = set(cropped_parcel_masks_paths)
+        if len(unique_formats) > 1:
+            raise ValueError(
+                f"Unsupported format. You must upload images in one unique format."
+            )
+        
+        # Crop the parcel outline using the geomatry available
+        cropped_parcel_masks_paths = []
+        for feature in geojson_data["features"]:
+            geometry = feature["geometry"]
+            geometry_id = cadastral_reference
+            cropped_parcel_masks_paths.extend(cut_from_geometry(geometry, unique_formats[0], rgb_images_path_values, geometry_id))
+        unique_masks = set(cropped_parcel_masks_paths)
+        print("unique_masks", unique_masks)
 
-    out_dir, png_paths, rgb_tif_paths = rgb(unique_masks)
+        out_dir, png_paths, rgb_tif_paths = get_rgb_composite(cropped_parcel_masks_paths, geojson_data)
 
-    return out_dir, png_paths, rgb_tif_paths
+        return out_dir, png_paths, rgb_tif_paths
+    except Exception as e:
+        print(f"An error occurred (get_rgb_parcel_image): {str(e)}")
+        raise
