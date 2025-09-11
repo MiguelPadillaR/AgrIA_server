@@ -9,7 +9,7 @@ import rasterio
 
 from PIL import Image
 
-from ..config.constants import SR_BANDS
+from ..config.constants import SR_BANDS, SR_DIR
 
 from .utils import percentile_stretch, stack_bgrn, make_grid
 from .L1BSR_wrapper import L1BSR
@@ -28,7 +28,49 @@ def save_rgb_png(sr, out_path):
     rgb_u8 = percentile_stretch(rgb)
     Image.fromarray(rgb_u8).save(out_path)
 
-def process_directory(input_dir, output_dir=CURR_SCRIPT_DIR / 'sr_5m'):
+def save_multiband_tif(sr: np.ndarray, reference_band: str, out_path: str):
+    """
+    Save SR result as multiband GeoTIFF using metadata from a reference band.
+    Assumes sr has shape (H, W, 4).
+    """
+    with rasterio.open(reference_band) as src:
+        profile = src.profile
+
+    h, w, c = sr.shape
+    transform = profile["transform"]
+
+    # Scale transform if SR resolution changed
+    if h != profile["height"] or w != profile["width"]:
+        scale_x = profile["width"] / w
+        scale_y = profile["height"] / h
+        transform = rasterio.Affine(
+            profile["transform"].a * scale_x,
+            profile["transform"].b,
+            profile["transform"].c,
+            profile["transform"].d,
+            profile["transform"].e * scale_y,
+            profile["transform"].f,
+        )
+
+    # Replace NaN or inf with 0
+    sr_clean = np.nan_to_num(sr, nan=0, posinf=0, neginf=0).astype(np.uint16)
+
+    profile.update({
+        "height": h,
+        "width": w,
+        "transform": transform,
+        "count": c,
+        "dtype": rasterio.uint16,
+        "compress": "lzw",
+        "nodata": 0,   # mark 0 as nodata
+    })
+
+    with rasterio.open(out_path, "w", **profile) as dst:
+        for i in range(c):
+            dst.write(sr_clean[..., i], i + 1)
+            dst.set_band_description(i + 1, f"B{i+1}")  # optional: label bands
+
+def process_directory(input_dir, output_dir=SR_DIR, save_as_tif=True):
     """
     Process directory where image bands are found for all images found and super-resolves them.
     Saves SR image and comparison image between original and SR version.
@@ -42,6 +84,8 @@ def process_directory(input_dir, output_dir=CURR_SCRIPT_DIR / 'sr_5m'):
     all_files = glob.glob(os.path.join(input_dir, "*.tif*"))
     groups = {}
 
+    sr_image_path = None
+
     # Group filenames with respective band file paths
     for f in all_files:
         base = os.path.basename(f)
@@ -49,7 +93,8 @@ def process_directory(input_dir, output_dir=CURR_SCRIPT_DIR / 'sr_5m'):
         if band is None:
             continue
         filename, __ = os.path.splitext(base)
-        prefix = filename.rsplit(band, 1)[0]
+        prefix_parts = filename.split(f"-{band}", 1)[0].split('_')
+        prefix = f'SR_{prefix_parts[1]}_{prefix_parts[2]}'
         if prefix not in groups:
             groups[prefix] = {}
         groups[prefix][band] = f
@@ -86,9 +131,16 @@ def process_directory(input_dir, output_dir=CURR_SCRIPT_DIR / 'sr_5m'):
 
         # Save PNG
         output_dir.mkdir(parents=True, exist_ok=True)
-        out_png = os.path.join(output_dir, 'out', f"{prefix}.png")
+        out_png = os.path.join(output_dir, f"{prefix}.png")
+        sr_image_path = out_png
         save_rgb_png(sr_u16, out_png)
         print(f"Saved PNG: {out_png}")
+
+        # Save TIF
+        if save_as_tif:
+            out_tif = os.path.join(output_dir, f"{prefix}.tif")
+            save_multiband_tif(sr_u16, band_files["B02"], out_tif)
+            print(f"Saved TIF: {out_tif}")
 
         # Make and save comparison grid
         comp_dir = output_dir / "comparison"
@@ -102,3 +154,4 @@ def process_directory(input_dir, output_dir=CURR_SCRIPT_DIR / 'sr_5m'):
         print(f"Saved comparison grid: {comp_png}")
 
         print(f"\nTotal time taken:\t{(time.time() - start_time)/60:.1f} minutes")
+    return sr_image_path

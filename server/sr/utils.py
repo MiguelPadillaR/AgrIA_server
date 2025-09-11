@@ -33,15 +33,16 @@ def percentile_stretch(arr: np.ndarray, p_low=2.0, p_high=98.0) -> np.ndarray:
     if arr.ndim == 3:
         out = np.zeros(arr.shape, dtype=np.uint8)
         for i in range(arr.shape[-1]):
-            vmin, vmax = np.percentile(arr[..., i], [p_low, p_high])
+            band = np.nan_to_num(arr[..., i], nan=0.0, posinf=0.0, neginf=0.0)
+            vmin, vmax = np.percentile(band, [p_low, p_high])
             vmax = vmax if vmax > vmin else vmin + 1e-3
-            out[..., i] = np.clip((arr[..., i] - vmin) / (vmax - vmin) * 255.0, 0, 255).astype(np.uint8)
+            out[..., i] = np.clip((band - vmin) / (vmax - vmin) * 255.0, 0, 255).astype(np.uint8)
         return out
-    else: # Grayscale
-        vmin, vmax = np.percentile(arr, [p_low, p_high])
+    else:
+        band = np.nan_to_num(arr, nan=0.0, posinf=0.0, neginf=0.0)
+        vmin, vmax = np.percentile(band, [p_low, p_high])
         vmax = vmax if vmax > vmin else vmin + 1e-3
-        return np.clip((arr - vmin) / (vmax - vmin) * 255.0, 0, 255).astype(np.uint8)
-
+        return np.clip((band - vmin) / (vmax - vmin) * 255.0, 0, 255).astype(np.uint8)
 
 def stack_bgrn(b02: BandData, b03: BandData, b04: BandData, b08: BandData) -> np.ndarray:
     h, w = b02.arr.shape
