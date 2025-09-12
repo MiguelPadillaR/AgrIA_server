@@ -78,6 +78,8 @@ def process_directory(input_dir, output_dir=SR_DIR, save_as_tif=True):
     Arguments:
         input_dir (str | Path): Input directory path
         output_dir (str | Path): Output directory path. Default is `sr/sr_5m`
+    Returns:
+        (str): SR PNG filename (even if also saved as TIF).
     """
     start_time = time.time()
 

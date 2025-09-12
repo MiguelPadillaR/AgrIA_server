@@ -72,21 +72,24 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
     return geometry, metadata, sigpac_image_url
 
 def download_parcel_image(cadastral_reference, geojson_data, list_zones_utm, year, month, bands):
-    # Download RGB image:
-    rgb_images_path = download_tile_bands(list_zones_utm, year, month, bands)
-    print("rgb_images_path", rgb_images_path)
-    if not rgb_images_path:
-        error_message = "No images are available for the selected date, images are processed at the end of each month."
-        print(error_message)
-        abort(404, description=error_message)
+    try:
+        # Download RGB image:
+        rgb_images_path = download_tile_bands(list_zones_utm, year, month, bands)
+        if not rgb_images_path:
+            error_message = "No images are available for the selected date, images are processed at the end of each month."
+            print(error_message)
+            abort(404, description=error_message)
 
-    __, png_paths, __ = get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path)
-    print('png_paths', png_paths)
-    sigpac_image_name = png_paths.pop()  # there should only be one file
+        __, png_paths, __ = get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path)
+        
+        sigpac_image_name = png_paths.pop()  # there should only be one file
 
-    # Upload and fetch latest image
-    sigpac_image_url = f"{os.getenv('API_URL')}/uploads/{os.path.basename(sigpac_image_name)}?v={int(time.time())}"
-    return sigpac_image_url.split("?")[0]
+        # Upload and fetch latest image
+        sigpac_image_url = f"{os.getenv('API_URL')}/uploads/{os.path.basename(sigpac_image_name)}?v={int(time.time())}"
+        return sigpac_image_url.split("?")[0]
+    except Exception as e:
+        print(f"An error occurred (download_parcel_image): {str(e)}")
+        raise
 
 def get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path_values):
     """
