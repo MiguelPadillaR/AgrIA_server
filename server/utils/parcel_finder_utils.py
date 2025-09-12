@@ -3,10 +3,12 @@ from pathlib import Path
 import re
 import shutil
 from flask import jsonify
-from pyproj import Transformer
+from pyproj import Transformer, CRS
 
 from ..sr.get_sr_image import process_directory
+from ..sr.utils import percentile_stretch
 from ..config.constants import TEMP_UPLOADS_PATH, SR_BANDS, RESOLUTION, BANDS_DIR, MERGED_BANDS_DIR, MASKS_DIR, SR_DIR
+
 from ..config.minio_client import minioClient, bucket_name
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
@@ -21,6 +23,7 @@ from rasterio.mask import mask
 from rasterio.merge import merge
 from shapely.ops import transform as shapely_transform
 from rasterio.warp import calculate_default_transform, reproject, Resampling
+
 import cv2
 import geopandas as gpd
 import numpy as np
@@ -105,8 +108,6 @@ def download_tile_bands(utm_zones, year, month, bands):
         # Get month folder name from filename
         month_number = os.path.basename(recent_file).split('_')[1]
 
-        ## TODO: Cut and Super-resolve??
-
         # Merge bands
         merge_path = merge_tifs(input_dir, year, band, month_number)
         if merge_path:
@@ -140,38 +141,57 @@ def download_image_file(client, file, local_file_path):
 
 def merge_tifs(input_dir, year, band, month_number):
     """
-    Merges all same-band images into one mosaic, reprojecting to a common CRS if needed.
-    Arguments:
+    Merge all GeoTIFF tiles for a band into one mosaic. 
+    If only one file is found, copy/re-save it. 
+    Returns the merged GeoTIFF path.
+
+    Args:
         input_dir (str): Local directory where band images are stored.
         year (str): Year of the desired image.
-        band (str): Band name.
-        month_number (str): Month of the desired image (number as string, e.g., "02").
+        band (str): Band name (e.g., "B02", "B03", "B04", "B08").
+        month_number (str): Month of the desired image (e.g., "02").
+
     Returns:
-        merged_image_path (str): Local file path to the resulting merged image.
+        str: Local file path to the resulting merged image.
     """
+    # Reproject tiles (ensures consistent CRS/res)
     all_files = reproject_tiles(input_dir)
+    band_files = [f for f in all_files if band in Path(f).name]
 
-    # Now merge all files (original or reprojected)
-    src_files_to_mosaic = [rasterio.open(f) for f in all_files]
-    mosaic, out_transform = merge(src_files_to_mosaic)
-
-    out_meta = src_files_to_mosaic[0].meta.copy()
-    out_meta.update({
-        "driver": "GTiff",
-        "height": mosaic.shape[1],
-        "width": mosaic.shape[2],
-        "transform": out_transform
-    })
+    if not band_files:
+        print(f"⚠️ No files found for band {band} in {input_dir}")
+        return None
 
     out_path = MERGED_BANDS_DIR
     os.makedirs(out_path, exist_ok=True)
     merged_image_path = out_path / f"RGB_{year}_{month_number}-{band}.tif"
 
+    # Case 1: Only one file → just copy/re-save
+    if len(band_files) == 1:
+        with rasterio.open(band_files[0]) as src:
+            meta = src.meta.copy()
+            with rasterio.open(merged_image_path, "w", **meta) as dst:
+                dst.write(src.read())
+        return str(merged_image_path)
+
+    # Case 2: Multiple files → mosaic
+    src_files = [rasterio.open(f) for f in band_files]
+    mosaic, out_transform = merge(src_files)
+
+    out_meta = src_files[0].meta.copy()
+    out_meta.update({
+        "driver": "GTiff",
+        "height": mosaic.shape[1],
+        "width": mosaic.shape[2],
+        "transform": out_transform,
+        "count": mosaic.shape[0]  # preserves multi-band mosaics
+    })
+
     with rasterio.open(merged_image_path, "w", **out_meta) as dest:
         dest.write(mosaic)
 
-    # Clean up open files
-    for src in src_files_to_mosaic:
+    # Cleanup
+    for src in src_files:
         src.close()
 
     return str(merged_image_path)
@@ -284,12 +304,14 @@ def get_rgb_composite(merged_paths, geojson_data):
         input_dir = Path(merged_paths[0]).parent
         print(f"\nProcessing {input_dir} directory for SR upscale...\n")
         sr_tif_path = process_directory(input_dir)
-        sr_tif = os.path.join(SR_DIR, os.path.basename(sr_tif_path) + '.tif')
+        sr_tif = os.path.join(SR_DIR, os.path.splitext(os.path.basename(sr_tif_path))[0] + '.tif')
         
         # Crop parcel from SR RGB
         cropped_sr = crop_raster_to_geometry(
             image_path=sr_tif,
-            geometry=gpd.GeoDataFrame.from_features(geojson_data["features"]),
+            geometry=gpd.GeoDataFrame.from_features(
+                geojson_data["features"], crs="EPSG:4326"
+            ),
             geometry_id="",
             output_dir=TEMP_UPLOADS_PATH,
             fmt="png"
@@ -381,7 +403,7 @@ def normalize(array):
     valid_pixels = array[array > 0]
     if len(valid_pixels) == 0:
         return np.zeros_like(array, dtype=np.uint8)
-    array_min, array_max = np.percentile(valid_pixels, [2, 99.999])
+    array_min, array_max = np.percentile(valid_pixels, [2, 98])
     if array_max - array_min == 0:
         return np.zeros_like(array, dtype=np.uint8)
     norm_array = (array - array_min) / (array_max - array_min)
@@ -499,7 +521,7 @@ def cut_from_geometry(gdf_parcel, format, image_paths, geometry_id):
         print(f"An error occurred: {str(e)}")
         raise
 
-def crop_raster_to_geometry(image_path, geometry, geometry_id, output_dir, fmt="tif"):
+def crop_raster_to_geometry(image_path, geometry, geometry_id, output_dir, fmt="tif", target_size = (300, 300)):
     """
     Crop either a single-band or multi-band raster (e.g., Sentinel bands or True Color RGB) to a geometry.
 
@@ -551,15 +573,66 @@ def crop_raster_to_geometry(image_path, geometry, geometry_id, output_dir, fmt="
 
         # If PNG, drop CRS and save with Pillow
         elif fmt.lower() == "png":
-            arr = np.moveaxis(out_image, 0, -1)  # C,H,W -> H,W,C
-            img = Image.fromarray(arr.astype(np.uint8))
-            img.save(out_path)
+            # Expecting C,H,W
+            if out_image.shape[0] >= 3:  
+                blue  = out_image[0]  
+                green = out_image[1]
+                red   = out_image[2]
 
+                rgb = np.stack([red, green, blue], axis=-1)
+
+                # Stretch to 0–255 for visibility
+                rgb_stretched = normalize(rgb)
+                rgb_stretched = percentile_stretch(rgb_stretched)
+
+                # Create alpha channel: transparent where all channels are 0
+                alpha = np.where(np.all(rgb_stretched == 0, axis=-1), 0, 255).astype(np.uint8)
+
+                # Combine RGB + alpha
+                rgba = np.dstack([rgb_stretched, alpha])
+
+                img = Image.fromarray(rgba, mode="RGBA")
+
+                # Resize only if smaller than target_size
+                if img.width < target_size[0] or img.height < target_size[1]:
+                    scale_w = target_size[0] / img.width
+                    scale_h = target_size[1] / img.height
+                    scale = max(scale_w, scale_h)
+                    new_size = (int(img.width * scale), int(img.height * scale))
+                    img = img.resize(new_size, Image.Resampling.LANCZOS)
+
+            else:
+                # Single-band fallback
+                arr = out_image[0]
+                img = Image.fromarray(arr.astype(np.uint8))
+
+                # Resize only if smaller than target_size
+                if img.width < target_size[0] or img.height < target_size[1]:
+                    scale_w = target_size[0] / img.width
+                    scale_h = target_size[1] / img.height
+                    scale = max(scale_w, scale_h)
+                    new_size = (int(img.width * scale), int(img.height * scale))
+                    img = img.resize(new_size, Image.Resampling.LANCZOS)
+
+            img.save(out_path)
         else:
             raise ValueError(f"Unsupported output format: {fmt}")
-
         return str(out_path)
 
+def upscale_to_minimum(img, target_size):
+    # Current size
+    w, h = img.size
+    target_w, target_h = target_size
+
+    # Determine scale factor to reach minimum size
+    scale_w = target_w / w
+    scale_h = target_h / h
+    scale = max(scale_w, scale_h)  # use max to ensure both dimensions ≥ target
+
+    if scale > 1:  # only upscale if smaller
+        new_size = (int(w * scale), int(h * scale))
+        img = img.resize(new_size, Image.Resampling.LANCZOS)
+    return img
 
 def crop_directory(valid_files, geometry, geometry_id, output_dir, fmt="tif"):
     """
@@ -768,21 +841,7 @@ def build_cadastral_reference(province: str, municipality: str, polygon: str, pa
     print("FINAL CADASTRAL REF:", cadastral_reference)
     return cadastral_reference
 
-def bbox_from_polygon(polygon_geojson: dict, resolution_m: int = 10, min_px: int = 750):
-    """
-    Given a polygon, return a bbox geometry in EPSG:4326 that fully contains it,
-    ensuring at least min_px x min_px pixels at the given resolution.
-
-    Args:
-        polygon_geojson (dict): Polygon in GeoJSON format (must be EPSG:4326).
-        resolution_m (int): Desired resolution in meters per pixel (default 10m/px).
-        min_px (int): Minimum size in pixels for bbox width and height.
-
-    Returns:
-        dict: GeoJSON geometry for the expanded bbox in EPSG:4326.
-    """
-
-def bbox_from_polygon(polygon_geojson: dict, resolution_m: float = 10, min_px: int = 750):
+def bbox_from_polygon(polygon_geojson: dict, resolution_m: int = 10, min_px: int = 500):
     """
     Given a polygon, return a bbox geometry in EPSG:4326 that is centered
     on the polygon centroid, fully contains it, and ensures at least
@@ -796,6 +855,7 @@ def bbox_from_polygon(polygon_geojson: dict, resolution_m: float = 10, min_px: i
     Returns:
         dict: GeoJSON geometry for the expanded bbox in EPSG:4326 (lists instead of tuples).
     """
+    min_px = max(min_px, polygon_pixel_size(polygon_geojson))
     poly = shape(polygon_geojson)
     centroid = poly.centroid
     minx, miny, maxx, maxy = poly.bounds
@@ -836,3 +896,43 @@ def bbox_from_polygon(polygon_geojson: dict, resolution_m: float = 10, min_px: i
     geom["CRS"] = polygon_geojson["CRS"]
 
     return geom
+
+def polygon_pixel_size(geojson_polygon, resolution=RESOLUTION):
+    """
+    Compute pixel size (width, height) and max dimension for a polygon and resolution.
+
+    Args:
+        geojson_polygon (dict): GeoJSON polygon in EPSG:4326.
+        resolution (int | float): Pixel resolution in meters.
+
+    Returns:
+        (width_px, height_px, max_dim_px)
+    """
+    # Load polygon
+    poly = shape(geojson_polygon)
+
+    # Put into GeoDataFrame with EPSG:4326
+    gdf = gpd.GeoDataFrame(geometry=[poly], crs="EPSG:4326")
+
+    # Pick appropriate UTM zone for reprojection
+    centroid = gdf.geometry.iloc[0].centroid
+    utm_zone = int((centroid.x + 180) // 6) + 1
+    if centroid.y >= 0:
+        utm_crs = CRS.from_epsg(32600 + utm_zone)  # Northern Hemisphere
+    else:
+        utm_crs = CRS.from_epsg(32700 + utm_zone)  # Southern Hemisphere
+
+    # Reproject polygon
+    gdf_utm = gdf.to_crs(utm_crs)
+
+    # Get bounds in meters
+    minx, miny, maxx, maxy = gdf_utm.total_bounds
+    width_m = maxx - minx
+    height_m = maxy - miny
+
+    # Convert to pixels
+    width_px = int(width_m / resolution)
+    height_px = int(height_m / resolution)
+    max_dim_px = max(width_px, height_px)
+
+    return max_dim_px
