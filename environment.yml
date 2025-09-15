@@ -4,21 +4,30 @@ channels:
   - defaults
 dependencies:
   - python=3.11
-  - pyproj
-  - numpy
+  # Core scientific stack
+  - numpy<2
   - pandas
+  # Geospatial stack (conda-forge compiled binaries!)
+  - geopandas
+  - shapely
+  - pyproj
+  - rasterio
+  - fiona
+  - gdal
+  # pip available
   - pip
   - pip:
       - Flask
       - flask-cors
+      - google.genai
+      - minio
+      - opencv-python<4.12
       - Pillow
       - protobuf
       - pytest
       - python-dotenv
       - requests
-      - google.genai
-      - minio
-      - geopandas
-      - rasterio
-      - opencv-python
+      - safetensors
       - sigpac-tools @ git+https://github.com/KhaosResearch/sigpac-tools.git@07145bcaebcdf37bc5b24191950a3f0a666841b4
+      - torch
+      - torchvision

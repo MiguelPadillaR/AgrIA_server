@@ -1,6 +1,5 @@
 import os
 from ..config.constants import TEMP_UPLOADS_PATH
-from ..services.parcel_finder_service import get_parcel_image
 from ..utils.parcel_finder_utils import *
 from ..services.parcel_finder_service import get_parcel_image
 from flask import Blueprint, make_response, request, jsonify, send_from_directory
@@ -17,8 +16,8 @@ def find_parcel():
     The function performs the following steps:
         1. Validates the presence of required form data.
         2. Retrieves the parcel's geometry and metadata using the cadastral reference.
-        3. (TODO) Integrates with the super-resolution service to obtain a super-resolved image for the parcel and date.
-        4. (Mock) Copies a sample super-resolved image to the upload directory.
+        3. Integrates with the L1BSR super-resolution pre-trained model to obtain a super-resolved image for the parcel and date.
+        4. Sends super-resolved image to the upload directory.
         5. Constructs a response containing the cadastral reference, geometry, image URL, and metadata.
     Returns:
         response: A JSON response with the parcel data or an error message and appropriate HTTP status code.
@@ -50,12 +49,10 @@ def find_parcel():
             is_from_cadastral_reference,
             parcel_geometry,
             parcel_metadata,
-            coordinates
+            coordinates,
+            get_sr_image=True
             )
 
-        # TODO: Pass image to super-resolution module and save super-resolved image
-        #get_sr_image()
-
         response = { 
             "cadastralReference": cadastral_reference,
             "geometry": geometry,
@@ -66,43 +63,6 @@ def find_parcel():
         return jsonify({'response': response})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-@parcel_finder_bp.route('/find-parcel-from-location', methods=['POST'])
-def find_parcel_from_location():
-    reset_temp_dir()
-    init = datetime.now()
-    try:
-        province = request.form.get('province')
-        municipality = request.form.get('municipality')
-        polygon = request.form.get('polygon')
-        parcel_id = request.form.get('parcelId')
-        selected_date = request.form.get('selectedDate')
-        
-        # Get image and store it for display
-        cadastral_reference, geometry, metadata, url_image_address = get_parcel_image_from_location(
-            province,
-            municipality,
-            polygon,
-            parcel_id,
-            selected_date
-        )
-
-        # TODO: Pass image to super-resolution module and save super-resolved image
-        #get_sr_image()
-
-        response = { 
-            "cadastralReference": cadastral_reference,
-            "geometry": geometry,
-            "imagePath": url_image_address,
-            "metadata": metadata,
-        }
-        print("TIME TAKEN:", datetime.now() - init)
-        return jsonify({'response': response})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-    return
-    
 
 @parcel_finder_bp.route('/uploads/<filename>')
 def uploaded_file(filename):

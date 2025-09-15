@@ -2,10 +2,12 @@ import json
 import time
 from flask import abort
 from sigpac_tools.find import find_from_cadastral_registry, geometry_from_coords
+
+from ..config.constants import SR_BANDS, RESOLUTION
 from ..utils.parcel_finder_utils import *
 import os
 
-def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_reference: bool= True, parcel_geometry: str  = None, parcel_metadata: str = None, coordinates: list[float] = None) -> tuple:
+def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_reference: bool= True, parcel_geometry: str  = None, parcel_metadata: str = None, coordinates: list[float] = None, get_sr_image: bool = True) -> tuple:
     """
     Retrieves a SIGPAC image and data for a specific parcel.
     Arguments:
@@ -15,12 +17,14 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
         parcel_geometry (str): _Optional_; GeoJSON data of the parcel's polygon to use if `is_from_cadastral_reference` is `False`.
         parcel_metadata (str): _Optional_; User input metadata associated with the parcel to use if `is_from_cadastral_reference` is `False`.
         coordinates (list): _Optional_; Coordinates within parcel limits to find the parcel. Only used if `parcel_geometry` is `None` and if `is_from_cadastral_reference` is `False`.
+        get_sr_image (bool): _Optional_; Get the Super-Resolved version of the parcel's image. Default is `True`.
     Returns:
         geometry (dict): GeoJSON geometry with the parcel's limits.
         metadata (dict): Metadata associated with the parcel.
         sigpac_image_url (str): URL of the SIGPAC image.
     """
     year, month, _ = date.split("-")
+    resolution = RESOLUTION
 
     # Get parcel data
     if cadastral_reference:
@@ -58,20 +62,34 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
     zones_utm = get_tiles_polygons(gdf)
     list_zones_utm = list(zones_utm)
 
-    # Download RGB image:
-    rgb_images_path = download_tiles_rgb_bands(list_zones_utm, year, month)
-    if not rgb_images_path:
-        error_message = "No images are available for the selected date, images are processed at the end of each month."
-        print(error_message)
-        abort(404, description=error_message)
+    # Get bands for RGB/SR processing
+    bands = [b + f"_{resolution}m" for b in SR_BANDS]
+    if not get_sr_image:
+        # Remove B08 band
+        bands.pop()
+
+    sigpac_image_url = download_parcel_image(cadastral_reference, geojson_data, list_zones_utm, year, month, bands)
+    return geometry, metadata, sigpac_image_url
+
+def download_parcel_image(cadastral_reference, geojson_data, list_zones_utm, year, month, bands):
+    try:
+        # Download RGB image:
+        rgb_images_path = download_tile_bands(list_zones_utm, year, month, bands)
+        if not rgb_images_path:
+            error_message = "No images are available for the selected date, images are processed at the end of each month."
+            print(error_message)
+            abort(404, description=error_message)
+
+        __, png_paths, __ = get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path)
         
-    out_dir, png_paths, rgb_tif_paths = get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path)
+        sigpac_image_name = png_paths.pop()  # there should only be one file
 
-    sigpac_image_name = png_paths.pop()  # there should only be one file
-
-    # Upload and fetch latest image
-    sigpac_image_url = f"{os.getenv('API_URL')}/uploads/{os.path.basename(sigpac_image_name)}?v={int(time.time())}"
-    return geometry, metadata, sigpac_image_url.split("?")[0]
+        # Upload and fetch latest image
+        sigpac_image_url = f"{os.getenv('API_URL')}/uploads/{os.path.basename(sigpac_image_name)}?v={int(time.time())}"
+        return sigpac_image_url.split("?")[0]
+    except Exception as e:
+        print(f"An error occurred (download_parcel_image): {str(e)}")
+        raise
 
 def get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path_values):
     """
@@ -89,27 +107,31 @@ def get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path_valu
     Raises:
         ValueError: If the input images are not all in the same file format.
     """
-    unique_formats = list(
-        set(
-            f.split(".")[-1].lower()
-            for f in rgb_images_path_values
-            if isinstance(f, str) and "." in f
+    try:
+        unique_formats = list(
+            set(
+                f.split(".")[-1].lower()
+                for f in rgb_images_path_values
+                if isinstance(f, str) and "." in f
+            )
         )
-    )
-    if len(unique_formats) > 1:
-        raise ValueError(
-            f"Unsupported format. You must upload images in one unique format."
-        )
-    
-    # Crop the parcel outline using the geomatry available
-    cropped_parcel_masks_paths = []
-    for feature in geojson_data["features"]:
-        geometry = feature["geometry"]
-        geometry_id = cadastral_reference
-        cropped_parcel_masks_paths.extend(cut_from_geometry(geometry, unique_formats[0], rgb_images_path_values, geometry_id))
-    
-    unique_masks = set(cropped_parcel_masks_paths)
+        if len(unique_formats) > 1:
+            raise ValueError(
+                f"Unsupported format. You must upload images in one unique format."
+            )
+        
+        # Crop the parcel outline using the geomatry available
+        cropped_parcel_masks_paths = []
+        for feature in geojson_data["features"]:
+            geometry = feature["geometry"]
+            geometry_id = cadastral_reference
+            cropped_parcel_masks_paths.extend(cut_from_geometry(geometry, unique_formats[0], rgb_images_path_values, geometry_id))
+        unique_masks = set(cropped_parcel_masks_paths)
+        print("unique_masks", unique_masks)
 
-    out_dir, png_paths, rgb_tif_paths = rgb(unique_masks)
+        out_dir, png_paths, rgb_tif_paths = get_rgb_composite(cropped_parcel_masks_paths, geojson_data)
 
-    return out_dir, png_paths, rgb_tif_paths
+        return out_dir, png_paths, rgb_tif_paths
+    except Exception as e:
+        print(f"An error occurred (get_rgb_parcel_image): {str(e)}")
+        raise
