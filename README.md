@@ -4,7 +4,7 @@ This is the server side of the Agricultural Imaging Assistant (AgrIA). It includ
 
 ## Requirements:
 - Python 3.10+
-- `conda`, for simplified virtual environment package managing
+- `conda`, for simplified virtual environment package managing.
 - Access to KHAOS' [`sigpac-tools`](https://github.com/KhaosResearch/sigpac-tools.git@07145bcaebcdf37bc5b24191950a3f0a666841b4) repository.
     - **To access the repository, contact [KHAOS Research](https://khaos.uma.es/?page_id=101) group.**
 
@@ -38,12 +38,31 @@ GEOMETRY_FILE = geometry-file.kml
 ```
 **To get credentials to access the MinIO image database, contact [KHAOS Research](https://khaos.uma.es/?page_id=101) group.**
 
+### SR Module Dependencies
+The current implementation of the SR module is derived from the [Superres4Sentinel](https://github.com/MiguelPadillaR/SuperRes4Sentinel.git) repository. Modifications have been made from its original source. For more documentation, please refer to it.
+
+The SR module requires `torch`, `rasterio`, `Pillow`, `opencv-python<4.12` and `numpy<2`. These are included in the provided `environment.yml`. If you install manually, ensure these packages are present in the correct version.
+
+>NOTE: At the time of development, `torch` package would not work with `numpy`'s latest version. Downgrades had to be made to the `numpy` package and the `opencv-python` package as a consequence.
+
 ## Server initialization:
 After activating and setting up all environment, run the server by simply using:
 
 ```bash
 python run.py
 ```
+
+### Running the Super-Resolution module
+The SR module can be invoked during server execution (e.g., when handling parcel image requests). It can also be run independently for testing:
+```bash
+python -m server.sr.process_sr --input path/to/input_dir --output path/to/output_dir
+```
+This will:
+- Read the required band files (`B02`, `B03`, `B04` and `B08`)
+- Run the SR model
+- Save both a multiband GeoTIFF and a stretched PNG for quick visualization
+
+Input must be a dir with all bands for all the images you want. For each image, all four bands must share the same filename and the band somewhere in it.
 
 ## Project structure:
 By the end of the setup process, your directory structure should look like this:
@@ -95,6 +114,13 @@ Agria_server:.
 |   |       chat_service.py
 |   |       llm_services.py
 |   |           
+|   +---sr
+|   |       get_sr_image.py
+|   |       L1BSR_wrapper.py
+|   |       RCAN_wrapper.py
+|   |       README.md
+|   |       REC_Real_L1B.safetensors
+|   |       
 |   +---utils
 |           chat_utils.py
 |           config_utils.py
@@ -117,5 +143,10 @@ This is a brief overview of each main directory in the project structure:
   - `config`: Holds configuration-related files: from constants used all-over to initialization configuration.
   - `endpoints`: Keeps all endpoints access and methods to a single file for each UI component.
   - `services`: Stores files with all the methods that call external services outside of our project scope.
+  - `sr`: Super-resolution (SR) module for satellite imagery.Handles upscaling Sentinel-like input images (B02, B03, B04, B08 bands) using a deep learning model.  
+    - `get_sr_image`: Orchestrates SR processing for directories and handles saving results (GeoTIFF + PNG).
+    - `L1BSR_wrapper.py`: Wrapper for the SR model L1BSR's implementation.
+    - `RCAN_wrapper.py`: Wrapper for the RCAN model's architecture.
+    - `REC_Real_L1B.safetensors`: Pre-trained L1BSR model. 
   - `utils`: An assortment of functions and methods that  help  all the data processing that mainly comes from endpoint input requests.
 - `tests`: A batery of integration tests for the server **(TODO)**.
