@@ -43,7 +43,8 @@ The current implementation of the SR module is derived from the [Superres4Sentin
 
 The SR module requires `torch`, `rasterio`, `Pillow`, `opencv-python<4.12` and `numpy<2`. These are included in the provided `environment.yml`. If you install manually, ensure these packages are present in the correct version.
 
->NOTE: At the time of development, `torch` package would not work with `numpy`'s latest version. Downgrades had to be made to the `numpy` package and the `opencv-python` package as a consequence.
+>### NOTE:
+> At the time of development, `torch` package would not work with `numpy`'s latest version. Downgrades had to be made to the `numpy` package and the `opencv-python` package as a consequence.
 
 ## Server initialization:
 After activating and setting up all environment, run the server by simply using:
@@ -62,8 +63,22 @@ This will:
 - Run the SR model
 - Save both a multiband GeoTIFF and a stretched PNG for quick visualization
 
-Input must be a dir with all bands for all the images you want. For each image, all four bands must share the same filename and the band somewhere in it.
+>### NOTE:
+>Input must be a directory with all bands with all the images you want. For each image, all four bands must share the same filename and include the band name somewhere in it.
 
+## SuperRes4Sentinel workflow diagram:
+In order to work, the image super-resolution taken by Agria performs the following workflow:
+
+1. **Access tiles stored in the DB:** Using MinIO's credentials, it access the database where Sentinel’s tile bands are stored.
+2. **Retrieve image bands:** Get the RGB bands (B02, B03, B04) for the tiles that contain the parcel as well as the infrarred band (B08).
+3. **Crop a smaller tile to super-resolve:** Since the tiles are too big, a smaller crop containing the parcel is cut from each band.
+4. **Get Super-Resolved true color image:** Pass the band crops to the L1BSR model and obtain a super-resolved RGB image (.tif*).
+5. **Crop parcel geometry from image:** From the super-resolved image, and using the parcel's geometry, the parcell is cut out and returned to the user.
+
+<img src="./assets/sr_diagram.png" alt="AgrIA's process Diagram" style="display: block; margin-left: auto; margin-right: auto;">
+
+>### NOTE:
+>**In case no tiles are found in the database**, the bands can be directly taken from Sentinel using its API's Python package (`sentinelhub`) with the proper credentials. ***(IN PROGRESS)***
 ## Project structure:
 By the end of the setup process, your directory structure should look like this:
 
