@@ -3,4 +3,5 @@ temp
 .venv
 *__pycache__/
 *.kml
+*.png
 *assets/.scripts
