@@ -575,9 +575,9 @@ def crop_raster_to_geometry(image_path, geometry, geometry_id, output_dir, fmt="
         elif fmt.lower() == "png":
             # Expecting C,H,W
             if out_image.shape[0] >= 3:  
-                blue  = out_image[0]  
+                red  = out_image[0]  
                 green = out_image[1]
-                red   = out_image[2]
+                blue   = out_image[2]
 
                 rgb = np.stack([red, green, blue], axis=-1)
 

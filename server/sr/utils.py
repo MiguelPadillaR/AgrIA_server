@@ -47,7 +47,8 @@ def percentile_stretch(arr: np.ndarray, p_low=2.0, p_high=98.0) -> np.ndarray:
 def stack_bgrn(b02: BandData, b03: BandData, b04: BandData, b08: BandData) -> np.ndarray:
     h, w = b02.arr.shape
     out = np.zeros((h, w, 4), dtype=np.uint16)
-    out[..., 0], out[..., 1], out[..., 2], out[..., 3] = b02.arr, b03.arr, b04.arr, b08.arr
+    # Correct order: R, G, B, NIR
+    out[..., 0], out[..., 1], out[..., 2], out[..., 3] = b04.arr, b03.arr, b02.arr, b08.arr
     return out
 
 def to_torch_4ch(img_bgrn_u16: np.ndarray, device: torch.device) -> torch.Tensor:
