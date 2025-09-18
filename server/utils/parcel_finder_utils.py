@@ -5,8 +5,8 @@ import shutil
 from flask import jsonify
 from pyproj import Transformer, CRS
 
-from ..sr.get_sr_image import process_directory
-from ..sr.utils import percentile_stretch
+from ..services.sr4s.sr.get_sr_image import process_directory
+from ..services.sr4s.sr.utils import percentile_stretch
 from ..config.constants import TEMP_UPLOADS_PATH, SR_BANDS, RESOLUTION, BANDS_DIR, MERGED_BANDS_DIR, MASKS_DIR, SR_DIR
 
 from ..config.minio_client import minioClient, bucket_name
