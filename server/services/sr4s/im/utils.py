@@ -196,16 +196,19 @@ def generate_evalscript(
     factor =  " * 255" if bit_scale=="UINT8" else ''
     output = ", ".join([f"sample.{band  + factor}" for band in output_bands]) if len(output_bands) > 1 else f"sample.{output_bands[0] + factor}"
     
+    input_str = ",\n\t\t".join(input_options)
+    output_str = ",\n\t\t".join(output_options)
+
     evalscript = f"""
     //VERSION=3
 
     function setup() {{
         return {{
             input: [{{
-                {',\n\t\t'.join(input_options)}
+                {input_str}
             }}],
             output: {{
-                {',\n\t\t'.join(output_options)}
+                {output_str}
             }}
         }};
     }}

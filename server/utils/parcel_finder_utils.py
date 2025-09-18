@@ -5,9 +5,10 @@ import shutil
 from flask import jsonify
 from pyproj import Transformer, CRS
 
+from ..services.sr4s.im.get_image_bands import download_sentinel_bands
 from ..services.sr4s.sr.get_sr_image import process_directory
 from ..services.sr4s.sr.utils import percentile_stretch
-from ..config.constants import TEMP_UPLOADS_PATH, SR_BANDS, RESOLUTION, BANDS_DIR, MERGED_BANDS_DIR, MASKS_DIR, SR_DIR
+from ..config.constants import ANDALUSIA_TILES, TEMP_UPLOADS_PATH, SR_BANDS, RESOLUTION, BANDS_DIR, MERGED_BANDS_DIR, MASKS_DIR, SR_DIR
 
 from ..config.minio_client import minioClient, bucket_name
 from collections import defaultdict
@@ -63,42 +64,54 @@ def get_tiles_polygons(geojson):
 
     return tiles_zones_list
 
-def download_tile_bands(utm_zones, year, month, bands):
+def download_tile_bands(utm_zones, year, month, bands, geometry):
     """
     Download raw band tiles (.tif) for the given UTM zones and date range.
     """
     year_month_pairs = generate_date_range_last_n_months(year, month)
     downloaded_files = {band: [] for band in bands}
-
-    download_tasks = []
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        for zone in utm_zones:
-            for year, month_folder in year_month_pairs:
-                composites_path = f"{zone}/{year}/{month_folder}/composites/"
-                try:
-                    composites_dir = minioClient.list_objects(bucket_name, prefix=composites_path, recursive=True)
-                    for file in composites_dir:
-                        if file.object_name.endswith(".tif") and "raw" in file.object_name:
-                            band = file.object_name.split("/")[-1].split(".")[0]
-                            if band in bands:
-                                # Assign and generate local download dir
-                                download_dir = BANDS_DIR
-                                download_dir.mkdir(parents=True, exist_ok=True)
-                                os.makedirs(download_dir, exist_ok=True)
-                                # Generate filename
-                                month_number = datetime.strptime(month_folder, "%B").month
-                                local_file_path = os.path.join(download_dir, f"{year}_{month_number}_{zone}-{band}.tif")
-                                # Set the ownload file task
-                                task = executor.submit(download_image_file, minioClient, file, local_file_path)
-                                download_tasks.append((task, band, local_file_path))
-                except S3Error as exc:
-                    print(f"Error when accessing {composites_path}: {exc}")
-        # Run all download tasks and append resulting local file paths
-        for task, band, local_file_path in download_tasks:
-            task.result()
-            downloaded_files[band].append(local_file_path)
-    
+    if str(utm_zones)[1:-1].replace("'", "") in str(ANDALUSIA_TILES)[1:-1].replace("'", ""):
+        # Download image bands from MinIO DB:
+        download_tasks = []
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            for zone in utm_zones:
+                for year, month_folder in year_month_pairs:
+                    composites_path = f"{zone}/{year}/{month_folder}/composites/"
+                    try:
+                        composites_dir = minioClient.list_objects(bucket_name, prefix=composites_path, recursive=True)
+                        for file in composites_dir:
+                            if file.object_name.endswith(".tif") and "raw" in file.object_name:
+                                band = file.object_name.split("/")[-1].split(".")[0]
+                                if band in bands:
+                                    # Assign and generate local download dir
+                                    download_dir = BANDS_DIR
+                                    download_dir.mkdir(parents=True, exist_ok=True)
+                                    os.makedirs(download_dir, exist_ok=True)
+                                    # Generate filename
+                                    month_number = datetime.strptime(month_folder, "%B").month
+                                    local_file_path = os.path.join(download_dir, f"{year}_{month_number}_{zone}-{band}.tif")
+                                    # Set the ownload file task
+                                    task = executor.submit(download_image_file, minioClient, file, local_file_path)
+                                    download_tasks.append((task, band, local_file_path))
+                    except S3Error as exc:
+                        print(f"Error when accessing {composites_path}: {exc}")
+            # Run all download tasks and append resulting local file paths
+            for task, band, local_file_path in download_tasks:
+                task.result()
+                downloaded_files[band].append(local_file_path)
+    else:
+        print("Getting parcel outside of Andalusia...")
+        # Download image bands using Sentinel Hub
+        parcel_center  = shape(geometry).representative_point()
+        band_files_list = download_sentinel_bands(parcel_center.y, parcel_center.x, f"{year}_{month}")
+        print("band_files_list", band_files_list)
+        for path in band_files_list:
+            for band in downloaded_files:
+                if band in path:
+                    downloaded_files[band].append(path)
+        
     merged_paths = []
+    print("downloaded_files", downloaded_files)
     for band, file_list in downloaded_files.items():
         if not file_list:
             continue
@@ -698,13 +711,13 @@ def find_nearest_feature_to_point(feature_collection: dict, lat: float, lng: flo
 
     return closest_feature
 
-
 def geojson_with_crs(geometry_dict: dict, crs: str = "epsg:4326") -> dict:
     """
     Adds a CRS field to a geometry dict, mimicking custom GeoJSON with CRS.
     """
     geometry_dict["CRS"] = crs
     return geometry_dict
+
 def merge_and_convert_to_geometry(feature_collection: dict) -> dict:
     """
     Takes a set of FeatureCollection features and generates a single geometry multipolygon object that contains all of the features.
