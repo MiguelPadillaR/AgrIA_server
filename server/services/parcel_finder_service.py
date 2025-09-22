@@ -24,7 +24,6 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
         sigpac_image_url (str): URL of the SIGPAC image.
     """
     year, month, _ = date.split("-")
-    resolution = RESOLUTION
 
     # Get parcel data
     if cadastral_reference:
@@ -63,7 +62,7 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
     list_zones_utm = list(zones_utm)
 
     # Get bands for RGB/SR processing
-    bands = [b + f"_{resolution}m" for b in SR_BANDS]
+    bands = [b + f"_{RESOLUTION}m" for b in SR_BANDS]
     if not get_sr_image:
         # Remove B08 band
         bands.pop()

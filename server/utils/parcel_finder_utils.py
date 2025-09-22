@@ -9,6 +9,7 @@ from ..services.sr4s.im.get_image_bands import download_sentinel_bands
 from ..services.sr4s.sr.get_sr_image import process_directory
 from ..services.sr4s.sr.utils import percentile_stretch
 from ..config.constants import ANDALUSIA_TILES, TEMP_UPLOADS_PATH, SR_BANDS, RESOLUTION, BANDS_DIR, MERGED_BANDS_DIR, MASKS_DIR, SR_DIR
+from ..config.config import Config
 
 from ..config.minio_client import minioClient, bucket_name
 from collections import defaultdict
@@ -70,8 +71,9 @@ def download_tile_bands(utm_zones, year, month, bands, geometry):
     """
     year_month_pairs = generate_date_range_last_n_months(year, month)
     downloaded_files = {band: [] for band in bands}
-    if str(utm_zones)[1:-1].replace("'", "") in str(ANDALUSIA_TILES)[1:-1].replace("'", ""):
+    if any(zone in ANDALUSIA_TILES for zone in utm_zones):
         # Download image bands from MinIO DB:
+        Config.set_reflectance_scale(400.0)
         download_tasks = []
         with ThreadPoolExecutor(max_workers=10) as executor:
             for zone in utm_zones:
@@ -102,16 +104,15 @@ def download_tile_bands(utm_zones, year, month, bands, geometry):
     else:
         print("Getting parcel outside of Andalusia...")
         # Download image bands using Sentinel Hub
+        Config.set_reflectance_scale(50.0)
         parcel_center  = shape(geometry).representative_point()
         band_files_list = download_sentinel_bands(parcel_center.y, parcel_center.x, f"{year}_{month}")
-        print("band_files_list", band_files_list)
         for path in band_files_list:
             for band in downloaded_files:
                 if band in path:
                     downloaded_files[band].append(path)
         
     merged_paths = []
-    print("downloaded_files", downloaded_files)
     for band, file_list in downloaded_files.items():
         if not file_list:
             continue
@@ -289,7 +290,6 @@ def get_rgb_composite(merged_paths, geojson_data):
 
     # Check for the RBG + B08 bands for L1BSR upscale
     get_sr_image = len(merged_paths) == 4 and any(SR_BANDS[-1] in path for path in merged_paths)
-    print("get_sr_image", get_sr_image)
     if get_sr_image:
         out_dir = SR_DIR
         out_dir.mkdir(parents=True, exist_ok=True)

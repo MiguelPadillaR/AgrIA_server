@@ -217,8 +217,6 @@ def generate_evalscript(
         return [{output},];
     }}
     """
-    print(f"\nEVALSCRIPT:\n{evalscript}\n")
-
     return evalscript
 
 def save_tiff(image: np.ndarray, filename: str, bbox, crs="EPSG:4326"):
