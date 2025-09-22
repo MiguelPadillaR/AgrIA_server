@@ -38,8 +38,9 @@ def send_parcel_info_to_chat():
         image_crops = json.loads(request.form.get('imageCrops'))
         image_filename = request.form.get('imageFilename')
         is_detailed_description: bool = "true" in str(request.form.get("isDetailedDescription")).lower()
-        
-        response = get_parcel_description(image_date, image_crops, image_filename, is_detailed_description)
+        lang = request.form.get('lang')
+
+        response = get_parcel_description(image_date, image_crops, image_filename, is_detailed_description, lang)
 
         return jsonify({'response': response})
     except Exception as e:
