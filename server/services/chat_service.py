@@ -54,11 +54,10 @@ def get_parcel_description(image_date, image_crops, image_filename, is_detailed_
         image_desc_prompt += "\n"+image_context_data[lang]
 
         image_indication_options ={
-            'es' :"Estas son las características de la parcela cuya imagen te paso. Tenlo en cuenta para tu descripción:",
-            'en' : "These are the parcel's features whose image I am sending you. Take them into account for your description:"
+            'es' :"Estas son las características de la parcela cuya imagen te paso. Tenlo en cuenta para tu descripción que debes dar en español:",
+            'en' : "These are the parcel's features whose image I am sending you. Take them into account for your description that you must provide in English:"
         }
         image_indication_prompt  = image_indication_options[lang]+ "\n\n" + image_desc_prompt
-        print("image_indication_prompt", image_indication_prompt)
 
         # Open image from path
         image_path = Path(os.path.join(TEMP_UPLOADS_PATH, image_filename))
@@ -73,7 +72,7 @@ def get_parcel_description(image_date, image_crops, image_filename, is_detailed_
     except Exception as e:
         print("Error while getting parcel description: " + e)
 
-def get_suggestion_for_chat(chat_history: list[Content]):
+def get_suggestion_for_chat(chat_history: list[Content], lang: str):
     """
     Provides a suggested input for the model's last chat output.
     Args:
@@ -90,7 +89,8 @@ def get_suggestion_for_chat(chat_history: list[Content]):
                 break
         summarised_chat = "### CHAT_SUMMARY_START ###\n" + get_summarised_chat(chat_history) + "\n### CHAT_SUMMARY_END ###"
         last_chat_output = "### LAST_OUTPUT_START ###\n" + str(last_message) + "### LAST_OUTPUT_END ###"
-        suggestion_prompt = "Using the summary as context, provide an appropiate 300-character max response in Spanish to this chat output. You are acting as a user. Do not use any data not mentioned. Questions are heavily encouraged. Limit the use of expressions such as 'Genial','Excelente', etc..:\n\n"
+        language = "Spanish" if lang == "es" else "English"
+        suggestion_prompt = f"Using the summary as context, provide an appropiate 300-character max response in {language} to this chat output. You are acting as a user. Do not use any data not mentioned. Questions are heavily encouraged. Limit the use of expressions such as 'Genial','Excelente', etc..:\n\n"
         suggestion = client.models.generate_content(
             model="gemini-2.0-flash",
             contents=[suggestion_prompt, summarised_chat, last_chat_output]
