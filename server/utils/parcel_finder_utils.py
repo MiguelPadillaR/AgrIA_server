@@ -7,7 +7,7 @@ from pyproj import Transformer, CRS
 
 from ..services.sr4s.im.get_image_bands import download_sentinel_bands
 from ..services.sr4s.sr.get_sr_image import process_directory
-from ..services.sr4s.sr.utils import percentile_stretch
+from ..services.sr4s.sr.utils import percentile_stretch, set_reflectance_scale
 from ..config.constants import ANDALUSIA_TILES, TEMP_UPLOADS_PATH, SR_BANDS, RESOLUTION, BANDS_DIR, MERGED_BANDS_DIR, MASKS_DIR, SR_DIR
 from ..config.config import Config
 
@@ -33,6 +33,7 @@ import os
 import rasterio
 
 load_dotenv()
+
 
 GEOMETRY_FILE = os.getenv("GEOMETRY_FILE")
 
@@ -71,9 +72,11 @@ def download_tile_bands(utm_zones, year, month, bands, geometry):
     """
     year_month_pairs = generate_date_range_last_n_months(year, month)
     downloaded_files = {band: [] for band in bands}
-    if any(zone in ANDALUSIA_TILES for zone in utm_zones):
+    is_zone_in_andalusia =any(zone in ANDALUSIA_TILES for zone in utm_zones)
+    set_reflectance_scale(is_zone_in_andalusia)
+    
+    if is_zone_in_andalusia:
         # Download image bands from MinIO DB:
-        Config.set_reflectance_scale(400.0)
         download_tasks = []
         with ThreadPoolExecutor(max_workers=10) as executor:
             for zone in utm_zones:
@@ -104,7 +107,6 @@ def download_tile_bands(utm_zones, year, month, bands, geometry):
     else:
         print("Getting parcel outside of Andalusia...")
         # Download image bands using Sentinel Hub
-        Config.set_reflectance_scale(50.0)
         parcel_center  = shape(geometry).representative_point()
         band_files_list = download_sentinel_bands(parcel_center.y, parcel_center.x, f"{year}_{month}")
         for path in band_files_list:
