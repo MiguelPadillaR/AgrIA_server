@@ -38,18 +38,21 @@ def send_parcel_info_to_chat():
         image_crops = json.loads(request.form.get('imageCrops'))
         image_filename = request.form.get('imageFilename')
         is_detailed_description: bool = "true" in str(request.form.get("isDetailedDescription")).lower()
-        
-        response = get_parcel_description(image_date, image_crops, image_filename, is_detailed_description)
+        lang = request.form.get('lang')
+
+        response = get_parcel_description(image_date, image_crops, image_filename, is_detailed_description, lang)
 
         return jsonify({'response': response})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
-@chat_bp.route('/get-input-suggestion', methods=['GET'])
+@chat_bp.route('/get-input-suggestion', methods=['POST'])
 def get_input_suggestion():
     try:
+        lang = request.form.get('lang')
+        print("Lang:", lang)
         chat_history = chat.get_history()
-        response = get_suggestion_for_chat(chat_history)
+        response = get_suggestion_for_chat(chat_history, lang)
         return jsonify({'response': response})
     except Exception as e:
         return jsonify({'error': str(e)}), 500

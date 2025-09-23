@@ -3,7 +3,7 @@ from PIL import Image
 import os
 from google.genai.types import Content
 from ..config.llm_client import client
-from ..utils.chat_utils import save_image_and_get_path
+from ..utils.chat_utils import generate_image_context_data, save_image_and_get_path
 from ..config.constants import FULL_DESC_TRIGGER, SHORT_DESC_TRIGGER, TEMP_UPLOADS_PATH
 from ..config.chat_config import CHAT as chat
 
@@ -33,7 +33,7 @@ def get_image_description(file, is_detailed_description):
 
     return response.text
 
-def get_parcel_description(image_date, image_crops, image_filename, is_detailed_description):
+def get_parcel_description(image_date, image_crops, image_filename, is_detailed_description, lang):
     """
     Handles the parcel information reading and description.
     Args:
@@ -41,33 +41,30 @@ def get_parcel_description(image_date, image_crops, image_filename, is_detailed_
         image_crops (list[dict]): List of crops detected in the image.
         image_filename (str): Name of the image file.
         is_detailed_description (bool): If True, generates a detailed description; otherwise, a short one.
+        lang (str): Current interface language (`es`/ `en`).
     Returns:
         response (dict:{text:str, imagedesc:str}): Contains the text response and image description.
     """
     try:
         # Build image context prompt
-        image_context_data =f'FECHA DE IMAGEN: {image_date}\nPARCELAS DETECTADAS: {len(image_crops)}\n'
-        total_surface = 0.0
-        for crop in image_crops:
-            parcel_id = crop["recinto"]
-            type = crop["uso_sigpac"]
-            surface = round(float(crop["superficie_admisible"] or crop["dn_surface"]),3)
-            irrigation = crop["coef_regadio"] if crop["coef_regadio"] is not None else 0
-            total_surface += surface
-            image_context_data+= f'\n- Recinto: {parcel_id}\n- Tipo: {type}\n- Superficie admisible (m2): {surface}\n'
-            if irrigation > 0:  image_context_data+=f'- Coef. regadío: {irrigation}%\n'
+        image_context_data = generate_image_context_data(image_date, image_crops)
 
         # Insert image context prompt and read image desc file
-        image_context_data += f'\nSUPERFICIE ADMISIBLE TOTAL (m2): {round(total_surface,3)}'
         image_desc_prompt =  FULL_DESC_TRIGGER if is_detailed_description else SHORT_DESC_TRIGGER
-        image_desc_prompt += image_context_data
-        
+        image_desc_prompt += "\n"+image_context_data[lang]
+
+        image_indication_options ={
+            'es' :"Estas son las características de la parcela cuya imagen te paso. Tenlo en cuenta para tu descripción que debes dar en español:",
+            'en' : "These are the parcel's features whose image I am sending you. Take them into account for your description that you must provide in English:"
+        }
+        image_indication_prompt  = image_indication_options[lang]+ "\n\n" + image_desc_prompt
+
         # Open image from path
         image_path = Path(os.path.join(TEMP_UPLOADS_PATH, image_filename))
         image = Image.open(image_path)
 
         response = {
-            "text": chat.send_message([image, "Estas son las características de la parcela cuya imagen te paso. Tenlo en cuenta para tu descripción:\n\n" + image_desc_prompt],).text,
+            "text": chat.send_message([image, image_indication_prompt],).text,
             "imageDesc":image_context_data
         }
 
@@ -75,7 +72,7 @@ def get_parcel_description(image_date, image_crops, image_filename, is_detailed_
     except Exception as e:
         print("Error while getting parcel description: " + e)
 
-def get_suggestion_for_chat(chat_history: list[Content]):
+def get_suggestion_for_chat(chat_history: list[Content], lang: str):
     """
     Provides a suggested input for the model's last chat output.
     Args:
@@ -92,7 +89,8 @@ def get_suggestion_for_chat(chat_history: list[Content]):
                 break
         summarised_chat = "### CHAT_SUMMARY_START ###\n" + get_summarised_chat(chat_history) + "\n### CHAT_SUMMARY_END ###"
         last_chat_output = "### LAST_OUTPUT_START ###\n" + str(last_message) + "### LAST_OUTPUT_END ###"
-        suggestion_prompt = "Using the summary as context, provide an appropiate 300-character max response in Spanish to this chat output. You are acting as a user. Do not use any data not mentioned. Questions are heavily encouraged. Limit the use of expressions such as 'Genial','Excelente', etc..:\n\n"
+        language = "Spanish" if lang == "es" else "English"
+        suggestion_prompt = f"Using the summary as context, provide an appropiate 300-character max response in {language} to this chat output. You are acting as a user. Do not use any data not mentioned. Questions are heavily encouraged. Limit the use of expressions such as 'Genial','Excelente', etc..:\n\n"
         suggestion = client.models.generate_content(
             model="gemini-2.0-flash",
             contents=[suggestion_prompt, summarised_chat, last_chat_output]

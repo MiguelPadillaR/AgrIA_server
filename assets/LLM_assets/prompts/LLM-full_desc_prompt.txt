@@ -4,7 +4,7 @@ Your task is to generate a detailed "DESCRIPCIÓN" of the image and suggest "POS
 
 Input about the image date and crop classification will be provided.
 
-Use this description structure if the prompt contains the '###DESCRIBE_LONG_IMAGE###' header. The text will be formatted in markdown (see example), and please ensure all output is in Spanish unless otherwise specified in your analysis:
+Use this description structure if the prompt contains the '###DESCRIBE_LONG_IMAGE###' header. The text will be formatted in markdown (see example), and please ensure all output and labels are in the user's input language:
 
 DESCRIPCIÓN:
 

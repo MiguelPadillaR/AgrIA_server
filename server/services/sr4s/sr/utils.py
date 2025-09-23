@@ -5,7 +5,10 @@ from dataclasses import dataclass
 from rasterio.transform import Affine
 import cv2
 
-REFLECTANCE_SCALE = 50.0
+from ....config.config import Config
+
+config = Config()
+
 @dataclass
 class BandData:
     path: str
@@ -14,20 +17,6 @@ class BandData:
     crs: any
     width: int
     height: int
-
-def raw_rgb_for_visual(b04, b03, b02):
-    """
-    Build an RGB image from raw Sentinel-2 bands without percentile stretch.
-    Simply rescales 0-max value to 0-255 for uint8 display.
-    """
-    rgb = np.stack([b04, b03, b02], axis=-1).astype(np.float32)
-
-    # Optional: scale by 0–max of each band
-    max_val = np.max(rgb, axis=(0,1), keepdims=True)
-    max_val[max_val == 0] = 1  # prevent division by zero
-    rgb_u8 = np.clip((rgb / max_val) * 255, 0, 255).astype(np.uint8)
-    return rgb_u8
-
 
 def percentile_stretch(arr: np.ndarray, p_low=2.0, p_high=98.0) -> np.ndarray:
     arr = arr.astype(np.float32)
@@ -54,13 +43,14 @@ def stack_bgrn(b02: BandData, b03: BandData, b04: BandData, b08: BandData) -> np
 
 def to_torch_4ch(img_bgrn_u16: np.ndarray, device: torch.device) -> torch.Tensor:
     ten = torch.from_numpy(img_bgrn_u16.astype(np.float32)).permute(2,0,1)[None]
-    return ten.to(device) / REFLECTANCE_SCALE
-
+    return ten.to(device) / config.REFLECTANCE_SCALE
 
 def from_torch_to_u16(sr: torch.Tensor) -> np.ndarray:
     """1x4xHxW -> HxWx4 uint16, reverse of normalization with clipping to prevent artifacts."""
     # Convert to numpy and de-normalize
-    sr_denormalized = sr.detach().cpu().numpy() * REFLECTANCE_SCALE
+    print("REFLECTANCE_SCALE", config.REFLECTANCE_SCALE)
+
+    sr_denormalized = sr.detach().cpu().numpy() * config.REFLECTANCE_SCALE
     
     # Clip the values to the valid range of uint16 to prevent wrap-around artifacts
     np.clip(sr_denormalized, 0, 65535, out=sr_denormalized)
@@ -85,3 +75,9 @@ def make_grid(images, ncols=3, pad=4) -> np.ndarray:
         y, x = pad + r*(h+pad), pad + c*(w+pad)
         grid[y:y+h, x:x+w] = im
     return grid
+
+def set_reflectance_scale(is_andalusia_tiles: bool):
+    if is_andalusia_tiles:
+        config.set_reflectance_scale(400.0)
+    else:
+        config.set_reflectance_scale(60.0)
