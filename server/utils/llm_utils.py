@@ -48,8 +48,6 @@ def load_prompt_from_json(json_path: str, base_path: str = BASE_PROMPTS_PATH, is
     else:
         prompt_type = 'role'
 
-    print("PROMPT TYPE: ", prompt_type.capitalize())
-
     prompt_data = meta.get(prompt_type)
     content = get_description_prompt(base_path, prompt_data, is_image_desc_prompt)
     meta['content'] = content
@@ -76,8 +74,8 @@ def get_description_prompt(base_path, prompt_data, is_image_desc_prompt):
         prompt_example_dir = os.path.join(base_path, prompt_data["examples"]).replace("\\", "/")
         for prompt_example_path in os.listdir(prompt_example_dir):
             prompt_example_path = os.path.join(prompt_example_dir, prompt_example_path)
-            with open(prompt_example_path, 'r', encoding='utf-8') as ef:
-                content += "\n" + ef.read()
+            with open(prompt_example_path, 'r', encoding='utf-8') as f:
+                content += "\n" + f.read()
 
     return content
 
@@ -128,7 +126,7 @@ def set_initial_history(documents_json_path: str):
         doc_paths_list = []
 
     if doc_paths_list:
-        document_parts.append(Part(text="Use the following files as context documents for the task. You may display tables and quote or reference information directly from the text:"))
+        document_parts.append(Part(text="Use the following files as context documents for the task. You may display tables and quote or reference information directly from the documents:"))
 
         for doc_path in doc_paths_list:
             if not doc_path:
@@ -140,7 +138,7 @@ def set_initial_history(documents_json_path: str):
             try:
                 uploaded_doc = upload_context_document(doc_path)
                 if uploaded_doc and uploaded_doc.uri:
-                    print(f"Successfully uploaded: {os.path.basename(doc_path)} (URI: {uploaded_doc.uri})")
+                    print(f"Successfully uploaded document. URI: {uploaded_doc.uri}")
                     document_parts.append(Part(text=f"Document: {os.path.basename(doc_path)}"))
                     # Add the document URI part
                     document_parts.append(Part.from_uri(file_uri=uploaded_doc.uri, mime_type=mime_type))
@@ -160,7 +158,7 @@ def set_initial_history(documents_json_path: str):
             print("No documents were successfully uploaded to include in the initial history.")
 
 
-    user_input_intro = 'Introduce yourself!'
+    user_input_intro = 'Recuerda que debes hablar en el mismo idioma que el usuario, ya esa español, inglés u otro. Ahora preséntate.'
     model_output_intro = (
         '¡Hola!\n\nSoy tu Asistente de Imágenes Agrícolas, ¡pero puedes llamarme **AgrIA**!\n\n'
         'Mi propósito aquí es **analizar imágenes satelitales de campos de cultivo** para '
