@@ -6,6 +6,28 @@ from flask import Blueprint, make_response, request, jsonify, send_from_director
 
 parcel_finder_bp = Blueprint('find_parcel', __name__)
 
+@parcel_finder_bp.route('/load-parcel-description', methods=['POST'])
+def load_parcel_descriptio():
+    """
+    Loads and returns dinamically the correct parcel description file.
+    Returns:
+        response (dict): Contains the image description of the text file.
+    """
+    try:
+        lang = request.form.get('lang')
+        parcel_desc_file = os.path.join(TEMP_UPLOADS_PATH, f"parcel_desc-{lang}.txt")
+        content = "..."
+        
+        if os.path.exists(parcel_desc_file):
+            print("Loading parcel description file:", parcel_desc_file)
+            with open(parcel_desc_file, 'r', encoding='utf-8') as file:
+                content = file.read()
+            print(content)
+        return jsonify({'response': content}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @parcel_finder_bp.route('/find-parcel', methods=['POST'])
 def find_parcel():
     """

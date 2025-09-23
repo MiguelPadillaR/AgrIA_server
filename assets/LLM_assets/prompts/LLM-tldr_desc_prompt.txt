@@ -4,7 +4,7 @@ Analyze the provided satellite image of agricultural land. Given the image date 
 
 Image date and crop analysis will be provided.
 
-Output Format: in markdown, do not wrpa it in a md block, just raw text (All in Spanish). Use this description structure if the prompt contains the '###DESCRIBE_SHORT_IMAGE###' header:
+Output Format: in markdown, do not wrap it in a MD block, just raw text. Use this description structure if the prompt contains the '###DESCRIBE_SHORT_IMAGE###' header:
 
 **DESCRIPCIÓN:**
 Provide a brief, 2-4 sentence summary of the image. Focus on the most salient visual features and use crop type and surface is such data has been provided via prompt:

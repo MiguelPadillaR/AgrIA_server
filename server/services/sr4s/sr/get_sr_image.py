@@ -9,7 +9,7 @@ import rasterio
 
 from PIL import Image
 
-from ..config.constants import SR_BANDS, SR_DIR
+from ....config.constants import SR_BANDS, SR_DIR
 
 from .utils import percentile_stretch, stack_bgrn, make_grid
 from .L1BSR_wrapper import L1BSR

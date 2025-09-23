@@ -23,6 +23,11 @@ MIME_TYPES = {
     'png': 'image/png',
 }
 
+ANDALUSIA_TILES = ["29SPC", "29SQC", "30STH", "30SUH", "30SVH", "30SWH", "30SXH", "30SYH", "30SXG", 
+        "30SWG", "30SVG", "30SUG", "30STG", "29SQB" ,"29SPB", "30STF", "30SUF", 
+        "30SVF", "30SWF"]
+
+
 SR_BANDS = ["B02", "B03", "B04", "B08"]
 BANDS_DIR = TEMP_UPLOADS_PATH / "bands"
 MERGED_BANDS_DIR = TEMP_UPLOADS_PATH / "merged_bands"
