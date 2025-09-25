@@ -478,7 +478,9 @@ def cut_from_geometry(gdf_parcel, format, image_paths, geometry_id):
         geometry = gdf_parcel
         
         # Check for the RBG + B08 bands for L1BSR upscale
-        if len(image_paths) == 4 and any(SR_BANDS[-1] in path for path in image_paths):
+        get_sr_image = len(image_paths) == 4 and any(SR_BANDS[-1] in path for path in image_paths)
+
+        if get_sr_image:
             geometry = bbox_from_polygon(geometry)
         
         # Sanity check
@@ -856,7 +858,7 @@ def build_cadastral_reference(province: str, municipality: str, polygon: str, pa
     print("FINAL CADASTRAL REF:", cadastral_reference)
     return cadastral_reference
 
-def bbox_from_polygon(polygon_geojson: dict, resolution_m: int = 10, min_px: int = 500):
+def bbox_from_polygon(polygon_geojson: dict, resolution_m: int = RESOLUTION, min_px: int=-1 ):
     """
     Given a polygon, return a bbox geometry in EPSG:4326 that is centered
     on the polygon centroid, fully contains it, and ensures at least
@@ -865,12 +867,12 @@ def bbox_from_polygon(polygon_geojson: dict, resolution_m: int = 10, min_px: int
     Args:
         polygon_geojson (dict): Polygon in GeoJSON format (must be EPSG:4326).
         resolution_m (float): Desired resolution in meters per pixel (default 10m/px).
-        min_px (int): Minimum size in pixels for bbox width and height.
+        min_px (int): Minimum size in pixels for bbox width and height. Default: px for bbox that contains `polygon_geojson`.
 
     Returns:
         dict: GeoJSON geometry for the expanded bbox in EPSG:4326 (lists instead of tuples).
     """
-    min_px = max(min_px, polygon_pixel_size(polygon_geojson))
+    min_px = polygon_pixel_size(polygon_geojson) if min_px < 0 else min_px
     poly = shape(polygon_geojson)
     centroid = poly.centroid
     minx, miny, maxx, maxy = poly.bounds
@@ -942,6 +944,17 @@ def polygon_pixel_size(geojson_polygon, resolution=RESOLUTION):
 
     # Get bounds in meters
     minx, miny, maxx, maxy = gdf_utm.total_bounds
+
+    # Define offset (in meters)
+    offset_m = resolution * 10 # 10 pixels buffer
+
+    # Expand bounds equally in all directions
+    minx = minx - offset_m
+    miny = miny - offset_m
+    maxx = maxx + offset_m
+    maxy = maxy + offset_m
+
+    # Now recalculate width/height with buffer
     width_m = maxx - minx
     height_m = maxy - miny
 
