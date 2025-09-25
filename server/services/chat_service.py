@@ -54,8 +54,8 @@ def get_parcel_description(image_date, image_crops, image_filename, is_detailed_
         image_desc_prompt += "\n"+image_context_data[lang]
 
         image_indication_options ={
-            'es' :"Estas son las características de la parcela cuya imagen te paso. Tenlo en cuenta para tu descripción que debes dar en español:",
-            'en' : "These are the parcel's features whose image I am sending you. Take them into account for your description that you must provide in English:"
+            'es': "Estas son las características de la parcela cuya imagen te paso. Tenlo en cuenta para tu descripción en español. Comprueba el siguiente prompt para ver si es necesario cambiar el idioma:",
+            'en': "These are the parcel's features whose image I am sending you. Take them into account for your description in English. Check next prompt for language change if needed:"
         }
         image_indication_prompt  = image_indication_options[lang]+ "\n\n" + image_desc_prompt
 
