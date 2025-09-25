@@ -148,15 +148,17 @@ def set_initial_history(documents_json_path: str):
             except Exception as e:
                 print(f"Error uploading document {doc_path}: {e}")
         
+        llm_answer = "Apologies, it appears there has been an error during the document upload process and I have not got access to the files. I will do my best to answer any queries though."
         if upload_success > 0:
             print(f"Successfully uploaded and prepared {upload_success} documents for context.")
             # Append all document parts as a single 'user' turn
             initial_history.append(Content(role='user', parts=document_parts))
             # Model's optional "OK" response to the context
-            initial_history.append(Content(role='model', parts=[Part(text="Okay, I have received the context documents and will use them for our conversation.")]))
+            llm_answer = "Okay, I have received the context documents and I will use them for our conversation."
         else:
             print("No documents were successfully uploaded to include in the initial history.")
 
+        initial_history.append(Content(role='model', parts=[Part(text=llm_answer)]))
 
     user_input_intro = 'Recuerda que debes hablar en el mismo idioma que el usuario, ya esa español, inglés u otro. Ahora preséntate.'
     model_output_intro = (

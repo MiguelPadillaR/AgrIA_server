@@ -50,7 +50,6 @@ def send_parcel_info_to_chat():
 def get_input_suggestion():
     try:
         lang = request.form.get('lang')
-        print("Lang:", lang)
         chat_history = chat.get_history()
         response = get_suggestion_for_chat(chat_history, lang)
         return jsonify({'response': response})
