@@ -125,8 +125,6 @@ def get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path_valu
             geometry = feature["geometry"]
             geometry_id = cadastral_reference
             cropped_parcel_masks_paths.extend(cut_from_geometry(geometry, unique_formats[0], rgb_images_path_values, geometry_id))
-        unique_masks = set(cropped_parcel_masks_paths)
-        print("unique_masks", unique_masks)
 
         out_dir, png_paths, rgb_tif_paths = get_rgb_composite(cropped_parcel_masks_paths, geojson_data)
 
