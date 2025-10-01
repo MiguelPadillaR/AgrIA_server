@@ -57,6 +57,9 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
         raise ValueError("Cadastral reference missing. Reference must be provided when not using location or GeoJSON/coordinates")
 
     # Get GeoJSON data and dataframe and list of UTM zones
+    # Open a file in write mode and save the string
+    with open("polygon.geojson", "w") as file:
+        file.write(str(geometry).replace("'", '"'))
     geojson_data, gdf = get_geojson_data(geometry, metadata)
     zones_utm = get_tiles_polygons(gdf)
     list_zones_utm = list(zones_utm)

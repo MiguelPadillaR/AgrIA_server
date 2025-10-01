@@ -17,6 +17,15 @@ conda env create -f environment.yml
 conda activate agria_server_env
 ```
 
+You will also need to install `mamba` locally like this:
+```
+pip install mamba --no-build-isolation
+```
+>NOTE: this package requires NVIDIA CUDA Toolkit: `sudo apt install nvidia-cuda-toolkit`
+After that, manually install `sen2sr` if needed:
+```
+pip install sen2sr mlstac git+https://github.com/ESDS-Leipzig/cubo.git -q
+```
 ### System environment setup:
 You will need to rename the `.env_example` file to `.env` and complete it with your own data.
 
