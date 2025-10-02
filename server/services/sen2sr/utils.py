@@ -1,10 +1,67 @@
+import os
+import rasterio
+
 import numpy as np
-from PIL import Image, ImageEnhance
+
+from rasterio.transform import from_origin
 from xarray import DataArray
+from PIL import Image, ImageEnhance
+
+from .constants import OG_TIF_FILEPATH, PNG_DIR, SR_TIF_FILEPATH, TIF_DIR
 
 # --------------------
-# PNG export
+# GeoTIFF + PNG export
 # --------------------
+def reorder_bands(original_s2_numpy, superX):
+    # Original: [NIR, B, G, R] -> reorder to [R, G, B, NIR]
+    band_order_tif = [3, 2, 1, 0]  # indices in original array
+    original_s2_reordered = original_s2_numpy[band_order_tif]
+    superX_np = superX.detach().cpu().numpy()
+    superX_reordered = superX_np[band_order_tif]
+    return original_s2_reordered, superX_reordered
+
+def export_to_tif(original_s2_reordered, superX_reordered, sample):
+    # Prepare band order for export    
+    minx, __, __, maxy = sample.rio.bounds()
+    res_x, res_y = sample.rio.resolution()
+    transform = from_origin(minx, maxy, abs(res_x), abs(res_y))
+    save_as_tif(original_s2_reordered, OG_TIF_FILEPATH, transform)
+
+    # Super-res (adjust resolution)
+    scale = superX_reordered.shape[1] / sample.shape[1]
+    new_res_x = abs(res_x) / scale
+    new_res_y = abs(res_y) / scale
+    transform_sr = from_origin(minx, maxy, new_res_x, new_res_y)
+    save_as_tif(superX_reordered, SR_TIF_FILEPATH, transform_sr)
+
+def save_as_tif(image_nparray,filepath, transform, crs:str="EPSG:32630"):
+    # Create output TIF dir
+    os.makedirs(TIF_DIR, exist_ok=True)
+    # Save as TIF
+    with rasterio.open(
+        filepath, "w",
+        driver="GTiff",
+        height=image_nparray.shape[1],
+        width=image_nparray.shape[2],
+        count=image_nparray.shape[0],
+        dtype="float32",
+        crs=crs,
+        transform=transform
+    ) as dst:
+        dst.write(image_nparray)
+
+    print(f"✅ Saved {filepath} with corrected band order")
+
+def export_to_png(image_nparray, filepath):
+    # Create PNG output dir
+    os.makedirs(PNG_DIR, exist_ok=True)
+    image_nparray = brighten(image_nparray)
+    save_png(image_nparray, filepath)
+    print(f"✅ Saved{filepath} PNG with correct colors")
+
+def brighten(img, factor=2.5):
+    """Brighten both by scaling and clipping"""
+    return np.clip(img * factor, 0, 1)
 
 def save_png(arr, path, enhance_contrast=False, contrast_factor=1.2, apply_gamma=False, gamma=1.6, transparent_nodata=True):
     """
@@ -49,11 +106,6 @@ def save_png(arr, path, enhance_contrast=False, contrast_factor=1.2, apply_gamma
         img = enhancer.enhance(contrast_factor)
 
     img.save(path, "PNG")
-
-
-def brighten(img, factor=2.5):
-    """Brighten both by scaling and clipping"""
-    return np.clip(img * factor, 0, 1)
 
 def get_cloudless_time_indices(scl: DataArray, cloud_threshold = 0.01):
 

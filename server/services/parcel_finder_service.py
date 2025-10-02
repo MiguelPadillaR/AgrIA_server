@@ -3,7 +3,9 @@ import time
 from flask import abort
 from sigpac_tools.find import find_from_cadastral_registry, geometry_from_coords
 
-from ..config.constants import SR_BANDS, RESOLUTION
+from .sen2sr.constants import GEOJSON_FILEPATH
+
+from ..config.constants import SEN2SR_SR_DIR, SR_BANDS, RESOLUTION
 from ..utils.parcel_finder_utils import *
 import os
 
@@ -58,7 +60,8 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
 
     # Get GeoJSON data and dataframe and list of UTM zones
     # Open a file in write mode and save the string
-    with open("polygon.geojson", "w") as file:
+    os.makedirs(SEN2SR_SR_DIR, exist_ok=True)
+    with open(GEOJSON_FILEPATH, "w") as file:
         file.write(str(geometry).replace("'", '"'))
     geojson_data, gdf = get_geojson_data(geometry, metadata)
     zones_utm = get_tiles_polygons(gdf)
