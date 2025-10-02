@@ -9,7 +9,7 @@ import rasterio
 
 from PIL import Image
 
-from ....config.constants import SR_BANDS, SR_DIR
+from ....config.constants import SR_BANDS, SR5M_DIR
 
 from .utils import percentile_stretch, stack_bgrn, make_grid
 from .L1BSR_wrapper import L1BSR
@@ -70,7 +70,7 @@ def save_multiband_tif(sr: np.ndarray, reference_band: str, out_path: str):
             dst.write(sr_clean[..., i], i + 1)
             dst.set_band_description(i + 1, f"B{i+1}")  # optional: label bands
 
-def process_directory(input_dir, output_dir=SR_DIR, save_as_tif=True):
+def process_directory(input_dir, output_dir=SR5M_DIR, save_as_tif=True):
     """
     Process directory where image bands are found for all images found and super-resolves them.
     Saves SR image and comparison image between original and SR version.
@@ -96,7 +96,7 @@ def process_directory(input_dir, output_dir=SR_DIR, save_as_tif=True):
             continue
         filename, __ = os.path.splitext(base)
         prefix_parts = filename.split(f"-{band}", 1)[0].split('_')
-        prefix = f'SR_{prefix_parts[1]}_{prefix_parts[2]}'
+        prefix = f'SR_{prefix_parts[1]}_{prefix_parts[2][:-1]}'
         if prefix not in groups:
             groups[prefix] = {}
         groups[prefix][band] = f
