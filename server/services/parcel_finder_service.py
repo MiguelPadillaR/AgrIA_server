@@ -1,9 +1,12 @@
+from datetime import timedelta
 import json
 import time
 from flask import abort
 from sigpac_tools.find import find_from_cadastral_registry, geometry_from_coords
 
-from .sen2sr.constants import GEOJSON_FILEPATH
+from ..services.sen2sr.sen2sr_test import get_sr_image
+
+from .sen2sr.constants import BANDS, GEOJSON_FILEPATH
 
 from ..config.constants import SEN2SR_SR_DIR, SR_BANDS, RESOLUTION
 from ..utils.parcel_finder_utils import *
@@ -39,7 +42,6 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
         elif parcel_geometry:
             # Retrieve geometry from map drawing geometry
             geometry = json.loads(parcel_geometry)
-            
         else:
             # Retrieve geometry from coordinates
             lat, lng = coordinates    
@@ -62,7 +64,7 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
     # Open a file in write mode and save the string
     os.makedirs(SEN2SR_SR_DIR, exist_ok=True)
     with open(GEOJSON_FILEPATH, "w") as file:
-        file.write(str(geometry).replace("'", '"'))
+        file.write(str(geometry).replace("'", '"').replace("(","[").replace(")","]"))
     geojson_data, gdf = get_geojson_data(geometry, metadata)
     zones_utm = get_tiles_polygons(gdf)
     list_zones_utm = list(zones_utm)
@@ -73,8 +75,33 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
         # Remove B08 band
         bands.pop()
 
-    sigpac_image_url = download_parcel_image(cadastral_reference, geojson_data, list_zones_utm, year, month, bands)
+    # sigpac_image_url = download_parcel_image(cadastral_reference, geojson_data, list_zones_utm, year, month, bands)
+    # print("IMAGE URL", sigpac_image_url)
+    sigpac_image_url = download_sen2sr_parcel_image(geometry, date, coordinates)
     return geometry, metadata, sigpac_image_url
+
+def download_sen2sr_parcel_image(geometry, date, coordinates):
+    if coordinates == None:
+        print("Using geometry")
+        poly = shape(geometry)
+        print("CENTROID", poly.centroid, type(poly.centroid))
+        lon, lat = float(poly.centroid.x), float(poly.centroid.y)
+        print(lat, lon)
+    else:
+        print("Using coordinates")
+        lat, lon = coordinates
+    bands= BANDS
+
+    year, month, day = date.split("-")
+    formatted_date = datetime(year=int(year), month=int(month), day=int(day))
+    delta = 15
+    end_date = formatted_date.strftime("%Y-%m-%d")
+    start_date = (formatted_date - timedelta(days=delta)).strftime("%Y-%m-%d")
+
+    sigpac_image_name = os.path.basename(get_sr_image(lat, lon, bands, start_date, end_date))
+    sigpac_image_url = f"{os.getenv('API_URL')}/uploads/{os.path.basename(sigpac_image_name)}?v={int(time.time())}"
+
+    return sigpac_image_url
 
 def download_parcel_image(cadastral_reference, geojson_data, list_zones_utm, year, month, bands):
     try:

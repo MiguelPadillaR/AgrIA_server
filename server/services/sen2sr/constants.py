@@ -15,6 +15,8 @@ SR_TIF_FILEPATH = TIF_DIR / "superres.tif"
 
 OG_PNG_FILEPATH = str(OG_TIF_FILEPATH).replace("tif", "png")
 SR_PNG_FILEPATH = str(SR_TIF_FILEPATH).replace("tif", "png")
-COMPARISON_PNG_FILEPATH = PNG_DIR / "comparison.png"
+COMPARISON_PNG_FILEPATH = SEN2SR_SR_DIR / "OG-SR_comparison.png"
 
 GEOJSON_FILEPATH = SEN2SR_SR_DIR / "polygon.geojson"
+
+BANDS = ["B08", "B02", "B03", "B04", "SCL"]  # NIR + RGB + SCL

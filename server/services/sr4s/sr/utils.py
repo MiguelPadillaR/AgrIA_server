@@ -62,7 +62,7 @@ def from_torch_to_u16(sr: torch.Tensor) -> np.ndarray:
     sr_np = np.moveaxis(sr_np[0], 0, -1)
     return sr_np
 
-def make_grid(images, ncols=3, pad=4) -> np.ndarray:
+def make_grid(images, ncols=2, pad=4) -> np.ndarray:
     """Make a grid of images (HxWx3 uint8) with padding."""
     h = max(im.shape[0] for im in images)
     w = max(im.shape[1] for im in images)
