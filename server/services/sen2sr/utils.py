@@ -1,21 +1,25 @@
+import math
 import os
 import cv2
 import rasterio
 
 import numpy as np
 
-from rasterio.transform import from_origin
+from rasterio.transform import from_bounds
 from xarray import DataArray
 from PIL import Image, ImageEnhance
 
 from ..sr4s.sr.utils import make_grid
 
-from .constants import COMPARISON_PNG_FILEPATH, PNG_DIR, TIF_DIR
+from .constants import COMPARISON_PNG_FILEPATH, PNG_DIR, SPAIN_MAINLAND, TIF_DIR
 
 # --------------------
 # GeoTIFF + PNG export
 # --------------------
 def reorder_bands(original_s2_numpy, superX):
+    """
+    Reorders image bands from NIR,B,G,R to R,G,B,NIR
+    """
     # Original: [NIR, B, G, R] -> reorder to [R, G, B, NIR]
     band_order_tif = [3, 2, 1, 0]  # indices in original array
     original_s2_reordered = original_s2_numpy[band_order_tif]
@@ -23,32 +27,27 @@ def reorder_bands(original_s2_numpy, superX):
     superX_reordered = superX_np[band_order_tif]
     return original_s2_reordered, superX_reordered
 
-def save_to_tif(array, filepath, sample, sr=False):
+def save_to_tif(array, filepath, sample, crs: str):
     """
     Export a numpy array (bands, H, W) as GeoTIFF.
     
-    Args:
+    Arguments:
         array (np.ndarray): Image data in (bands, H, W).
         filepath (str): Path to save GeoTIFF.
         sample (xarray.DataArray or rioxarray obj): Source for bounds + resolution.
         sr (bool): If True, adjust transform for super-res image.
     """
     # Spatial bounds and resolution from sample
-    minx, __, __, maxy = sample.rio.bounds()
-    res_x, res_y = sample.rio.resolution()
-    
-    if sr:
-        # Scale factor = ratio of super-res width to sample width
-        scale = array.shape[1] / sample.shape[1]
-        new_res_x = abs(res_x) / scale
-        new_res_y = abs(res_y) / scale
-        transform = from_origin(minx, maxy, new_res_x, new_res_y)
-    else:
-        transform = from_origin(minx, maxy, abs(res_x), abs(res_y))
-    
-    save_as_tif(array, filepath, transform)
+    minx, miny, maxx, maxy = sample.rio.bounds()
+    height, width = array.shape[1], array.shape[2]
+    transform = from_bounds(minx, miny, maxx, maxy, width, height)
+
+    save_as_tif(array, filepath, transform, crs)
 
 def save_as_tif(image_nparray,filepath, transform, crs:str="EPSG:32630"):
+    """
+    Uses `rasterio` to save a GeoTIFF image
+    """
     # Create output TIF dir
     os.makedirs(TIF_DIR, exist_ok=True)
     # Save as TIF
@@ -73,9 +72,12 @@ def save_to_png(image_nparray, filepath):
     save_png(image_nparray, filepath)
     print(f"✅ Saved {filepath} with correct colors")
 
-def brighten(img, factor=2.5):
+def brighten(img, factor=3):
     """Brighten both by scaling and clipping"""
     return np.clip(img * factor, 0, 1)
+
+def apply_gamma(img, gamma = 0.8):
+    return np.clip(img ** gamma, 0, 1)
 
 def save_png(arr, path, enhance_contrast=False, contrast_factor=1.5, apply_gamma=False, gamma=1.6, transparent_nodata=True):
     """
@@ -99,7 +101,7 @@ def save_png(arr, path, enhance_contrast=False, contrast_factor=1.5, apply_gamma
 
     # Apply gamma correction if requested
     if apply_gamma:
-        rgb_norm = np.clip(rgb_norm ** gamma, 0, 1)
+        rgb_norm = apply_gamma(rgb_norm)
 
     # Scale to 0-255
     rgb_uint8 = (rgb_norm * 255).astype(np.uint8)
@@ -122,7 +124,14 @@ def save_png(arr, path, enhance_contrast=False, contrast_factor=1.5, apply_gamma
     img.save(path, "PNG")
 
 def get_cloudless_time_indices(scl: DataArray, cloud_threshold = 0.01):
-
+    """
+    Uses the SCL band and combs over the image data within date range to find the least cloudy.
+    Arguments:
+        scl (DataArray): SCL band info
+        cloud_threshold (float): Tolerated cloud density percentage. Default: 0.01 (0.00-1.00)
+    Returns:
+        valid_indices (list): List of all valid dates' indices within acceptable cloud threshold
+    """
     valid_indices = []
     min_threshold = 1  # 100%
     min_index = -1
@@ -179,3 +188,19 @@ def make_comparison_grid(original, superres):
     grid = make_grid([og_img_resized, sr_img], ncols=2)
     Image.fromarray(grid).save(COMPARISON_PNG_FILEPATH)
     print(f"✅ Saved comparison grid: {COMPARISON_PNG_FILEPATH}")
+
+def lonlat_to_utm_epsg(lon, lat):
+    """
+    Get correct CRS from coordinates
+    """
+    zone = int(math.floor((lon + 180) / 6) + 1)
+    if lat >= 0:
+        return f"EPSG:{32600 + zone}"  # Northern hemisphere
+    else:
+        return f"EPSG:{32700 + zone}"  # Southern hemisphere
+# Load Spain shapefile (or GeoJSON)
+
+def is_in_spain(lon, lat):
+    """Return True if a lon/lat point is inside mainland Spain bbox."""
+    min_lon, min_lat, max_lon, max_lat = SPAIN_MAINLAND
+    return (min_lon <= lon <= max_lon) and (min_lat <= lat <= max_lat)

@@ -1,16 +1,18 @@
 from datetime import timedelta
 import json
 import time
+import os
+
 from flask import abort
 from sigpac_tools.find import find_from_cadastral_registry, geometry_from_coords
 
-from ..services.sen2sr.sen2sr_test import get_sr_image
-
+from .sen2sr.utils import is_in_spain
+from .sen2sr.sen2sr_test import get_sr_image
 from .sen2sr.constants import BANDS, GEOJSON_FILEPATH
+from ..services.sr4s.im.utils import get_bbox_from_center
 
 from ..config.constants import SEN2SR_SR_DIR, SR_BANDS, RESOLUTION
 from ..utils.parcel_finder_utils import *
-import os
 
 def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_reference: bool= True, parcel_geometry: str  = None, parcel_metadata: str = None, coordinates: list[float] = None, get_sr_image: bool = True) -> tuple:
     """
@@ -29,7 +31,6 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
         sigpac_image_url (str): URL of the SIGPAC image.
     """
     year, month, _ = date.split("-")
-
     # Get parcel data
     if cadastral_reference:
         geometry, metadata = find_from_cadastral_registry(cadastral_reference)
@@ -54,17 +55,22 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
                 else:
                     # Use all parcels found as parcel image
                     geometry = merge_and_convert_to_geometry(feature_collection) 
+            elif len(feature_collection['features']) < 1:
+                # Generate bbox geojson from coord
+                lat, lon = coordinates
+                is_spain = is_in_spain(lon, lat)
+                min_size = min_size if is_spain else 512
+                geometry = get_bbox_from_center(lat, lon, min_size, min_size, RESOLUTION).geojson
             else:
                 # Only one parcel found
                 geometry = feature_collection
     else:
         raise ValueError("Cadastral reference missing. Reference must be provided when not using location or GeoJSON/coordinates")
-
     # Get GeoJSON data and dataframe and list of UTM zones
     # Open a file in write mode and save the string
     os.makedirs(SEN2SR_SR_DIR, exist_ok=True)
     with open(GEOJSON_FILEPATH, "w") as file:
-        file.write(str(geometry).replace("'", '"').replace("(","[").replace(")","]"))
+        file.write(str(geometry).replace("'", '"').replace("(","[").replace(")","]"))  # format GeoJSON correctly
     geojson_data, gdf = get_geojson_data(geometry, metadata)
     zones_utm = get_tiles_polygons(gdf)
     list_zones_utm = list(zones_utm)
@@ -76,21 +82,30 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
         bands.pop()
 
     # sigpac_image_url = download_parcel_image(cadastral_reference, geojson_data, list_zones_utm, year, month, bands)
-    # print("IMAGE URL", sigpac_image_url)
-    sigpac_image_url = download_sen2sr_parcel_image(geometry, date, coordinates)
+    sigpac_image_url = download_sen2sr_parcel_image(geometry, date)
     return geometry, metadata, sigpac_image_url
 
-def download_sen2sr_parcel_image(geometry, date, coordinates):
-    if coordinates == None:
-        print("Using geometry")
+def download_sen2sr_parcel_image(geometry, date):
+    """
+    Download and super-resolve parcel image cropped from Sentinel imagery cubo data.
+
+    Arguments:
+        geometry (dict): Geometry containing the parcel/image's limits.
+        date (str): Most recent date to get the image from.
+    
+    Returns:
+        sigpac_image_url (str): Path to display SR image.
+    """
+    min_size = 128
+    if geometry:
         poly = shape(geometry)
-        print("CENTROID", poly.centroid, type(poly.centroid))
         lon, lat = float(poly.centroid.x), float(poly.centroid.y)
-        print(lat, lon)
+        print("Centroid:", lat, lon)
     else:
-        print("Using coordinates")
-        lat, lon = coordinates
+        raise ValueError("Error: No GeoJSON or coordinates provided for parcel.")
     bands= BANDS
+
+    sr_size=max(min_size, polygon_pixel_size(geometry))
 
     year, month, day = date.split("-")
     formatted_date = datetime(year=int(year), month=int(month), day=int(day))
@@ -98,7 +113,7 @@ def download_sen2sr_parcel_image(geometry, date, coordinates):
     end_date = formatted_date.strftime("%Y-%m-%d")
     start_date = (formatted_date - timedelta(days=delta)).strftime("%Y-%m-%d")
 
-    sigpac_image_name = os.path.basename(get_sr_image(lat, lon, bands, start_date, end_date))
+    sigpac_image_name = os.path.basename(get_sr_image(lat, lon, bands, start_date, end_date, sr_size))
     sigpac_image_url = f"{os.getenv('API_URL')}/uploads/{os.path.basename(sigpac_image_name)}?v={int(time.time())}"
 
     return sigpac_image_url
