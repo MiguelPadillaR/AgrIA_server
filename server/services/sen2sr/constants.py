@@ -20,3 +20,6 @@ COMPARISON_PNG_FILEPATH = SEN2SR_SR_DIR / "OG-SR_comparison.png"
 GEOJSON_FILEPATH = SEN2SR_SR_DIR / "polygon.geojson"
 
 BANDS = ["B08", "B02", "B03", "B04", "SCL"]  # NIR + RGB + SCL
+
+# Bounding box for mainland Spain (lon_min, lat_min, lon_max, lat_max)
+SPAIN_MAINLAND = (-9.3, 36.0, 3.3, 43.8)
