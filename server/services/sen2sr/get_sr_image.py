@@ -117,7 +117,7 @@ def download_sentinel_cubo(lat: float, lon: float, bands: list, start_date: str,
     # Reproject to UTM zone 30N
     cloudless_image_data = cloudless_image_data.rio.reproject(crs)
     
-    print("☁️ Downloaded cloudless data!")
+    print("☁️  Downloaded cloudless data!")
     return cloudless_image_data
 
 # --------------------

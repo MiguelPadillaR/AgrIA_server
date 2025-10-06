@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import glob
 from pathlib import Path
@@ -81,7 +82,7 @@ def process_directory(input_dir, output_dir=SR5M_DIR, save_as_tif=True):
     Returns:
         (str): SR PNG filename (even if also saved as TIF).
     """
-    start_time = time.time()
+    start_time = datetime.now()
 
     all_files = glob.glob(os.path.join(input_dir, "*.tif*"))
     groups = {}
@@ -155,5 +156,5 @@ def process_directory(input_dir, output_dir=SR5M_DIR, save_as_tif=True):
         Image.fromarray(grid).save(comp_png)
         print(f"Saved comparison grid: {comp_png}")
 
-        print(f"\nTotal time taken:\t{(time.time() - start_time)/60:.1f} minutes")
+        print(f"\nTotal time taken:\t{datetime.now() - start_time}")
     return sr_image_path
