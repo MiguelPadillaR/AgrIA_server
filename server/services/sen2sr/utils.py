@@ -9,7 +9,9 @@ from rasterio.transform import from_bounds
 from xarray import DataArray
 from PIL import Image, ImageEnhance
 
+from ...config.constants import GET_SR_BENCHMARK
 
+from ...benchmark.utils import copy_file_to_dir
 from .constants import COMPARISON_PNG_FILEPATH, PNG_DIR, SPAIN_MAINLAND, TIF_DIR
 
 # --------------------
@@ -43,7 +45,7 @@ def save_to_tif(array, filepath, sample, crs: str):
 
     save_as_tif(array, filepath, transform, crs)
 
-def save_as_tif(image_nparray,filepath, transform, crs:str="EPSG:32630"):
+def save_as_tif(image_nparray, filepath, adjust_transform, crs:str="EPSG:32630"):
     """
     Uses `rasterio` to save a GeoTIFF image
     """
@@ -58,9 +60,18 @@ def save_as_tif(image_nparray,filepath, transform, crs:str="EPSG:32630"):
         count=image_nparray.shape[0],
         dtype="float32",
         crs=crs,
-        transform=transform
+        transform=adjust_transform
     ) as dst:
         dst.write(image_nparray)
+
+    if GET_SR_BENCHMARK:
+        print("Copying SEN3SR TIF file...")
+        if "original" in str(filepath):
+            print("ORIGINAL")
+            copy_file_to_dir(filepath, is_sr4s=None)
+        else:
+            print("SEN2SR")
+            copy_file_to_dir(filepath)
 
     print(f"✅ Saved {filepath} with corrected band order")
 

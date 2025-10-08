@@ -29,10 +29,15 @@ ANDALUSIA_TILES = ["29SPC", "29SQC", "30STH", "30SUH", "30SVH", "30SWH", "30SXH"
 
 
 SR_BANDS = ["B02", "B03", "B04", "B08"]
-BANDS_DIR = TEMP_UPLOADS_PATH / "bands"
-MERGED_BANDS_DIR = TEMP_UPLOADS_PATH / "merged_bands"
-MASKS_DIR = TEMP_UPLOADS_PATH / "masks"
-SR5M_DIR = TEMP_UPLOADS_PATH / "sr_5m"
+BANDS_DIR = TEMP_DIR / "bands"
+MERGED_BANDS_DIR = TEMP_DIR / "merged_bands"
+MASKS_DIR = TEMP_DIR / "masks"
+SR5M_DIR = TEMP_DIR / "sr_5m"
 RESOLUTION = 10
 
-SEN2SR_SR_DIR = TEMP_UPLOADS_PATH / "sr_2.5m"
+SEN2SR_SR_DIR = TEMP_DIR / "sr_2.5m"
+
+GET_SR_BENCHMARK = True
+
+if GET_SR_BENCHMARK:
+    print("WARNING: Super-Res benchmark is active. This will execute both SR4S and SEN2SR pipelines, slowing all parcel fetching processes. To deactivate it, set the `GET_SR_BENCHMARK` to `False` in the `Agria_server/server/config/constants.py` file")
