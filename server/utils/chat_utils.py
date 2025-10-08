@@ -1,5 +1,5 @@
 import os
-from server.config.constants import TEMP_UPLOADS_PATH
+from server.config.constants import TEMP_DIR
 
 def save_image_and_get_path(file) -> str:
     """
@@ -9,7 +9,7 @@ def save_image_and_get_path(file) -> str:
     Returns:
         filepath (str): Path of the stored image.
     """
-    upload_dir = TEMP_UPLOADS_PATH
+    upload_dir = TEMP_DIR
     os.makedirs(upload_dir, exist_ok=True)
     filename = file.filename
     filepath = os.path.join(upload_dir, filename)
@@ -62,7 +62,7 @@ def generate_image_context_data(image_date, image_crops, language) -> str:
 
         for lang in ["es", "en"]:
             results[lang] += templates[lang]["footer"].format(total=round(total_surface, 3))
-            desc_file = TEMP_UPLOADS_PATH / f"parcel_desc-{lang}.txt"
+            desc_file = TEMP_DIR / f"parcel_desc-{lang}.txt"
             print(f"\nGenerating file:\t{desc_file}")
             with open(desc_file, "w") as file:
                 file.write(results[lang])

@@ -13,7 +13,7 @@ from rasterio.mask import mask
 
 from .constants import *
 from .utils import apply_gamma, brighten, lonlat_to_utm_epsg, save_to_png, save_to_tif, get_cloudless_time_indices, make_pixel_faithful_comparison, reorder_bands, save_png
-from ...config.constants import RESOLUTION, TEMP_UPLOADS_PATH
+from ...config.constants import RESOLUTION, TEMP_DIR
 
 def get_sr_image(lat: float, lon: float, bands: list, start_date: str, end_date: str, size: int):
     """
@@ -76,7 +76,7 @@ def get_sr_image(lat: float, lon: float, bands: list, start_date: str, end_date:
         sr_image_filepath = str(crop_parcel_from_sr_tif(SR_TIF_FILEPATH))
         return sr_image_filepath
     except Exception as e:
-        print(f"An error occurred (get_sr_iamge SEN2SR): {str(e)}")
+        print(f"An error occurred (get_sr_image SEN2SR): {str(e)}")
         raise
 
 # --------------------
@@ -169,7 +169,7 @@ def crop_parcel_from_sr_tif(raster_path:str):
         dest.write(out_image)
 
     # Save cropped PNG
-    out_png_path= TEMP_UPLOADS_PATH / f"SR_{now.year}_{now.month}.png"
+    out_png_path= TEMP_DIR / f"SR_{now.year}_{now.month}.png"
     out_image = brighten(out_image, 2.2)
     out_image = apply_gamma(out_image, 1.8)
     save_png(out_image, out_png_path)

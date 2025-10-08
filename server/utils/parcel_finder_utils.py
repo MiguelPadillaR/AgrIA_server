@@ -8,7 +8,7 @@ from pyproj import Transformer, CRS
 from ..services.sr4s.im.get_image_bands import download_sentinel_bands
 from ..services.sr4s.sr.get_sr_image import process_directory
 from ..services.sr4s.sr.utils import percentile_stretch, set_reflectance_scale
-from ..config.constants import ANDALUSIA_TILES, TEMP_UPLOADS_PATH, SR_BANDS, RESOLUTION, BANDS_DIR, MERGED_BANDS_DIR, MASKS_DIR, SR5M_DIR
+from ..config.constants import ANDALUSIA_TILES, TEMP_DIR, SR_BANDS, RESOLUTION, BANDS_DIR, MERGED_BANDS_DIR, MASKS_DIR, SR5M_DIR
 from ..config.config import Config
 
 from ..config.minio_client import minioClient, bucket_name
@@ -288,7 +288,7 @@ def get_rgb_composite(merged_paths, geojson_data):
             rgb_tif_paths (list of tuple): List of tuples containing (GeoTIFF file path, year, month) for each generated RGB composite.
     """
 
-    out_dir = TEMP_UPLOADS_PATH
+    out_dir = TEMP_DIR
 
     # Check for the RBG + B08 bands for L1BSR upscale
     get_sr_image = len(merged_paths) == 4 and any(SR_BANDS[-1] in path for path in merged_paths)
@@ -328,7 +328,7 @@ def get_rgb_composite(merged_paths, geojson_data):
                 geojson_data["features"], crs="EPSG:4326"
             ),
             geometry_id="",
-            output_dir=TEMP_UPLOADS_PATH,
+            output_dir=TEMP_DIR,
             fmt="png"
         )
 
@@ -481,7 +481,12 @@ def cut_from_geometry(gdf_parcel, format, image_paths, geometry_id):
         get_sr_image = len(image_paths) == 4 and any(SR_BANDS[-1] in path for path in image_paths)
 
         if get_sr_image:
-            geometry = bbox_from_polygon(geometry)
+            if geometry:
+                geometry = bbox_from_polygon(geometry)
+            # TODO:
+            # else: 
+            #     geometry = get_bbox_from_center(lat, lon, min_size, min_size, RESOLUTION).geojson
+
         
         # Sanity check
         if isinstance(geometry, dict):
@@ -749,11 +754,11 @@ def merge_and_convert_to_geometry(feature_collection: dict) -> dict:
     del transformer
     return mapping(merged) 
 
-def reset_temp_dir():
+def reset_dir(dir: Path | str):
     # Clear uploaded files and dirs
-    if os.path.exists(TEMP_UPLOADS_PATH):
-        for file in os.listdir(TEMP_UPLOADS_PATH):
-            file_path = os.path.join(os.getcwd(), TEMP_UPLOADS_PATH, file)
+    if os.path.exists(dir):
+        for file in os.listdir(dir):
+            file_path = os.path.join(os.getcwd(), dir, file)
             if os.path.isfile(file_path) or os.path.islink(file_path):
                 os.unlink(file_path)
             elif os.path.isdir(file_path):
