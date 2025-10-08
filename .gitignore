@@ -1,8 +1,11 @@
 .env
-temp
+*temp*
 .venv
 *__pycache__/
 *.kml
 *.png
+*.tif*
 *assets/.scripts
-*model/
+*model*
+*data*
+*res*
