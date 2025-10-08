@@ -7,6 +7,10 @@ import traceback
 from flask import abort
 from sigpac_tools.find import find_from_cadastral_registry, geometry_from_coords
 
+from ..benchmark.compare_sr_metrics import compare_sr_metrics
+
+from ..benchmark.constants import BM_DATA_DIR, BM_RES_DIR
+
 from .sen2sr.utils import is_in_spain
 from .sen2sr.get_sr_image import get_sr_image
 from .sen2sr.constants import BANDS, GEOJSON_FILEPATH
@@ -86,12 +90,17 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
     sigpac_image_url = ''
     print("GET_SR_BENCHMARK", GET_SR_BENCHMARK)
     if GET_SR_BENCHMARK:
+        reset_dir(BM_DATA_DIR)
+        reset_dir(BM_RES_DIR)
         sigpac_image_url = download_parcel_image(cadastral_reference, geojson_data, list_zones_utm, year, month, bands)
     time1 = datetime.now()-init
     msg1 = f"\nTIME TAKEN (SENTINEL HUB / MINIO + SR4S): {time1}" if sigpac_image_url else ""
     init2 = datetime.now()
     sigpac_image_url = download_sen2sr_parcel_image(geometry, date)
     print(msg1 + f"\nTIME TAKEN (SEN2SR): {datetime.now()-init2}")
+    if GET_SR_BENCHMARK:
+        compare_sr_metrics()
+
     return geometry, metadata, sigpac_image_url
 
 def download_sen2sr_parcel_image(geometry, date):

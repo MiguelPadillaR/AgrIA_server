@@ -3,108 +3,52 @@ import numpy as np
 import pandas as pd
 from skimage.metrics import structural_similarity as ssim, peak_signal_noise_ratio as psnr
 from datetime import datetime
-import cv2, os, glob
+import os, glob
 
-from .constants import BM_DIR, BM_DATA_DIR, BM_RES_DIR, BM_SR_DIR
+from .constants import BM_DATA_DIR, BM_SR_DIR, BM_RES_DIR
+from .utils import *
 
+def compare_sr_metrics():
+    # Collect all ground truths
+    gt_files = sorted(glob.glob(str(BM_DATA_DIR / "*_original.tif")))
+    sr_files = sorted(glob.glob(str(BM_SR_DIR / "*.tif")))
 
-EPS = 1e-10
+    if not gt_files or not sr_files:
+        raise FileNotFoundError("Missing ground truth or SR files")
 
-def spectral_angle_mapper(img1, img2):
-    """Mean SAM across pixels (img shape H,W,B). Returns radians."""
-    # Flatten pixels x bands
-    a = img1.reshape(-1, img1.shape[-1])
-    b = img2.reshape(-1, img2.shape[-1])
-    dot = np.sum(a * b, axis=1)
-    denom = np.linalg.norm(a, axis=1) * np.linalg.norm(b, axis=1) + EPS
-    angles = np.arccos(np.clip(dot / denom, -1.0, 1.0))
-    return np.mean(angles)
+    print(f"Found {len(gt_files)} ground truths and {len(sr_files)} SR images.")
 
-def ergas(sr, gt, ratio=2):
-    """ERGAS metric. ratio = resolution_LR / resolution_HR (e.g., 2 for 20->10m)."""
-    gt = gt.astype(np.float64)
-    sr = sr.astype(np.float64)
-    mean_gt = np.mean(gt, axis=(0,1))
-    mse = np.mean((sr - gt)**2, axis=(0,1))
-    # Avoid divide by zero for mean_gt
-    denom = (mean_gt**2 + EPS)
-    return 100.0 * ratio * np.sqrt(np.mean(mse / denom))
+    paired = {}
 
-def resize_image(img, target_shape):
-    """
-    Resize HxWxB image to target_shape (h, w) using bicubic interpolation.
-    img: numpy array HxWxB
-    """
-    Ht, Wt = target_shape
-    bands = img.shape[-1]
-    out = np.zeros((Ht, Wt, bands), dtype=np.float32)
-    for b in range(bands):
-        out[..., b] = cv2.resize(img[..., b], (Wt, Ht), interpolation=cv2.INTER_CUBIC)
-    return out
+    for gt_path in gt_files:
+        gt_name = os.path.basename(gt_path)
+        ts_gt = extract_timestamp(gt_name)
+        if ts_gt is None:
+            print(f"⚠️ Skipping {gt_name} (no timestamp found)")
+            continue
 
-def detect_and_normalize(sr, gt, auto_normalize=True):
-    """
-    Decide whether to normalize sr to gt. Returns (sr_mapped, normalized_flag, method, per_band_stats, warnings)
-    Normalization logic:
-      - Compute per-band max ratios sr_max / (gt_max + EPS). If median ratio > 5 or < 0.2 => we map per-band SR range -> GT range.
-      - Otherwise do nothing (assume same units).
-    The mapping is per-band linear mapping:
-      sr_mapped_b = (sr_b - sr_b_min)/(sr_b_max - sr_b_min) * (gt_b_max - gt_b_min) + gt_b_min
-    """
-    warnings = []
-    sr = sr.astype(np.float32)
-    gt = gt.astype(np.float32)
+        sr_sen2sr = find_closest_sr(ts_gt, sr_files, "SEN2SR")
+        sr_sr4s = find_closest_sr(ts_gt, sr_files, "SR4S")
 
-    bands = gt.shape[-1]
-    per_band_stats = []
-    ratios = []
-    for b in range(bands):
-        gt_b = gt[..., b]
-        sr_b = sr[..., b]
-        gt_min, gt_max = float(np.nanmin(gt_b)), float(np.nanmax(gt_b))
-        sr_min, sr_max = float(np.nanmin(sr_b)), float(np.nanmax(sr_b))
-        per_band_stats.append({
-            "band": b,
-            "gt_min": gt_min, "gt_max": gt_max,
-            "sr_min": sr_min, "sr_max": sr_max
-        })
-        # compute ratio safely
-        ratios.append((sr_max / (gt_max + EPS)) if (gt_max + EPS) != 0 else np.inf)
+        paired[ts_gt] = {
+            "gt": gt_path,
+            "SEN2SR": sr_sen2sr,
+            "SR4S": sr_sr4s
+        }
 
-    median_ratio = float(np.median(ratios))
-    # Heuristics to decide mapping
-    normalized = False
-    method = "none"
+    # Now evaluate
+    for ts, files in paired.items():
+        gt_path = files["gt"]
+        for model_name in ["SEN2SR", "SR4S"]:
+            sr_path = files[model_name]
+            if not sr_path or not os.path.exists(sr_path):
+                print(f"⚠️ Missing {model_name} for timestamp {ts}")
+                continue
+            print(f"\n🚀 Benchmarking {model_name} for {os.path.basename(gt_path)} ...")
+            compute_metrics_for_folder(gt_path, os.path.dirname(sr_path),
+                                       output_dir=BM_RES_DIR, ratio=2, auto_normalize=True)
 
-    if auto_normalize:
-        # If GT looks like [0..1] and SR is on a much larger numeric scale OR the median ratio is huge/small -> map
-        if median_ratio > 5.0 or median_ratio < 0.2 or np.nanmax([s["sr_max"] for s in per_band_stats]) > 1000 and np.nanmax([s["gt_max"] for s in per_band_stats]) <= 1.5:
-            # map per-band
-            sr_mapped = np.empty_like(sr, dtype=np.float32)
-            for b in range(bands):
-                smin = per_band_stats[b]["sr_min"]
-                smax = per_band_stats[b]["sr_max"]
-                gmin = per_band_stats[b]["gt_min"]
-                gmax = per_band_stats[b]["gt_max"]
-                if (smax - smin) < EPS:
-                    # constant band in SR: set to GT mean (avoid divide by zero)
-                    sr_mapped[..., b] = np.full(sr[..., b].shape, np.nanmean(gt[..., b]), dtype=np.float32)
-                    warnings.append(f"band_{b}_constant_sr; set to gt_mean")
-                else:
-                    sr_norm = (sr[..., b] - smin) / (smax - smin)
-                    sr_mapped[..., b] = (sr_norm * (gmax - gmin)) + gmin
-            normalized = True
-            method = "per_band_mapped_to_gt_range"
-        else:
-            sr_mapped = sr  # do nothing
-            normalized = False
-            method = "none"
-    else:
-        sr_mapped = sr
-        normalized = False
-        method = "auto_normalize_disabled"
-
-    return sr_mapped, normalized, method, per_band_stats, warnings
+    print("\n✅ Benchmark complete for all available pairs.")
 
 def compute_metrics_for_folder(gt_path, sr_folder, output_dir="results", ratio=2, auto_normalize=True):
     # Load GT
@@ -206,24 +150,3 @@ def compute_metrics_for_folder(gt_path, sr_folder, output_dir="results", ratio=2
     print(df)
     print(df[["filename_gt","filename_sr","Resized","PSNR","SSIM","RMSE","SAM_rad","ERGAS"]])
     return csv_path
-
-def check_normalization(filelist):
-    print("Files:", filelist)
-    for path in filelist:
-        with rasterio.open(path) as src:
-            arr = src.read(1).astype(np.float32)
-        print(path, np.min(arr), np.max(arr))
-
-# Example usage:
-GT_FILE = BM_DATA_DIR / "original.tif"
-
-os.makedirs(BM_SR_DIR, exist_ok=True)
-os.makedirs(BM_RES_DIR, exist_ok=True)
-
-compute_metrics_for_folder(GT_FILE, BM_SR_DIR, output_dir=BM_RES_DIR, ratio=2, auto_normalize=True)
-
-# Get all files list:
-filelist = [BM_SR_DIR / file for file in os.listdir(BM_SR_DIR)]
-filelist.append(GT_FILE)
-
-# check_normalization(filelist)
