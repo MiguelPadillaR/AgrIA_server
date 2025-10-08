@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import glob
 from pathlib import Path
@@ -9,7 +10,7 @@ import rasterio
 
 from PIL import Image
 
-from ....config.constants import SR_BANDS, SR_DIR
+from ....config.constants import SR_BANDS, SR5M_DIR
 
 from .utils import percentile_stretch, stack_bgrn, make_grid
 from .L1BSR_wrapper import L1BSR
@@ -70,7 +71,7 @@ def save_multiband_tif(sr: np.ndarray, reference_band: str, out_path: str):
             dst.write(sr_clean[..., i], i + 1)
             dst.set_band_description(i + 1, f"B{i+1}")  # optional: label bands
 
-def process_directory(input_dir, output_dir=SR_DIR, save_as_tif=True):
+def process_directory(input_dir, output_dir=SR5M_DIR, save_as_tif=True):
     """
     Process directory where image bands are found for all images found and super-resolves them.
     Saves SR image and comparison image between original and SR version.
@@ -81,7 +82,7 @@ def process_directory(input_dir, output_dir=SR_DIR, save_as_tif=True):
     Returns:
         (str): SR PNG filename (even if also saved as TIF).
     """
-    start_time = time.time()
+    start_time = datetime.now()
 
     all_files = glob.glob(os.path.join(input_dir, "*.tif*"))
     groups = {}
@@ -155,5 +156,5 @@ def process_directory(input_dir, output_dir=SR_DIR, save_as_tif=True):
         Image.fromarray(grid).save(comp_png)
         print(f"Saved comparison grid: {comp_png}")
 
-        print(f"\nTotal time taken:\t{(time.time() - start_time)/60:.1f} minutes")
+        print(f"\nTotal time taken:\t{datetime.now() - start_time}")
     return sr_image_path

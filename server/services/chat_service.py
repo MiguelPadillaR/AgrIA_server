@@ -47,7 +47,7 @@ def get_parcel_description(image_date, image_crops, image_filename, is_detailed_
     """
     try:
         # Build image context prompt
-        image_context_data = generate_image_context_data(image_date, image_crops)
+        image_context_data = generate_image_context_data(image_date, image_crops, lang)
 
         # Insert image context prompt and read image desc file
         image_desc_prompt =  FULL_DESC_TRIGGER if is_detailed_description else SHORT_DESC_TRIGGER
@@ -60,7 +60,7 @@ def get_parcel_description(image_date, image_crops, image_filename, is_detailed_
         image_indication_prompt  = image_indication_options[lang]+ "\n\n" + image_desc_prompt
 
         # Open image from path
-        image_path = Path(os.path.join(TEMP_UPLOADS_PATH, image_filename))
+        image_path = TEMP_UPLOADS_PATH / str(image_filename).split("?")[0]
         image = Image.open(image_path)
 
         response = {

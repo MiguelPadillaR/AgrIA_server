@@ -5,9 +5,9 @@ channels:
 dependencies:
   - python=3.11
   # Core scientific stack
-  - numpy<2
+  - numpy<2   # Avoid numpy 2 for now due to compatibility issues with torch
   - pandas
-  # Geospatial stack (conda-forge compiled binaries!)
+  # Geospatial stack (conda-forge compiled binaries! much faster/safer than pip wheels)
   - geopandas
   - shapely
   - pyproj
@@ -17,18 +17,30 @@ dependencies:
   # pip available
   - pip
   - pip:
+      # Core backend
       - Flask
       - flask-cors
       - google.genai
+      - matplotlib
       - minio
-      - opencv-python<4.12
+      - opencv-python<4.12  # Avoid opencv 4.12 for now due to compatibility issues with torch & numpy
       - Pillow
       - protobuf
       - pytest
       - python-dotenv
       - requests
+      - rioxarray
       - safetensors
       - sentinelhub
       - sigpac-tools @ git+https://github.com/KhaosResearch/sigpac-tools.git@07145bcaebcdf37bc5b24191950a3f0a666841b4
-      - torch
-      - torchvision
+
+      # PyTorch with CUDA 12.1 (instead of generic torch/torchvision)
+      - torch==2.4.1+cu121 torchvision==0.19.1+cu121 -f https://download.pytorch.org/whl/torch_stable.html
+
+      # SEN2SR stack
+      - sen2sr
+      - mlstac
+      - git+https://github.com/ESDS-Leipzig/cubo.git
+
+      # Full version only (requires CUDA > 12 & GPU runtime!)
+      # Needs manual: pip install mamba-ssm --no-build-isolation

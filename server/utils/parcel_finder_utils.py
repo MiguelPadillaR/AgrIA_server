@@ -8,7 +8,7 @@ from pyproj import Transformer, CRS
 from ..services.sr4s.im.get_image_bands import download_sentinel_bands
 from ..services.sr4s.sr.get_sr_image import process_directory
 from ..services.sr4s.sr.utils import percentile_stretch, set_reflectance_scale
-from ..config.constants import ANDALUSIA_TILES, TEMP_UPLOADS_PATH, SR_BANDS, RESOLUTION, BANDS_DIR, MERGED_BANDS_DIR, MASKS_DIR, SR_DIR
+from ..config.constants import ANDALUSIA_TILES, TEMP_UPLOADS_PATH, SR_BANDS, RESOLUTION, BANDS_DIR, MERGED_BANDS_DIR, MASKS_DIR, SR5M_DIR
 from ..config.config import Config
 
 from ..config.minio_client import minioClient, bucket_name
@@ -293,7 +293,7 @@ def get_rgb_composite(merged_paths, geojson_data):
     # Check for the RBG + B08 bands for L1BSR upscale
     get_sr_image = len(merged_paths) == 4 and any(SR_BANDS[-1] in path for path in merged_paths)
     if get_sr_image:
-        out_dir = SR_DIR
+        out_dir = SR5M_DIR
         out_dir.mkdir(parents=True, exist_ok=True)
         
     png_paths = []
@@ -319,7 +319,7 @@ def get_rgb_composite(merged_paths, geojson_data):
         input_dir = Path(merged_paths[0]).parent
         print(f"\nProcessing {input_dir} directory for SR upscale...\n")
         sr_tif_path = process_directory(input_dir)
-        sr_tif = os.path.join(SR_DIR, os.path.splitext(os.path.basename(sr_tif_path))[0] + '.tif')
+        sr_tif = os.path.join(SR5M_DIR, os.path.splitext(os.path.basename(sr_tif_path))[0] + '.tif')
         
         # Crop parcel from SR RGB
         cropped_sr = crop_raster_to_geometry(

@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from ..config.constants import TEMP_UPLOADS_PATH
 from ..utils.parcel_finder_utils import *
 from ..services.parcel_finder_service import get_parcel_image
@@ -81,7 +82,7 @@ def find_parcel():
             "imagePath": url_image_address,
             "metadata": metadata,
         }
-        print("TIME TAKEN:", datetime.now() - init)
+        print(f"\nTOTAL TIME TAKEN: {datetime.now() - init}\n")
         return jsonify({'response': response})
     except Exception as e:
         return jsonify({'error': str(e)}), 500

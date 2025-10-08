@@ -5,3 +5,4 @@ temp
 *.kml
 *.png
 *assets/.scripts
+*model/

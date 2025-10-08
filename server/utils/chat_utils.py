@@ -16,7 +16,7 @@ def save_image_and_get_path(file) -> str:
     file.save(filepath)
     return filepath
 
-def generate_image_context_data(image_date, image_crops) -> str:
+def generate_image_context_data(image_date, image_crops, language) -> str:
     """
     Retrieves image context data for prompt generation.
     Generates both English and Spanish versions and saves them as text files.
@@ -62,7 +62,9 @@ def generate_image_context_data(image_date, image_crops) -> str:
 
         for lang in ["es", "en"]:
             results[lang] += templates[lang]["footer"].format(total=round(total_surface, 3))
-            with open(TEMP_UPLOADS_PATH / f"parcel_desc-{lang}.txt", "w") as file:
+            desc_file = TEMP_UPLOADS_PATH / f"parcel_desc-{lang}.txt"
+            print(f"\nGenerating file:\t{desc_file}")
+            with open(desc_file, "w") as file:
                 file.write(results[lang])
 
         return results
