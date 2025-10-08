@@ -1,5 +1,5 @@
 # Attribution and License
-This module is built upon the core model and concepts of the `sen2sr` Python package.
+We appreciate the work done by the [ESAOpenSR](https://opensr.eu/) team in upscaling and super-resolving satellite imagery and making SR models accessible through Open Source code. This module is built upon the core model and concepts of the `sen2sr` Python package.
 
 - Original Repository: https://github.com/ESAOpenSR/SEN2SR.git
 

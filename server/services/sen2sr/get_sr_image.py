@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from rasterio.mask import mask
 
 from .constants import *
-from .utils import apply_gamma, brighten, lonlat_to_utm_epsg, save_to_png, save_to_tif, get_cloudless_time_indices, make_comparison_grid, reorder_bands, save_png
+from .utils import apply_gamma, brighten, lonlat_to_utm_epsg, save_to_png, save_to_tif, get_cloudless_time_indices, make_pixel_faithful_comparison, reorder_bands, save_png
 from ...config.constants import RESOLUTION, TEMP_UPLOADS_PATH
 
 def get_sr_image(lat: float, lon: float, bands: list, start_date: str, end_date: str, size: int):
@@ -70,7 +70,7 @@ def get_sr_image(lat: float, lon: float, bands: list, start_date: str, end_date:
         save_to_png(superX_reordered, SR_PNG_FILEPATH)
 
         # Make comparison grid TODO
-        # make_comparison_grid(original_s2_numpy, superX)
+        make_pixel_faithful_comparison(original_s2_reordered, superX_reordered)
 
         # Get and save cropped sr parcel image
         sr_image_filepath = str(crop_parcel_from_sr_tif(SR_TIF_FILEPATH))
@@ -170,7 +170,7 @@ def crop_parcel_from_sr_tif(raster_path:str):
 
     # Save cropped PNG
     out_png_path= TEMP_UPLOADS_PATH / f"SR_{now.year}_{now.month}.png"
-    out_image = brighten(out_image)
+    out_image = brighten(out_image, 2.2)
     out_image = apply_gamma(out_image, 1.8)
     save_png(out_image, out_png_path)
 

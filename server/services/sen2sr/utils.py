@@ -9,7 +9,6 @@ from rasterio.transform import from_bounds
 from xarray import DataArray
 from PIL import Image, ImageEnhance
 
-from ..sr4s.sr.utils import make_grid
 
 from .constants import COMPARISON_PNG_FILEPATH, PNG_DIR, SPAIN_MAINLAND, TIF_DIR
 
@@ -171,23 +170,64 @@ def prepare_rgb(arr, is_tensor=False):
     rgb_norm = (rgb - rgb.min()) / (rgb.max() - rgb.min() + 1e-6)
     return (rgb_norm * 255).astype(np.uint8)
 
-
-def make_comparison_grid(original, superres):
+def make_pixel_faithful_comparison(original_arr, sr_arr, output_path=COMPARISON_PNG_FILEPATH, brighten_factor=1.2, gamma=1.2, border=15, spacing=15, bg_color=(255, 255, 255)):
     """
-    Creates side-by-side comparison grid of original vs SR image.
-    original, superres: arrays (bands,H,W) with [NIR,B,G,R] order.
+    Create a side-by-side comparison between original and SR images with
+    white borders and padding. The original is upscaled with nearest-neighbor
+    to match SR size (preserves pixelation).
     """
-    og_img = prepare_rgb(original)          # convert to RGB
-    sr_img = prepare_rgb(superres, True)    # tensor → numpy → RGB
 
-    # Resize original to match SR dimensions
-    h_ref, w_ref = sr_img.shape[:2]
-    og_img_resized = cv2.resize(og_img, (w_ref, h_ref), interpolation=cv2.INTER_CUBIC)
+    if not isinstance(sr_arr, np.ndarray):
+        sr_arr = sr_arr.detach().cpu().numpy()
 
-    # Make grid
-    grid = make_grid([og_img_resized, sr_img], ncols=2)
-    Image.fromarray(grid).save(COMPARISON_PNG_FILEPATH)
-    print(f"✅ Saved comparison grid: {COMPARISON_PNG_FILEPATH}")
+    def normalize_and_brighten(arr):
+        arr = arr[:3]
+        rgb = np.transpose(arr, (1, 2, 0))
+        rgb_min, rgb_max = rgb.min(), rgb.max()
+        if rgb_max > rgb_min:
+            rgb = (rgb - rgb_min) / (rgb_max - rgb_min)
+        rgb = np.clip(rgb * brighten_factor, 0, 1)
+        rgb = np.clip(rgb ** (1 / gamma), 0, 1)
+        return (rgb * 255).astype(np.uint8)
+
+    img_original = normalize_and_brighten(original_arr)
+    img_sr = normalize_and_brighten(sr_arr)
+
+    # Match sizes
+    target_size = (img_sr.shape[1], img_sr.shape[0])
+    img_original_upscaled = np.array(
+        Image.fromarray(img_original).resize(target_size, resample=Image.NEAREST)
+    )
+
+    # Convert to PIL and add white border
+    def add_border(img_np):
+        img = Image.fromarray(img_np)
+        bordered = Image.new("RGB", (img.width + 2 * border, img.height + 2 * border), bg_color)
+        bordered.paste(img, (border, border))
+        return bordered
+
+    img_original_bordered = add_border(img_original_upscaled)
+    img_sr_bordered = add_border(img_sr)
+
+    # Canvas size
+    total_width = img_original_bordered.width + img_sr_bordered.width + spacing
+    total_height = max(img_original_bordered.height, img_sr_bordered.height)
+
+    canvas = Image.new("RGB", (total_width, total_height), bg_color)
+    canvas.paste(img_original_bordered, (0, (total_height - img_original_bordered.height) // 2))
+    canvas.paste(img_sr_bordered, (img_original_bordered.width + spacing,
+                                   (total_height - img_sr_bordered.height) // 2))
+
+    # Add labels
+    # draw = ImageDraw.Draw(canvas)
+    # font = ImageFont.load_default()
+    # draw.text((border, 10), "Original Sentinel (nearest-neighbor upscaled)", fill=(0, 0, 0), font=font)
+    # draw.text((img_original_bordered.width + spacing + border, 10),
+    #           "Super-Resolved (native resolution)", fill=(0, 0, 0), font=font)
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    canvas.save(output_path)
+    print(f"✅ Saved pixel-faithful comparison with padding → {output_path}")
 
 def lonlat_to_utm_epsg(lon, lat):
     """
