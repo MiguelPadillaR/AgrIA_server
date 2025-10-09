@@ -9,7 +9,6 @@ from ..services.sr4s.im.get_image_bands import download_sentinel_bands
 from ..services.sr4s.sr.get_sr_image import process_directory
 from ..services.sr4s.sr.utils import percentile_stretch, set_reflectance_scale
 from ..config.constants import ANDALUSIA_TILES, TEMP_DIR, SR_BANDS, RESOLUTION, BANDS_DIR, MERGED_BANDS_DIR, MASKS_DIR, SR5M_DIR
-from ..config.config import Config
 
 from ..config.minio_client import minioClient, bucket_name
 from collections import defaultdict

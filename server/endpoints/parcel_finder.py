@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 from ..config.constants import TEMP_DIR
-from ..utils.parcel_finder_utils import *
+from ..utils.parcel_finder_utils import check_cadastral_data, reset_dir
 from ..services.parcel_finder_service import get_parcel_image
 from flask import Blueprint, make_response, request, jsonify, send_from_directory
 
@@ -58,7 +58,6 @@ def find_parcel():
         municipality = request.form.get('municipality')
         polygon = request.form.get('polygon')
         parcel_id = request.form.get('parcelId')
-        
         if is_from_cadastral_reference:
             cadastral_reference = check_cadastral_data(cadastral_reference, province, municipality, polygon, parcel_id)
 

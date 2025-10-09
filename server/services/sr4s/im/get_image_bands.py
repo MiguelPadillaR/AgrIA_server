@@ -7,6 +7,10 @@ from .utils import *
 from ....config.constants import BANDS_DIR
 from ..constants import DELTA_DAYS, RESOLUTION, SIZE
 
+from contextvars import ContextVar
+
+request_date: ContextVar[str] = ContextVar("request_date", default="")
+
 config = SHConfig(CONFIG_NAME)
 
 if not config.sh_client_id or not config.sh_client_secret:
@@ -32,7 +36,7 @@ def download_sentinel_image(lat, lon, size, filename, evalscript):
     width, height = bbox_to_dimensions(bbox, resolution=RESOLUTION)
     year, month = filename.split("-")[0].split("_")
     # Get a range of dates to ensure cloud-free scenes
-    date = datetime(year=int(year), month=int(month), day=random.randint(1,28))
+    date = datetime(year=int(year), month=int(month), day=int(request_date.get().split("-")[-1]))
     date = date if date < datetime.now() else datetime.now() - timedelta(days=1)
     delta = DELTA_DAYS
     look_from = date - timedelta(days=delta)

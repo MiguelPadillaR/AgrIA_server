@@ -19,6 +19,8 @@ from ..services.sr4s.im.utils import get_bbox_from_center
 from ..config.constants import GET_SR_BENCHMARK, SEN2SR_SR_DIR, SR_BANDS, RESOLUTION
 from ..utils.parcel_finder_utils import *
 
+from .sr4s.im.get_image_bands import request_date
+
 def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_reference: bool= True, parcel_geometry: str  = None, parcel_metadata: str = None, coordinates: list[float] = None, get_sr_image: bool = True) -> tuple:
     """
     Retrieves a SIGPAC image and data for a specific parcel.
@@ -36,6 +38,7 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
         sigpac_image_url (str): URL of the SIGPAC image.
     """
     init = datetime.now()
+    request_date.set(date)
     year, month, _ = date.split("-")
     # Get parcel data
     if cadastral_reference:
@@ -97,9 +100,14 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
     msg1 = f"\nTIME TAKEN (SENTINEL HUB / MINIO + SR4S): {time1}" if sigpac_image_url else ""
     init2 = datetime.now()
     sigpac_image_url = download_sen2sr_parcel_image(geometry, date)
-    print(msg1 + f"\nTIME TAKEN (SEN2SR): {datetime.now()-init2}")
+    msg2 = f"TIME TAKEN (SEN2SR): {datetime.now()-init2}"
+    msg3 = ''
     if GET_SR_BENCHMARK:
+        init3 = datetime.now()
         compare_sr_metrics()
+        msg2 = f"TIME TAKEN (BENCHMARK): {datetime.now()-init3}"
+
+    print(msg1 + msg2 + msg3)
 
     return geometry, metadata, sigpac_image_url
 
