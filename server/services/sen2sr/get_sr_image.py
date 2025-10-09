@@ -69,7 +69,7 @@ def get_sr_image(lat: float, lon: float, bands: list, start_date: str, end_date:
         save_to_png(original_s2_reordered, OG_PNG_FILEPATH)
         save_to_png(superX_reordered, SR_PNG_FILEPATH)
 
-        # Make comparison grid TODO
+        # Make comparison grid
         make_pixel_faithful_comparison(original_s2_reordered, superX_reordered)
 
         # Get and save cropped sr parcel image
@@ -170,9 +170,7 @@ def crop_parcel_from_sr_tif(raster_path:str):
 
     # Save cropped PNG
     out_png_path= TEMP_DIR / f"SR_{now.year}_{now.month}.png"
-    out_image = brighten(out_image, 2.2)
-    out_image = apply_gamma(out_image, 1.8)
-    save_png(out_image, out_png_path)
+    save_to_png(out_image, out_png_path)
 
     print(f"✅ Clipped raster saved to {out_tif_path} and PNG saved to {out_png_path}")
     

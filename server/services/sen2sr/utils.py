@@ -12,7 +12,7 @@ from PIL import Image, ImageEnhance
 from ...config.constants import GET_SR_BENCHMARK
 
 from ...benchmark.utils import copy_file_to_dir
-from .constants import COMPARISON_PNG_FILEPATH, PNG_DIR, SPAIN_MAINLAND, TIF_DIR
+from .constants import BRIGHTNESS_FACTOR, COMPARISON_PNG_FILEPATH, GAMMA, PNG_DIR, SPAIN_MAINLAND, TIF_DIR
 
 # --------------------
 # GeoTIFF + PNG export
@@ -43,9 +43,9 @@ def save_to_tif(array, filepath, sample, crs: str):
     height, width = array.shape[1], array.shape[2]
     transform = from_bounds(minx, miny, maxx, maxy, width, height)
 
-    save_as_tif(array, filepath, transform, crs)
+    save_tif(array, filepath, transform, crs)
 
-def save_as_tif(image_nparray, filepath, adjust_transform, crs:str="EPSG:32630"):
+def save_tif(image_nparray, filepath, adjust_transform, crs:str="EPSG:32630"):
     """
     Uses `rasterio` to save a GeoTIFF image
     """
@@ -82,14 +82,7 @@ def save_to_png(image_nparray, filepath):
     save_png(image_nparray, filepath)
     print(f"✅ Saved {filepath} with correct colors")
 
-def brighten(img, factor=3):
-    """Brighten both by scaling and clipping"""
-    return np.clip(img * factor, 0, 1)
-
-def apply_gamma(img, gamma = 0.8):
-    return np.clip(img ** gamma, 0, 1)
-
-def save_png(arr, path, enhance_contrast=False, contrast_factor=1.5, apply_gamma=False, gamma=1.6, transparent_nodata=True):
+def save_png(arr, path, enhance_contrast=True, contrast_factor=1.5, apply_gamma_correction=False, gamma=GAMMA, transparent_nodata=True):
     """
     Save an RGB raster (bands, H, W) as PNG with optional contrast, gamma correction,
     and transparent background for nodata areas.
@@ -110,9 +103,9 @@ def save_png(arr, path, enhance_contrast=False, contrast_factor=1.5, apply_gamma
         rgb_norm = np.zeros_like(rgb, dtype=float)
 
     # Apply gamma correction if requested
-    if apply_gamma:
-        rgb_norm = apply_gamma(rgb_norm)
-
+    if apply_gamma_correction:
+        rgb_norm = apply_gamma(rgb_norm, gamma)
+    
     # Scale to 0-255
     rgb_uint8 = (rgb_norm * 255).astype(np.uint8)
 
@@ -132,6 +125,13 @@ def save_png(arr, path, enhance_contrast=False, contrast_factor=1.5, apply_gamma
         img = enhancer.enhance(contrast_factor)
 
     img.save(path, "PNG")
+
+def brighten(img, factor=BRIGHTNESS_FACTOR):
+    """Brighten both by scaling and clipping"""
+    return np.clip(img * factor, 0, 1)
+
+def apply_gamma(img, gamma = GAMMA):
+    return np.clip(img ** (1 / gamma), 0, 1)
 
 def get_cloudless_time_indices(scl: DataArray, cloud_threshold = 0.01):
     """
@@ -181,7 +181,7 @@ def prepare_rgb(arr, is_tensor=False):
     rgb_norm = (rgb - rgb.min()) / (rgb.max() - rgb.min() + 1e-6)
     return (rgb_norm * 255).astype(np.uint8)
 
-def make_pixel_faithful_comparison(original_arr, sr_arr, output_path=COMPARISON_PNG_FILEPATH, brighten_factor=1.2, gamma=1.2, border=15, spacing=15, bg_color=(255, 255, 255)):
+def make_pixel_faithful_comparison(original_arr, sr_arr, output_path=COMPARISON_PNG_FILEPATH, apply_brightness=True, apply_gamma=False, border=15, spacing=5, bg_color=(255, 255, 255)):
     """
     Create a side-by-side comparison between original and SR images with
     white borders and padding. The original is upscaled with nearest-neighbor
@@ -197,8 +197,8 @@ def make_pixel_faithful_comparison(original_arr, sr_arr, output_path=COMPARISON_
         rgb_min, rgb_max = rgb.min(), rgb.max()
         if rgb_max > rgb_min:
             rgb = (rgb - rgb_min) / (rgb_max - rgb_min)
-        rgb = np.clip(rgb * brighten_factor, 0, 1)
-        rgb = np.clip(rgb ** (1 / gamma), 0, 1)
+        rgb = brighten(rgb) if apply_brightness else rgb
+        rgb = apply_gamma(rgb) if apply_gamma else rgb
         return (rgb * 255).astype(np.uint8)
 
     img_original = normalize_and_brighten(original_arr)
