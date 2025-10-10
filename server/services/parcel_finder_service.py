@@ -149,7 +149,7 @@ def download_parcel_image(cadastral_reference, geojson_data, list_zones_utm, yea
         # Download image bands
         geometry =  geojson_data['features'][0]['geometry']
         rgb_images_path = download_tile_bands(list_zones_utm, year, month, bands, geometry)
-        if not rgb_images_path:
+        if not rgb_images_path or len(rgb_images_path) < len(bands):
             error_message = "No images are available for the selected date, images are processed at the end of each month."
             print(error_message)
             abort(404, description=error_message)
@@ -166,7 +166,7 @@ def download_parcel_image(cadastral_reference, geojson_data, list_zones_utm, yea
         print(f"An error occurred (download_parcel_image): {str(e)}")
         raise
 
-def get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path_values):
+def get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path):
     """
     Processes a list of RGB images by cropping them to the geometries specified in the provided GeoJSON data,
     ensuring all images are in the same format, and then generates output files for further use.
@@ -186,7 +186,7 @@ def get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path_valu
         unique_formats = list(
             set(
                 f.split(".")[-1].lower()
-                for f in rgb_images_path_values
+                for f in rgb_images_path
                 if isinstance(f, str) and "." in f
             )
         )
@@ -200,7 +200,7 @@ def get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path_valu
         for feature in geojson_data["features"]:
             geometry = feature["geometry"]
             geometry_id = cadastral_reference
-            cropped_parcel_masks_paths.extend(cut_from_geometry(geometry, unique_formats[0], rgb_images_path_values, geometry_id))
+            cropped_parcel_masks_paths.extend(cut_from_geometry(geometry, unique_formats[0], rgb_images_path, geometry_id))
 
         out_dir, png_paths, rgb_tif_paths = get_rgb_composite(cropped_parcel_masks_paths, geojson_data)
 

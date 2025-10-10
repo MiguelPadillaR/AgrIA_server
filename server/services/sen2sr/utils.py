@@ -65,12 +65,12 @@ def save_tif(image_nparray, filepath, adjust_transform, crs:str="EPSG:32630"):
         dst.write(image_nparray)
 
     if GET_SR_BENCHMARK:
-        print("Copying SEN3SR TIF file...")
+        print("Copying SEN2SR TIF file...")
         if "original" in str(filepath):
-            print("ORIGINAL")
+            print("Copying original file for benchmark...")
             copy_file_to_dir(filepath, is_sr4s=None)
         else:
-            print("SEN2SR")
+            print("Copying SEN2SR file for benchmark...")
             copy_file_to_dir(filepath)
 
     print(f"✅ Saved {filepath} with corrected band order")
