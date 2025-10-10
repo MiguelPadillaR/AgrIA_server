@@ -33,15 +33,15 @@ def generate_image_context_data(image_date, image_crops, language) -> str:
         templates = {
             "es": {
                 "header": f"FECHA DE IMAGEN: {image_date}\nPARCELAS DETECTADAS: {len(image_crops)}\n",
-                "parcel": "\n- Recinto: {id}\n- Tipo: {type}\n- Superficie admisible (m2): {surface}\n",
+                "parcel": "\n- Recinto: {id}\n- Tipo: {type}\n- Superficie admisible (ha): {surface}\n",
                 "irrigation": "- Coef. regadío: {irrigation}%\n",
-                "footer": "\nSUPERFICIE ADMISIBLE TOTAL (m2): {total}"
+                "footer": "\nSUPERFICIE ADMISIBLE TOTAL (ha): {total}"
             },
             "en": {
                 "header": f"IMAGE DATE: {image_date}\nPARCELS DETECTED: {len(image_crops)}\n",
-                "parcel": "\n- Parcel ID: {id}\n- Type: {type}\n- Eligible surface (m2): {surface}\n",
+                "parcel": "\n- Parcel ID: {id}\n- Type: {type}\n- Eligible surface (ha): {surface}\n",
                 "irrigation": "- Irrigation coefficient: {irrigation}%\n",
-                "footer": "\nTOTAL ELIGIBLE SURFACE (m2): {total}"
+                "footer": "\nTOTAL ELIGIBLE SURFACE (ha): {total}"
             }
         }
 
@@ -51,7 +51,7 @@ def generate_image_context_data(image_date, image_crops, language) -> str:
         for crop in image_crops:
             parcel_id = crop["recinto"]
             type_ = crop["uso_sigpac"]
-            surface = round(float(crop.get("superficie_admisible") or crop.get("dn_surface", 0)), 3)
+            surface = round(float(crop.get("superficie_admisible") or crop.get("dn_surface", 0))/10000, 5)
             irrigation = crop.get("coef_regadio") or 0
             total_surface += surface
 

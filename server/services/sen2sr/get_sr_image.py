@@ -7,6 +7,7 @@ import rioxarray  # needed to access .rio on xarray objects
 import sen2sr
 import torch
 import geopandas as gpd
+import numpy as np
 
 from datetime import datetime, timedelta
 from rasterio.mask import mask
@@ -40,7 +41,7 @@ def get_sr_image(lat: float, lon: float, bands: list, start_date: str, end_date:
        
         # Prepare data
         crs = lonlat_to_utm_epsg(lon, lat)
-        cloudless_image_data = download_sentinel_cubo(lat, lon, bands, start_date, end_date, size, crs)
+        cloudless_image_data, sample_date = download_sentinel_cubo(lat, lon, bands, start_date, end_date, size, crs)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         original_s2_numpy = (cloudless_image_data.compute().to_numpy() / 10_000).astype("float32")
         X = torch.from_numpy(original_s2_numpy).float().to(device)
@@ -73,7 +74,7 @@ def get_sr_image(lat: float, lon: float, bands: list, start_date: str, end_date:
         make_pixel_faithful_comparison(original_s2_reordered, superX_reordered)
 
         # Get and save cropped sr parcel image
-        sr_image_filepath = str(crop_parcel_from_sr_tif(SR_TIF_FILEPATH))
+        sr_image_filepath = str(crop_parcel_from_sr_tif(SR_TIF_FILEPATH, sample_date))
         return sr_image_filepath
     except Exception as e:
         print(f"An error occurred (get_sr_image SEN2SR): {str(e)}")
@@ -112,18 +113,24 @@ def download_sentinel_cubo(lat: float, lon: float, bands: list, start_date: str,
     scl = da.sel(band="SCL")
     cloudless_image_data = da.isel(time=get_cloudless_time_indices(scl, cloud_threshold)[-1])  # get most recent image
     cloudless_image_data = cloudless_image_data.sel(band=bands[:-1])  # drop SCL band
+
+    # Get acquisition date from the 'time' coordinate
+    acq_date = cloudless_image_data["time"].values
+    # Convert from numpy.datetime64 to 'yyyy-mm-dd' string
+    acq_date_str = np.datetime_as_string(acq_date, unit='D')
+
     # True CRS is EPSG:4326 (lon/lat degrees)
     cloudless_image_data = cloudless_image_data.rio.write_crs(crs)
     # Reproject to UTM zone 30N
     cloudless_image_data = cloudless_image_data.rio.reproject(crs)
     
     print("☁️  Downloaded cloudless data!")
-    return cloudless_image_data
+    return cloudless_image_data, str(acq_date_str)
 
 # --------------------
 # Cropping SR parcel with polygon
 # --------------------
-def crop_parcel_from_sr_tif(raster_path:str): 
+def crop_parcel_from_sr_tif(raster_path:str, date): 
     """
     Crops the parcel from the SR image, using the stored parcel's geometry and`rasterio`
     Arguments:
@@ -162,15 +169,16 @@ def crop_parcel_from_sr_tif(raster_path:str):
         "transform": out_transform
     })
 
-    # Save cropped TIF
-    now =datetime.today()
-    out_tif_path = TIF_DIR / f"SR_{now.year}_{now.month}.tif"
+    # Save cropped TIF & PNG
+    year, month, day = date.split("-")
+    filename = f"SR_{year}-{month}-{day}"
+
+    out_tif_path = TIF_DIR / f"{filename}.tif"
     with rasterio.open(out_tif_path, "w", **out_meta) as dest:
         dest.write(out_image)
 
-    # Save cropped PNG
-    out_png_path= TEMP_DIR / f"SR_{now.year}_{now.month}.png"
-    save_to_png(out_image, out_png_path)
+    out_png_path= TEMP_DIR / f"{filename}.png"
+    save_to_png(out_image, out_png_path, apply_gamma_correction=True)
 
     print(f"✅ Clipped raster saved to {out_tif_path} and PNG saved to {out_png_path}")
     

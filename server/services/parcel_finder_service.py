@@ -100,12 +100,12 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
     msg1 = f"\nTIME TAKEN (SENTINEL HUB / MINIO + SR4S): {time1}" if sigpac_image_url else ""
     init2 = datetime.now()
     sigpac_image_url = download_sen2sr_parcel_image(geometry, date)
-    msg2 = f"TIME TAKEN (SEN2SR): {datetime.now()-init2}"
+    msg2 = f"\nTIME TAKEN (SEN2SR): {datetime.now()-init2}"
     msg3 = ''
     if GET_SR_BENCHMARK:
         init3 = datetime.now()
         compare_sr_metrics()
-        msg2 = f"TIME TAKEN (BENCHMARK): {datetime.now()-init3}"
+        msg2 = f"\nTIME TAKEN (BENCHMARK): {datetime.now()-init3}"
 
     print(msg1 + msg2 + msg3)
 

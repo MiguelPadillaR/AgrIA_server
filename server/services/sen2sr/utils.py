@@ -75,11 +75,11 @@ def save_tif(image_nparray, filepath, adjust_transform, crs:str="EPSG:32630"):
 
     print(f"✅ Saved {filepath} with corrected band order")
 
-def save_to_png(image_nparray, filepath):
+def save_to_png(image_nparray, filepath, apply_gamma_correction=False):
     # Create PNG output dir
     os.makedirs(PNG_DIR, exist_ok=True)
     image_nparray = brighten(image_nparray)
-    save_png(image_nparray, filepath)
+    save_png(image_nparray, filepath, apply_gamma_correction=apply_gamma_correction)
     print(f"✅ Saved {filepath} with correct colors")
 
 def save_png(arr, path, enhance_contrast=True, contrast_factor=1.5, apply_gamma_correction=False, gamma=GAMMA, transparent_nodata=True):
