@@ -5,11 +5,10 @@ import shutil
 from flask import jsonify
 from pyproj import Transformer, CRS
 
-from ..services.sr4s.im.get_image_bands import download_sentinel_bands
+from ..services.sr4s.im.get_image_bands import download_from_sentinel_hub
 from ..services.sr4s.sr.get_sr_image import process_directory
 from ..services.sr4s.sr.utils import percentile_stretch, set_reflectance_scale
-from ..config.constants import ANDALUSIA_TILES, TEMP_UPLOADS_PATH, SR_BANDS, RESOLUTION, BANDS_DIR, MERGED_BANDS_DIR, MASKS_DIR, SR5M_DIR
-from ..config.config import Config
+from ..config.constants import ANDALUSIA_TILES, TEMP_DIR, SR_BANDS, RESOLUTION, BANDS_DIR, MERGED_BANDS_DIR, MASKS_DIR, SR5M_DIR
 
 from ..config.minio_client import minioClient, bucket_name
 from collections import defaultdict
@@ -72,63 +71,56 @@ def download_tile_bands(utm_zones, year, month, bands, geometry):
     """
     year_month_pairs = generate_date_range_last_n_months(year, month)
     downloaded_files = {band: [] for band in bands}
+    band_files_list = [] 
     is_zone_in_andalusia =any(zone in ANDALUSIA_TILES for zone in utm_zones)
     set_reflectance_scale(is_zone_in_andalusia)
     
     if is_zone_in_andalusia:
-        # Download image bands from MinIO DB:
-        download_tasks = []
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            for zone in utm_zones:
-                for year, month_folder in year_month_pairs:
-                    composites_path = f"{zone}/{year}/{month_folder}/composites/"
-                    try:
-                        composites_dir = minioClient.list_objects(bucket_name, prefix=composites_path, recursive=True)
-                        for file in composites_dir:
-                            if file.object_name.endswith(".tif") and "raw" in file.object_name:
-                                band = file.object_name.split("/")[-1].split(".")[0]
-                                if band in bands:
-                                    # Assign and generate local download dir
-                                    download_dir = BANDS_DIR
-                                    download_dir.mkdir(parents=True, exist_ok=True)
-                                    os.makedirs(download_dir, exist_ok=True)
-                                    # Generate filename
-                                    month_number = datetime.strptime(month_folder, "%B").month
-                                    local_file_path = os.path.join(download_dir, f"{year}_{month_number}_{zone}-{band}.tif")
-                                    # Set the ownload file task
-                                    task = executor.submit(download_image_file, minioClient, file, local_file_path)
-                                    download_tasks.append((task, band, local_file_path))
-                    except S3Error as exc:
-                        print(f"Error when accessing {composites_path}: {exc}")
-            # Run all download tasks and append resulting local file paths
-            for task, band, local_file_path in download_tasks:
-                task.result()
-                downloaded_files[band].append(local_file_path)
+        print("Parcel located in Andalusia...")
+        band_files_list = download_from_minio(utm_zones, year_month_pairs, bands)
     else:
         print("Getting parcel outside of Andalusia...")
         # Download image bands using Sentinel Hub
         parcel_center  = shape(geometry).representative_point()
-        band_files_list = download_sentinel_bands(parcel_center.y, parcel_center.x, f"{year}_{month}")
+        band_files_list = download_from_sentinel_hub(parcel_center.y, parcel_center.x, f"{year}_{month}")
         for path in band_files_list:
             for band in downloaded_files:
                 if band in path:
                     downloaded_files[band].append(path)
-        
-    merged_paths = []
-    for band, file_list in downloaded_files.items():
-        if not file_list:
-            continue
-        # Get most recent downloaded file
-        recent_file = file_list[-1]
-        input_dir = os.path.dirname(recent_file)
-        # Get month folder name from filename
-        month_number = os.path.basename(recent_file).split('_')[1]
+    
+    return band_files_list[-4:]
 
-        # Merge bands
-        merge_path = merge_tifs(input_dir, year, band, month_number)
-        if merge_path:
-            merged_paths.append(merge_path)
-    return merged_paths
+def download_from_minio(utm_zones, year_month_pairs, bands):
+    # Download image bands from MinIO DB:
+    res = []
+    download_tasks = []
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        for zone in utm_zones:
+            for year, month_folder in year_month_pairs:
+                composites_path = f"{zone}/{year}/{month_folder}/composites/"
+                try:
+                    composites_dir = minioClient.list_objects(bucket_name, prefix=composites_path, recursive=True)
+                    for file in composites_dir:
+                        if file.object_name.endswith(".tif") and "raw" in file.object_name:
+                            band = file.object_name.split("/")[-1].split(".")[0]
+                            if band in bands:
+                                # Assign and generate local download dir
+                                download_dir = BANDS_DIR
+                                download_dir.mkdir(parents=True, exist_ok=True)
+                                os.makedirs(download_dir, exist_ok=True)
+                                # Generate filename
+                                month_number = datetime.strptime(month_folder, "%B").month
+                                local_file_path = os.path.join(download_dir, f"{year}_{month_number}-{band}.tif")
+                                # Set the download file task
+                                task = executor.submit(download_image_file, minioClient, file, local_file_path)
+                                download_tasks.append((task, local_file_path))
+                except S3Error as exc:
+                    print(f"Error when accessing {composites_path}: {exc}")
+        # Run all download tasks and append resulting local file paths
+        for task, local_file_path in download_tasks:
+            task.result()
+            res.append(local_file_path)
+    return res
 
 def generate_date_range_last_n_months(year, month, month_range=2):
     """
@@ -275,12 +267,12 @@ def reproject_tiles(input_dir):
         all_files = reprojected_files
     return all_files
 
-def get_rgb_composite(merged_paths, geojson_data):
+def get_rgb_composite(cropped_parcel_band_paths, geojson_data):
     """
     Generates RGB composite images from a list of merged band file paths, saves them as GeoTIFF and PNG files, and returns their paths.
     This function groups input file paths by year and month, combines the corresponding red, green, and blue bands into RGB GeoTIFF images, normalizes and applies gamma correction, then saves enlarged PNG images with alpha transparency. It also creates an animated sequence if multiple frames are generated.
     Args:
-        merged_paths (list of str): List of file paths to band images, expected to follow naming convention ('RGB_`year`_`month_number`-`band`_`RESOLUTION`').
+        cropped_parcel_band_paths (list of str): List of file paths to band images, expected to follow naming convention (`year`_`month_number`-`band`_`RESOLUTION`').
     Returns:
         tuple:
             out_dir (str): Output directory where images are saved.
@@ -288,10 +280,10 @@ def get_rgb_composite(merged_paths, geojson_data):
             rgb_tif_paths (list of tuple): List of tuples containing (GeoTIFF file path, year, month) for each generated RGB composite.
     """
 
-    out_dir = TEMP_UPLOADS_PATH
+    out_dir = TEMP_DIR
 
     # Check for the RBG + B08 bands for L1BSR upscale
-    get_sr_image = len(merged_paths) == 4 and any(SR_BANDS[-1] in path for path in merged_paths)
+    get_sr_image = len(cropped_parcel_band_paths) == 4 and any(SR_BANDS[-1] in path for path in cropped_parcel_band_paths)
     if get_sr_image:
         out_dir = SR5M_DIR
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -301,14 +293,14 @@ def get_rgb_composite(merged_paths, geojson_data):
 
     # Group file bands info
     grouped = {}
-    for file in merged_paths:
+    for file in cropped_parcel_band_paths:
         # Generate id from filename
         filename = os.path.basename(file)
         filename_no_ext = os.path.splitext(filename)[0]
         filename_parts = re.split(r'[_-]', filename_no_ext)
-        year = filename_parts[1]
-        month_number = filename_parts[2]
-        band = filename_parts[3] + "_" + filename_parts[4]
+        year = filename_parts[0]
+        month_number = filename_parts[1]
+        band = filename_parts[2] + "_" + filename_parts[3]
         id = (year, month_number)
         if id not in grouped:
             grouped[id] = {}
@@ -316,7 +308,7 @@ def get_rgb_composite(merged_paths, geojson_data):
 
     if get_sr_image:
         # Apply SR upscaling (x10)
-        input_dir = Path(merged_paths[0]).parent
+        input_dir = Path(cropped_parcel_band_paths[0]).parent
         print(f"\nProcessing {input_dir} directory for SR upscale...\n")
         sr_tif_path = process_directory(input_dir)
         sr_tif = os.path.join(SR5M_DIR, os.path.splitext(os.path.basename(sr_tif_path))[0] + '.tif')
@@ -328,7 +320,7 @@ def get_rgb_composite(merged_paths, geojson_data):
                 geojson_data["features"], crs="EPSG:4326"
             ),
             geometry_id="",
-            output_dir=TEMP_UPLOADS_PATH,
+            output_dir=TEMP_DIR,
             fmt="png"
         )
 
@@ -481,7 +473,12 @@ def cut_from_geometry(gdf_parcel, format, image_paths, geometry_id):
         get_sr_image = len(image_paths) == 4 and any(SR_BANDS[-1] in path for path in image_paths)
 
         if get_sr_image:
-            geometry = bbox_from_polygon(geometry)
+            if geometry:
+                geometry = bbox_from_polygon(geometry)
+            # TODO:
+            # else: 
+            #     geometry = get_bbox_from_center(lat, lon, min_size, min_size, RESOLUTION).geojson
+
         
         # Sanity check
         if isinstance(geometry, dict):
@@ -503,31 +500,6 @@ def cut_from_geometry(gdf_parcel, format, image_paths, geometry_id):
         # Extract geom mask for each band file
         masks_dir = MASKS_DIR
         cropped_parcel_files = crop_directory(valid_files, geometry, geometry_id, masks_dir)
-
-        # for image_path in valid_files:
-        #     original_filename = os.path.basename(image_path)
-        #     with rasterio.open(image_path) as src:
-        #         geometry = geometry.to_crs(src.crs)
-        #         if geometry.is_empty.any():
-        #             print(f"Parcel geometry is empty for image {image_path}.")
-        #             continue
-
-        #         geometries = [geometry.geometry.iloc[0]]
-        #         out_image, out_transform = mask(src, geometries, crop=True)
-                
-        #         # Generate filename
-        #         extension = format.lower()
-        #         filename = original_filename.replace(".tif", f"_{geometry_id}.{extension}").replace(".jp2", f"_{geometry_id}.{extension}")
-                
-        #         # Generate download dir
-        #         masks_dir = MASKS_DIR
-        #         masks_dir.mkdir(parents=True, exist_ok=True)
-        #         temp_file = os.path.join(masks_dir, filename)
-                
-        #         # Save masked file
-        #         save_raster(out_image, temp_file, src, out_transform, format)
-        #         print(temp_file)
-        #         cropped_parcel_files = crop_directory
 
         return cropped_parcel_files
 
@@ -749,11 +721,11 @@ def merge_and_convert_to_geometry(feature_collection: dict) -> dict:
     del transformer
     return mapping(merged) 
 
-def reset_temp_dir():
+def reset_dir(dir: Path | str):
     # Clear uploaded files and dirs
-    if os.path.exists(TEMP_UPLOADS_PATH):
-        for file in os.listdir(TEMP_UPLOADS_PATH):
-            file_path = os.path.join(os.getcwd(), TEMP_UPLOADS_PATH, file)
+    if os.path.exists(dir):
+        for file in os.listdir(dir):
+            file_path = os.path.join(os.getcwd(), dir, file)
             if os.path.isfile(file_path) or os.path.islink(file_path):
                 os.unlink(file_path)
             elif os.path.isdir(file_path):

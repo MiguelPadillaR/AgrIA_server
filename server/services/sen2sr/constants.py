@@ -23,3 +23,6 @@ BANDS = ["B08", "B02", "B03", "B04", "SCL"]  # NIR + RGB + SCL
 
 # Bounding box for mainland Spain (lon_min, lat_min, lon_max, lat_max)
 SPAIN_MAINLAND = (-9.3, 36.0, 3.3, 43.8)
+
+BRIGHTNESS_FACTOR = 1.2
+GAMMA =  0.7

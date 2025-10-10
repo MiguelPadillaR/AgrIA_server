@@ -10,7 +10,8 @@ import rasterio
 
 from PIL import Image
 
-from ....config.constants import SR_BANDS, SR5M_DIR
+from ....config.constants import GET_SR_BENCHMARK, SR_BANDS, SR5M_DIR
+from ....benchmark.utils import copy_file_to_dir
 
 from .utils import percentile_stretch, stack_bgrn, make_grid
 from .L1BSR_wrapper import L1BSR
@@ -79,6 +80,7 @@ def process_directory(input_dir, output_dir=SR5M_DIR, save_as_tif=True):
     Arguments:
         input_dir (str | Path): Input directory path
         output_dir (str | Path): Output directory path. Default is `sr/sr_5m`
+        save_as_tif (bool): If `True`, saves uncropped SR image as TIF. Default to `True`.
     Returns:
         (str): SR PNG filename (even if also saved as TIF).
     """
@@ -97,7 +99,7 @@ def process_directory(input_dir, output_dir=SR5M_DIR, save_as_tif=True):
             continue
         filename, __ = os.path.splitext(base)
         prefix_parts = filename.split(f"-{band}", 1)[0].split('_')
-        prefix = f'SR_{prefix_parts[1]}_{prefix_parts[2]}'
+        prefix = f'SR_{prefix_parts[0]}_{prefix_parts[1]}'
         if prefix not in groups:
             groups[prefix] = {}
         groups[prefix][band] = f
@@ -140,10 +142,12 @@ def process_directory(input_dir, output_dir=SR5M_DIR, save_as_tif=True):
         print(f"Saved PNG: {out_png}")
 
         # Save TIF
-        if save_as_tif:
+        if save_as_tif or GET_SR_BENCHMARK:
             out_tif = os.path.join(output_dir, f"{prefix}.tif")
             save_multiband_tif(sr_u16, band_files["B02"], out_tif)
             print(f"Saved TIF: {out_tif}")
+            if GET_SR_BENCHMARK:
+                copy_file_to_dir(out_tif, is_sr4s=True)
 
         # Make and save comparison grid
         comp_dir = output_dir / "comparison"

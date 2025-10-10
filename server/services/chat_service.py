@@ -4,7 +4,7 @@ import os
 from google.genai.types import Content
 from ..config.llm_client import client
 from ..utils.chat_utils import generate_image_context_data, save_image_and_get_path
-from ..config.constants import FULL_DESC_TRIGGER, SHORT_DESC_TRIGGER, TEMP_UPLOADS_PATH
+from ..config.constants import FULL_DESC_TRIGGER, SHORT_DESC_TRIGGER, TEMP_DIR
 from ..config.chat_config import CHAT as chat
 
 def generate_user_response(user_input: str) -> str:
@@ -60,7 +60,7 @@ def get_parcel_description(image_date, image_crops, image_filename, is_detailed_
         image_indication_prompt  = image_indication_options[lang]+ "\n\n" + image_desc_prompt
 
         # Open image from path
-        image_path = TEMP_UPLOADS_PATH / str(image_filename).split("?")[0]
+        image_path = TEMP_DIR / str(image_filename).split("?")[0]
         image = Image.open(image_path)
 
         response = {

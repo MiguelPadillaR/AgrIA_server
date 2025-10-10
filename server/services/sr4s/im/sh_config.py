@@ -10,9 +10,6 @@ import logging
 
 load_dotenv()
 
-#Setup Google Maps API Key DEPRECATED
-# GOOGLE_MAPS_STATIC_API_KEY = str(os.getenv('GOOGLE_MAPS_STATIC_API_KEY'))
-
 # Setup Copernicus client credentials
 CLIENT_ID = os.getenv('COPERNICUS_CLIENT_ID')
 CLIENT_SECRET = os.getenv('COPERNICUS_CLIENT_SECRET')

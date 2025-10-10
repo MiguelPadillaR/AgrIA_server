@@ -2,17 +2,24 @@ from datetime import datetime, timedelta
 import json
 import time
 import os
+import traceback
 
 from flask import abort
 from sigpac_tools.find import find_from_cadastral_registry, geometry_from_coords
+
+from ..benchmark.compare_sr_metrics import compare_sr_metrics
+
+from ..benchmark.constants import BM_DATA_DIR, BM_RES_DIR
 
 from .sen2sr.utils import is_in_spain
 from .sen2sr.get_sr_image import get_sr_image
 from .sen2sr.constants import BANDS, GEOJSON_FILEPATH
 from ..services.sr4s.im.utils import get_bbox_from_center
 
-from ..config.constants import SEN2SR_SR_DIR, SR_BANDS, RESOLUTION
+from ..config.constants import GET_SR_BENCHMARK, SEN2SR_SR_DIR, SR_BANDS, RESOLUTION
 from ..utils.parcel_finder_utils import *
+
+from .sr4s.im.get_image_bands import request_date
 
 def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_reference: bool= True, parcel_geometry: str  = None, parcel_metadata: str = None, coordinates: list[float] = None, get_sr_image: bool = True) -> tuple:
     """
@@ -31,6 +38,7 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
         sigpac_image_url (str): URL of the SIGPAC image.
     """
     init = datetime.now()
+    request_date.set(date)
     year, month, _ = date.split("-")
     # Get parcel data
     if cadastral_reference:
@@ -83,12 +91,24 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
         bands.pop()
     
     sigpac_image_url = ''
-    # sigpac_image_url = download_parcel_image(cadastral_reference, geojson_data, list_zones_utm, year, month, bands)
+    print("GET_SR_BENCHMARK", GET_SR_BENCHMARK)
+    if GET_SR_BENCHMARK:
+        reset_dir(BM_DATA_DIR)
+        reset_dir(BM_RES_DIR)
+        sigpac_image_url = download_parcel_image(cadastral_reference, geojson_data, list_zones_utm, year, month, bands)
     time1 = datetime.now()-init
     msg1 = f"\nTIME TAKEN (SENTINEL HUB / MINIO + SR4S): {time1}" if sigpac_image_url else ""
     init2 = datetime.now()
     sigpac_image_url = download_sen2sr_parcel_image(geometry, date)
-    print(msg1 + f"\nTIME TAKEN (SEN2SR): {datetime.now()-init2}")
+    msg2 = f"\nTIME TAKEN (SEN2SR): {datetime.now()-init2}"
+    msg3 = ''
+    if GET_SR_BENCHMARK:
+        init3 = datetime.now()
+        compare_sr_metrics()
+        msg2 = f"\nTIME TAKEN (BENCHMARK): {datetime.now()-init3}"
+
+    print(msg1 + msg2 + msg3)
+
     return geometry, metadata, sigpac_image_url
 
 def download_sen2sr_parcel_image(geometry, date):
@@ -127,8 +147,9 @@ def download_sen2sr_parcel_image(geometry, date):
 def download_parcel_image(cadastral_reference, geojson_data, list_zones_utm, year, month, bands):
     try:
         # Download image bands
-        rgb_images_path = download_tile_bands(list_zones_utm, year, month, bands, geojson_data['features'][0]['geometry'])
-        if not rgb_images_path:
+        geometry =  geojson_data['features'][0]['geometry']
+        rgb_images_path = download_tile_bands(list_zones_utm, year, month, bands, geometry)
+        if not rgb_images_path or len(rgb_images_path) < len(bands):
             error_message = "No images are available for the selected date, images are processed at the end of each month."
             print(error_message)
             abort(404, description=error_message)
@@ -141,10 +162,11 @@ def download_parcel_image(cadastral_reference, geojson_data, list_zones_utm, yea
         sigpac_image_url = f"{os.getenv('API_URL')}/uploads/{os.path.basename(sigpac_image_name)}?v={int(time.time())}"
         return sigpac_image_url.split("?")[0]
     except Exception as e:
+        traceback.print_exc()
         print(f"An error occurred (download_parcel_image): {str(e)}")
         raise
 
-def get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path_values):
+def get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path):
     """
     Processes a list of RGB images by cropping them to the geometries specified in the provided GeoJSON data,
     ensuring all images are in the same format, and then generates output files for further use.
@@ -164,7 +186,7 @@ def get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path_valu
         unique_formats = list(
             set(
                 f.split(".")[-1].lower()
-                for f in rgb_images_path_values
+                for f in rgb_images_path
                 if isinstance(f, str) and "." in f
             )
         )
@@ -178,7 +200,7 @@ def get_rgb_parcel_image(cadastral_reference, geojson_data, rgb_images_path_valu
         for feature in geojson_data["features"]:
             geometry = feature["geometry"]
             geometry_id = cadastral_reference
-            cropped_parcel_masks_paths.extend(cut_from_geometry(geometry, unique_formats[0], rgb_images_path_values, geometry_id))
+            cropped_parcel_masks_paths.extend(cut_from_geometry(geometry, unique_formats[0], rgb_images_path, geometry_id))
 
         out_dir, png_paths, rgb_tif_paths = get_rgb_composite(cropped_parcel_masks_paths, geojson_data)
 
