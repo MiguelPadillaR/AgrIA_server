@@ -68,25 +68,7 @@ def get_zoom_from_bbox(bbox: BBox, size: tuple):
     # Compute Google zoom
     zoom_float = math.log2((156543.03392 * math.cos(math.radians(lat_center))) / mpp)
     zoom = max(0, min(21, round(zoom_float)))  # clamp to [0,21]
-    
-    # # Now recompute bbox that Google would actually cover at this zoom
-    # mpp_google = 156543.03392 * math.cos(math.radians(lat_center)) / (2 ** zoom)
-    # width_m_google = size[0] * mpp_google
-    # height_m_google = size[1] * mpp_google
-    
-    # width_deg_google = width_m_google / meters_per_degree_lon
-    # height_deg_google = height_m_google / meters_per_degree_lat
-    
-    # google_bbox = BBox(
-    #     bbox=[
-    #         (min_lon + max_lon) / 2 - width_deg_google / 2,
-    #         (min_lat + max_lat) / 2 - height_deg_google / 2,
-    #         (min_lon + max_lon) / 2 + width_deg_google / 2,
-    #         (min_lat + max_lat) / 2 + height_deg_google / 2
-    #     ],
-    #     crs=CRS.WGS84
-    # )
-    
+        
     return zoom #, google_bbox
 
 def get_bbox_from_center(lat, lon, width_px, height_px, resolution_m):
@@ -139,16 +121,18 @@ def get_n_random_coordinate_pairs(amount:int, bounded_zone = [LAT_MIN, LAT_MAX, 
     return coordinates
 
 def generate_evalscript(
-        bands=["B02", "B03", "B04"], 
-        units=None, 
-        data_type=None, 
-        mosaicking_type=None, 
-        bit_scale="AUTO", 
-        id=None, 
-        rendering=None, 
-        mask=None,
-        resampling=None
-    ):
+    bands=["B04", "B03", "B02"],
+    units="REFLECTANCE",
+    data_type=None,
+    mosaicking_type="SIMPLE",
+    bit_scale="UINT8",
+    id=None,
+    rendering=None,
+    mask=None,
+    resampling=None,
+    clip_range=(0.0, 0.3),
+    gamma=1.0,
+):
     """
     Generate an evalscript for SentinelHub requests. The script is dinamically generated with the values provided.
 
@@ -164,60 +148,66 @@ def generate_evalscript(
         rendering (bool): Whether to apply rendering/visualization. If None, omitted.
         mask (bool): Whether to output mask. If None, omitted.
         resampling (str):
+        clip_range (tuple):
+        gamma (float):
 
     Returns:
         evalscript (str): The generated evalscript for SentinelHub image request.
     """
-    output_bands = list(reversed(bands))
     bands_str = ", ".join([f'"{band}"' for band in bands])
 
-    # Build optional parts dynamically
-    input_options = [f"bands: [{bands_str}]"]
-    if units is not None:
-        input_options.append(f'units: "{units}"')
-    if data_type is not None:
-        input_options.append(f'dataType: "{data_type}"')
-    if mosaicking_type is not None:
-        input_options.append(f'mosaicking: "{mosaicking_type}"')
+    input_opts = [f"bands: [{bands_str}]"]
+    if units:
+        input_opts.append(f'units: "{units}"')
+    if data_type:
+        input_opts.append(f'dataType: "{data_type}"')
+    if mosaicking_type:
+        input_opts.append(f'mosaicking: "{mosaicking_type}"')
 
-    output_options = [f"bands: {len(output_bands)}"]
+    output_opts = [f"bands: {len(bands)}"]
+    if id:
+        output_opts.append(f'id: "{id}"')
+    if bit_scale:
+        output_opts.append(f'sampleType: "{bit_scale}"')
+    if rendering is not None:
+        output_opts.append(f"rendering: {str(rendering).lower()}")
+    if mask is not None:
+        output_opts.append(f"mask: {str(mask).lower()}")
+    if resampling:
+        output_opts.append(f'resampling: "{resampling}"')
 
-    if id is not None:
-        output_options.append(f'id: "{id}"')
-    if bit_scale is not None:
-        output_options.append(f'sampleType: "{bit_scale}"')
-    if rendering is not None and type(rendering) == bool:
-        output_options.append(f"rendering: {str(rendering).lower()}")
-    if mask is not None and type(mask) == bool:
-        output_options.append(f"mask: {str(mask).lower()}")
-    if resampling is not None:
-        output_options.append(f'mask: "{resampling}"')
+    input_str = ",\n\t\t".join(input_opts)
+    output_str = ",\n\t\t".join(output_opts)
 
-    factor =  " * 255" if bit_scale=="UINT8" else ''
-    output = ", ".join([f"sample.{band  + factor}" for band in output_bands]) if len(output_bands) > 1 else f"sample.{output_bands[0] + factor}"
-    
-    input_str = ",\n\t\t".join(input_options)
-    output_str = ",\n\t\t".join(output_options)
+    minv, maxv = clip_range
+    stretch = f"(val - {minv}) / ({maxv - minv})"
+    stretch = f"Math.max(0, Math.min(1, {stretch}))"
+    if gamma != 1.0:
+        stretch = f"Math.pow({stretch}, 1.0/{gamma})"
 
-    evalscript = f"""
-    //VERSION=3
+    # multiply by 255 if UINT8
+    mult = " * 255" if bit_scale == "UINT8" else ""
 
-    function setup() {{
-        return {{
-            input: [{{
-                {input_str}
-            }}],
-            output: {{
-                {output_str}
-            }}
-        }};
+    # apply stretch for each band
+    out_expr = ", ".join([f"{stretch.replace('val', f'sample.{b}')}{mult}" for b in bands])
+
+    return f"""
+//VERSION=3
+function setup() {{
+  return {{
+    input: [{{
+      {input_str}
+    }}],
+    output: {{
+      {output_str}
     }}
+  }};
+}}
 
-    function evaluatePixel(sample) {{
-        return [{output},];
-    }}
-    """
-    return evalscript
+function evaluatePixel(sample) {{
+  return [{out_expr}];
+}}
+"""
 
 def save_tiff(image: np.ndarray, filename: str, bbox, crs="EPSG:4326"):
     """

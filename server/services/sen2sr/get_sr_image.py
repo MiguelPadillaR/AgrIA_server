@@ -67,8 +67,8 @@ def get_sr_image(lat: float, lon: float, bands: list, start_date: str, end_date:
         save_to_tif(original_s2_reordered, OG_TIF_FILEPATH, cloudless_image_data, crs)
         save_to_tif(superX_reordered, SR_TIF_FILEPATH, cloudless_image_data, crs)
 
-        save_to_png(original_s2_reordered, OG_PNG_FILEPATH)
-        save_to_png(superX_reordered, SR_PNG_FILEPATH)
+        save_to_png(original_s2_reordered, OG_PNG_FILEPATH, lat)
+        save_to_png(superX_reordered, SR_PNG_FILEPATH, lat)
 
         # Make comparison grid
         make_pixel_faithful_comparison(original_s2_reordered, superX_reordered)

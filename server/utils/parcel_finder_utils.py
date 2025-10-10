@@ -5,7 +5,7 @@ import shutil
 from flask import jsonify
 from pyproj import Transformer, CRS
 
-from ..services.sr4s.im.get_image_bands import download_sentinel_bands
+from ..services.sr4s.im.get_image_bands import download_from_sentinel_hub
 from ..services.sr4s.sr.get_sr_image import process_directory
 from ..services.sr4s.sr.utils import percentile_stretch, set_reflectance_scale
 from ..config.constants import ANDALUSIA_TILES, TEMP_DIR, SR_BANDS, RESOLUTION, BANDS_DIR, MERGED_BANDS_DIR, MASKS_DIR, SR5M_DIR
@@ -76,19 +76,17 @@ def download_tile_bands(utm_zones, year, month, bands, geometry):
     set_reflectance_scale(is_zone_in_andalusia)
     
     if is_zone_in_andalusia:
-        print("Parcel lcoated in Andalusia...")
+        print("Parcel located in Andalusia...")
         band_files_list = download_from_minio(utm_zones, year_month_pairs, bands)
     else:
         print("Getting parcel outside of Andalusia...")
         # Download image bands using Sentinel Hub
         parcel_center  = shape(geometry).representative_point()
-        band_files_list = download_sentinel_bands(parcel_center.y, parcel_center.x, f"{year}_{month}")
-        print("band_files_list", band_files_list)
+        band_files_list = download_from_sentinel_hub(parcel_center.y, parcel_center.x, f"{year}_{month}")
         for path in band_files_list:
             for band in downloaded_files:
                 if band in path:
                     downloaded_files[band].append(path)
-    print("band_files_list", band_files_list)
     
     return band_files_list[-4:]
 

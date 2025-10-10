@@ -75,12 +75,32 @@ def save_tif(image_nparray, filepath, adjust_transform, crs:str="EPSG:32630"):
 
     print(f"✅ Saved {filepath} with corrected band order")
 
-def save_to_png(image_nparray, filepath, apply_gamma_correction=False):
-    # Create PNG output dir
+def save_to_png(image_nparray, filepath, lat=None, apply_gamma_correction=False):
+    """
+    Wrapper for saving a NumPy RGB array as PNG, optionally applying
+    latitude-based brightness normalization.
+    
+    Args:
+        image_nparray (np.ndarray): Input image (bands, H, W)
+        filepath (str): Output PNG path
+        lat (float, optional): Latitude for brightness normalization
+        apply_gamma_correction (bool): Whether to apply gamma correction
+    """
     os.makedirs(PNG_DIR, exist_ok=True)
-    image_nparray = brighten(image_nparray)
-    save_png(image_nparray, filepath, apply_gamma_correction=apply_gamma_correction)
-    print(f"✅ Saved {filepath} with correct colors")
+
+    # Apply latitude-based brightness normalization if latitude provided
+    if lat is not None:
+        brightness_factor = np.clip(1.0 / np.cos(np.deg2rad(lat)), 0.7, 1.3)
+        image_nparray = np.clip(image_nparray * brightness_factor, 0, 1)
+        print(f"🧭 Applied latitude-based brightness correction (lat={lat:.2f}, factor={brightness_factor:.3f})")
+
+    # Continue with normal save pipeline
+    save_png(
+        image_nparray,
+        filepath,
+        apply_gamma_correction=apply_gamma_correction
+    )
+    print(f"✅ Saved {filepath} with corrected colors and brightness normalization")
 
 def save_png(arr, path, enhance_contrast=True, contrast_factor=1.5, apply_gamma_correction=False, gamma=GAMMA, transparent_nodata=True):
     """
