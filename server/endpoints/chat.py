@@ -34,13 +34,13 @@ def send_image():
 @chat_bp.route('/load-parcel-data-to-chat', methods=['POST'])
 def send_parcel_info_to_chat():
     try:
-        image_date = request.form.get('imageDate')
-        image_crops = json.loads(request.form.get('imageCrops'))
+        image_date = request.form.get('imageDate').split("/")[-1]
+        land_uses = json.loads(request.form.get('landUses'))
         image_filename = request.form.get('imageFilename')
         is_detailed_description: bool = "true" in str(request.form.get("isDetailedDescription")).lower()
         lang = request.form.get('lang')
 
-        response = get_parcel_description(image_date, image_crops, image_filename, is_detailed_description, lang)
+        response = get_parcel_description(image_date, land_uses, image_filename, is_detailed_description, lang)
 
         return jsonify({'response': response})
     except Exception as e:

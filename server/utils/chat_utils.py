@@ -16,14 +16,14 @@ def save_image_and_get_path(file) -> str:
     file.save(filepath)
     return filepath
 
-def generate_image_context_data(image_date, image_crops, language) -> str:
+def generate_image_context_data(image_date, land_uses) -> str:
     """
     Retrieves image context data for prompt generation.
     Generates both English and Spanish versions and saves them as text files.
     
     Args:
         image_date (str): Date of the image.
-        image_crops (list[dict]): Crop metadata.
+        land_uses (list[dict]): Land use metadata.
     
     Returns:
         dict: {"es": str, "en": str} with Spanish and English context data.
@@ -32,15 +32,13 @@ def generate_image_context_data(image_date, image_crops, language) -> str:
         # Define templates for both languages
         templates = {
             "es": {
-                "header": f"FECHA DE IMAGEN: {image_date}\nPARCELAS DETECTADAS: {len(image_crops)}\n",
-                "parcel": "\n- Recinto: {id}\n- Tipo: {type}\n- Superficie admisible (ha): {surface}\n",
-                "irrigation": "- Coef. regadío: {irrigation}%\n",
+                "header": f"FECHA DE IMAGEN: {image_date}\nPARCELAS DETECTADAS: {len(land_uses)}\n",
+                "parcel": "\n- Tipo de Uso: {type}\n- Superficie admisible (ha): {surface}\n",
                 "footer": "\nSUPERFICIE ADMISIBLE TOTAL (ha): {total}"
             },
             "en": {
-                "header": f"IMAGE DATE: {image_date}\nPARCELS DETECTED: {len(image_crops)}\n",
-                "parcel": "\n- Parcel ID: {id}\n- Type: {type}\n- Eligible surface (ha): {surface}\n",
-                "irrigation": "- Irrigation coefficient: {irrigation}%\n",
+                "header": f"IMAGE DATE: {image_date}\nPARCELS DETECTED: {len(land_uses)}\n",
+                "parcel": "\n- Land Use: {type}\n- Eligible surface (ha): {surface}\n",
                 "footer": "\nTOTAL ELIGIBLE SURFACE (ha): {total}"
             }
         }
@@ -48,17 +46,14 @@ def generate_image_context_data(image_date, image_crops, language) -> str:
         results = {"es": templates["es"]["header"], "en": templates["en"]["header"]}
         total_surface = 0.0
 
-        for crop in image_crops:
-            parcel_id = crop["recinto"]
-            type_ = crop["uso_sigpac"]
-            surface = round(float(crop.get("superficie_admisible") or crop.get("dn_surface", 0))/10000, 5)
-            irrigation = crop.get("coef_regadio") or 0
+        for use in land_uses:
+            type_ = use["uso_sigpac"]
+            surface = round(float(use.get("superficie_admisible") or use.get("dn_surface", 0))/10000, 5)
+
             total_surface += surface
 
             for lang in ["es", "en"]:
-                results[lang] += templates[lang]["parcel"].format(id=parcel_id, type=type_, surface=surface)
-                if irrigation > 0:
-                    results[lang] += templates[lang]["irrigation"].format(irrigation=irrigation)
+                results[lang] += templates[lang]["parcel"].format(type=type_, surface=surface)
 
         for lang in ["es", "en"]:
             results[lang] += templates[lang]["footer"].format(total=round(total_surface, 3))

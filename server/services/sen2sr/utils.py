@@ -95,11 +95,7 @@ def save_to_png(image_nparray, filepath, lat=None, apply_gamma_correction=False)
         print(f"🧭 Applied latitude-based brightness correction (lat={lat:.2f}, factor={brightness_factor:.3f})")
 
     # Continue with normal save pipeline
-    save_png(
-        image_nparray,
-        filepath,
-        apply_gamma_correction=apply_gamma_correction
-    )
+    save_png(image_nparray, filepath, apply_gamma_correction=apply_gamma_correction)
     print(f"✅ Saved {filepath} with corrected colors and brightness normalization")
 
 def save_png(arr, path, enhance_contrast=True, contrast_factor=1.5, apply_gamma_correction=False, gamma=GAMMA, transparent_nodata=True):
@@ -110,7 +106,7 @@ def save_png(arr, path, enhance_contrast=True, contrast_factor=1.5, apply_gamma_
     - `enhance_contrast`: apply linear contrast boost
     - `contrast_factor`: multiplier for contrast enhancement (>1 = more contrast)
     - `apply_gamma`: apply gamma correction for punchy blacks/whites
-    - `gamma` <1 darkens shadows / brightens highlights
+    - `gamma` darkens shadows / brightens highlights
     - `transparent_nodata`: if True, black nodata areas will be transparent
     """
     rgb = np.transpose(arr[:3], (1, 2, 0))  # (H,W,3)
