@@ -21,7 +21,7 @@ def copy_file_to_dir(src, dest_dir = BM_SR_DIR, is_sr4s: bool = False):
     __, ext = os.path.splitext(src)
     if type(is_sr4s) is not bool:
         dest_dir = BM_DATA_DIR
-        name = f"original"
+        name = f"GT_SEN2SR"
     else:
         name = "SR4S" if is_sr4s else "SEN2SR"
     timestamp = str(time.time())
