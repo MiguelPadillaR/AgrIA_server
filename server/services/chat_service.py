@@ -1,6 +1,4 @@
-from pathlib import Path
 from PIL import Image
-import os
 from google.genai.types import Content
 from ..config.llm_client import client
 from ..utils.chat_utils import generate_image_context_data, save_image_and_get_path

@@ -65,4 +65,3 @@ def generate_image_context_data(image_date, land_uses) -> str:
         return results
     except Exception as e:
         print("Error while getting image context data: " + e)
-

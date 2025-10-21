@@ -105,7 +105,7 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
     if GET_SR_BENCHMARK:
         init3 = datetime.now()
         compare_sr_metrics()
-        msg2 = f"\nTIME TAKEN (BENCHMARK): {datetime.now()-init3}"
+        msg3 = f"\nTIME TAKEN (BENCHMARK): {datetime.now()-init3}"
 
     print(msg1 + msg2 + msg3)
 

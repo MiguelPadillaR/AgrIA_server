@@ -19,9 +19,9 @@ def generate_system_instructions(prompt_json_path: str):
     short_description_prompt = load_prompt_from_json(prompt_json_path,is_image_desc_prompt= True, is_detailed_description=False)
     full_description_prompt = load_prompt_from_json(prompt_json_path, is_image_desc_prompt= True, is_detailed_description=True)
 
-    # Compose system insrtuctions from files' URI and role text data
-    short_description_instruction = "\n\nThis is the description instructions, format and example for the short image description. You will use these to describe it whenever you are prompted with an image and the tokens '" + SHORT_DESC_TRIGGER +"' and date and crop info:\n\n" + short_description_prompt
-    long_description_instruction = "\n\nThis is the description instructions, format and example for the long image description. You will use these to describe it whenever you are prompted with an image and the tokens '" + FULL_DESC_TRIGGER +"' and date and crop info:\n\n" + full_description_prompt
+    # Compose system instructions from files' URI and role text data
+    short_description_instruction = "\n\nThese are the description instructions, format and example for the short image description. You will use these to describe and classify a parcel whenever you are prompted with an image and the tokens '" + SHORT_DESC_TRIGGER +"' and date and crop info:\n\n" + short_description_prompt
+    long_description_instruction = "\n\nThese are the description instructions, format and example for the long image description. You will use these to describe and classify a parcel whenever you are prompted with an image and the tokens '" + FULL_DESC_TRIGGER +"' and date and crop info:\n\n" + full_description_prompt
 
     system_instructions = role_prompt + short_description_instruction + long_description_instruction
 
@@ -104,7 +104,7 @@ def load_documents_from_json(json_path: str, base_path: str = BASE_CONTEXT_PATH)
 
 def set_initial_history(documents_json_path: str):
     """
-    Constructs the initial history for a chat session, including context documents.
+    Constructs the initial history for a chat session, including examples & context documents.
 
     Args:
         documents_json_path: The path to the JSON file containing paths to context documents.
@@ -126,7 +126,7 @@ def set_initial_history(documents_json_path: str):
         doc_paths_list = []
 
     if doc_paths_list:
-        document_parts.append(Part(text="Use the following files as context documents for the task. You may display tables and quote or reference information directly from the documents:"))
+        document_parts.append(Part(text="Use the following files as context documents for the task. You may display tables and quote or reference information directly from these documents:"))
 
         for doc_path in doc_paths_list:
             if not doc_path:
@@ -138,7 +138,7 @@ def set_initial_history(documents_json_path: str):
             try:
                 uploaded_doc = upload_context_document(doc_path)
                 if uploaded_doc and uploaded_doc.uri:
-                    print(f"Successfully uploaded document. URI: {uploaded_doc.uri}")
+                    print(f"Successfully uploaded document. {os.path.basename(doc_path)} URI: {uploaded_doc.uri}")
                     document_parts.append(Part(text=f"Document: {os.path.basename(doc_path)}"))
                     # Add the document URI part
                     document_parts.append(Part.from_uri(file_uri=uploaded_doc.uri, mime_type=mime_type))
