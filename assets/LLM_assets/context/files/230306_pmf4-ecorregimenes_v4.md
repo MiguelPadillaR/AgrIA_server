@@ -208,8 +208,8 @@ Existe un listado amplio de "espacios de biodiversidad" con coeficientes de pond
 
 Los requisitos deben cumplirse sobre el total de parcelas acogidas para cada tipo de uso del suelo:
 * **Tierras de cultivo:** El solicitante puede compensar entre superficies de secano y regadío, aplicando un coeficiente (ejemplo 3 del anexo I de la Nota Aclaratoria).
-* **Arroz:** El 3% se aplica al conjunto de tierras de arroz solicitadas para este ER. Se puede dedicar una parte a espacios de biodiversidad y otra a la gestión de la lámina de agua.
-* **Cultivos permanentes:** El 4% debe destinarse a superficies o elementos no productivos en el conjunto de tierras de cultivo permanente solicitadas para este ER.
+* **Arroz:** El 3% se aplica al conjunto de tierras de arroz solicitadas para este ES. Se puede dedicar una parte a espacios de biodiversidad y otra a la gestión de la lámina de agua.
+* **Cultivos permanentes:** El 4% debe destinarse a superficies o elementos no productivos en el conjunto de tierras de cultivo permanente solicitadas para este ES.
 
 **P.3.7. ¿Qué medidas de gestión sostenible de la lámina de agua se consideran para el cultivo del arroz?**
 

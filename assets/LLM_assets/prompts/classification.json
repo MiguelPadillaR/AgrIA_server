@@ -1,0 +1,176 @@
+{
+ "EN": [
+    {
+      "Ecoscheme": "P1 - Extensive Grazing (Humid/Mediterranean Pastures)",
+      "Land_Uses": "PA, PR, PS, MT",
+      "Conditions": "Maintain minimum and maximum livestock density within established limits (e.g., 0.2 LU/ha to 1.2 LU/ha), and respect a non-grazing or mowing period on at least 50% of the area to promote biodiversity.",
+      "Rates": {
+        "Peninsular": 27.27,
+        "Insular": 49.27,
+        "Pluriannuality": "N/A"
+      }
+    },
+    {
+      "Ecoscheme": "P3 - Crop Rotation with Enhancing Species",
+      "Land_Uses": "TA, TH, IV",
+      "Conditions": "Rotate 50% of the crop area annually or 10% of the land with enhancing species (5% for legumes).",
+      "Rates": {
+        "Peninsular": 44.32,
+        "Insular": 72.32,
+        "Pluriannuality": "Applicable"
+      }
+    },
+    {
+      "Ecoscheme": "P4 - No-Till Farming (Direct Sowing)",
+      "Land_Uses": "TA, TH, IV",
+      "Conditions": "40% of the requested area must be left untilled.",
+      "Rates": {
+        "Peninsular": 44.32,
+        "Insular": 72.32,
+        "Pluriannuality": "Applicable"
+      }
+    },
+    {
+      "Ecoscheme": "P5 (A) - Biodiversity Spaces (Cultivated Land)",
+      "Land_Uses": "TA, TH, IV, CF, CI, CS, CV, FF, FL, FS, FV, FY, OC, OF, OV, VF, VI, VO",
+      "Conditions": "Reserve a minimum strip in cultivated land or perform other specific biodiversity practices.",
+      "Rates": {
+        "Peninsular": 42.996797,
+        "Insular": "N/A",
+        "Pluriannuality": "N/A"
+      }
+    },
+    {
+      "Ecoscheme": "P5 (B) - Biodiversity Spaces (Under Water)",
+      "Land_Uses": "AG",
+      "Conditions": "Applicable to cultivated areas under water (e.g., rice fields).",
+      "Rates": {
+        "Peninsular": 145.098595,
+        "Insular": "N/A",
+        "Pluriannuality": "N/A"
+      }
+    },
+    {
+      "Ecoscheme": "Not Eligible",
+      "Land_Uses": "CA, ED, EP, FO, IM, ZC, ZU, ZV",
+      "Conditions": "These classes are not eligible to receive direct payments from Ecoschemes.",
+      "Rates": {
+        "Peninsular": 0,
+        "Insular": 0,
+        "Pluriannuality": "N/A"
+      }
+    },
+    {
+      "Ecoscheme": "P6 - Spontaneous or Sown Plant Cover",
+      "Land_Uses": "CF, CI, CS, CV, FF, FL, FS, FV, FY, OC, OF, OV, VF, VI, VO",
+      "Conditions": "Live cover from Oct 1st to Mar 31st. Pest eradication is allowed.",
+      "Rates": {
+        "Peninsular": 59.12,
+        "Insular": 99.12,
+        "Pluriannuality": "Applicable"
+      }
+    },
+    {
+      "Ecoscheme": "P7 - Inert Plant Cover from Pruning Remains",
+      "Land_Uses": "CF, CI, CS, CV, FF, FL, FS, FV, FY, OC, OF, OV, VF, VI, VO",
+      "Conditions": "Shred and distribute remains uniformly over the surface.",
+      "Rates": {
+        "Peninsular": 59.12,
+        "Insular": 99.12,
+        "Pluriannuality": "Applicable"
+      }
+    },
+    {
+      "Ecoscheme": "Non-Eligible",
+      "Land_Uses": "CA, ED, EP, IM, ZU",
+      "Conditions": "This category is reserved for non-agricultural land that does not fin into any of the CAP's Eco-schemes.",
+      "Rates": {
+        "Peninsular": "N/A",
+        "Insular": "N/A",
+        "Pluriannuality": "N/A"
+      }
+    }
+  ],
+  "ES":[
+  {
+    "Ecorrégimen": "P1 - Pastoreo Extensivo (Pastos Húmedos/Mediterráneos)",
+    "Usos": "PA, PR, PS, MT",
+    "Condiciones": "Mantener una carga ganadera mínima y máxima dentro de los límites establecidos (ej. 0.2 UGM/ha a 1.2 UGM/ha), y respetar un periodo de no pastoreo o siega en al menos el 50% de la superficie para favorecer la biodiversidad.",
+    "Importes": {
+      "Peninsular": 27.27,
+      "Insular": 49.27,
+      "Plurianualidad": "N/A"
+    }
+  },
+  {
+    "Ecorrégimen": "P3 - Rotación de cultivos con especies mejorantes",
+    "Usos": "TA, TH, IV",
+    "Condiciones": "Rotar 50% de cultivo al año o 10% de tierra con especies mejorantes (5% para leguminosas).",
+    "Importes": {
+      "Peninsular": 44.32,
+      "Insular": 72.32,
+      "Plurianualidad": "Si"
+    }
+  },
+  {
+    "Ecorrégimen": "P4 - Siembra directa",
+    "Usos": "TA, TH, IV",
+    "Condiciones": "El 40% de la superficie solicitada debe estar sin arar.",
+    "Importes": {
+      "Peninsular": 44.32,
+      "Insular": 72.32,
+      "Plurianualidad": "Si"
+    }
+  },
+  {
+    "Ecorrégimen": "P6 - Cubiertas vegetales espontáneas o sembradas",
+    "Usos": "CF, CI, CS, CV, FF, FL, FS, FV, FY, OC, OF, OV, VF, VI, VO",
+    "Condiciones": "Cubierta viva de 1 Oct hasta 31 Marzo. Se permite erradicación de plagas.",
+    "Importes": {
+      "Peninsular": 59.12,
+      "Insular": 99.12,
+      "Plurianualidad": "Si"
+    }
+  },
+  {
+    "Ecorrégimen": "P7 - Cubiertas vegetales inertes de restos de poda",
+    "Usos": "CF, CI, CS, CV, FF, FL, FS, FV, FY, OC, OF, OV, VF, VI, VO",
+    "Condiciones": "Triturar y distribuir restos de forma uniforme sobre superficie.",
+    "Importes": {
+      "Peninsular": 59.12,
+      "Insular": 99.12,
+      "Plurianualidad": "Si"
+    }
+  },
+  {
+    "Ecorrégimen": "P5 (A) - Espacios de Biodiversidad (Cultivos)",
+    "Usos": "TA, TH, IV, CF, CI, CS, CV, FF, FL, FS, FV, FY, OC, OF, OV, VF, VI, VO",
+    "Condiciones": "Reservar una franja mínima en tierras de cultivo o realizar otras prácticas de biodiversidad específicas.",
+    "Importes": {
+      "Peninsular": 42.996797,
+      "Insular": "N/A",
+      "Plurianualidad": "N/A"
+    }
+  },
+  {
+    "Ecorrégimen": "P5 (B) - Espacios de Biodiversidad (Bajo Agua)",
+    "Usos": "AG",
+    "Condiciones": "Aplicable a superficies de cultivo bajo agua (ej. arrozales).",
+    "Importes": {
+      "Peninsular": 145.098595,
+      "Insular": "N/A",
+      "Plurianualidad": "N/A"
+    }
+  },
+  {
+    "Ecorrégimen": "No Admisible",
+    "Usos": "CA, ED, EP, IM, ZC, ZU, ZV",
+    "Condiciones": "Esta categoría se reserva para superficies no agrícolas que no tienen cabida en los ecorregímenes de la CAP.",
+    "Importes": {
+      "Peninsular": "N/A",
+      "Insular": "N/A",
+      "Plurianualidad": "N/A"
+    }
+  }
+  ]
+}

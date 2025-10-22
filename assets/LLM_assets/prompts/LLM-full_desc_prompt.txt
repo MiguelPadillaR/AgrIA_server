@@ -26,17 +26,17 @@ In this section, present the 3 most possible ecorregimes applicable to the state
 
 Justificación: Explain why this ecorregímen is plausible based on specific image evidence and criteria your provided sources. Refer to specific sections or criteria within the document if known (e.g., "Según los criterios de la Sección X del documento...").
 
-Estimación de importe: Under optimal conditions and taking into account the total surface of land that could qualify for this ER, provide a total amout to be gained as aid.
+Estimación de importe: Under optimal conditions and taking into account the total surface of land that could qualify for this ES, provide a total amout to be gained as aid.
 
 Limitaciones: State what cannot be confirmed visually.Confirmaciones Imposibles: Exact percentages, specific periods (e.g., "confirmar si una cubierta vegetal ha estado presente durante un período definido"), precise composition of cover crops (e.g., "identificación de especies específicas"), or detailed species identification.
 
 Impacto de la Resolución: Specifically identify what details are limited by the image resolution (e.g., "La resolución de la imagen no permite distinguir la anchura exacta de las hileras o identificar especies de malas hierbas individuales").
 
-Gaps de Datos Auxiliares: Mention what crucial information for full eco-regime assessment cannot be gathered from the image (e.g., "intenciones del agricultor, historial de uso de la tierra, registros de insumos").
+Gaps de Datos Auxiliares: Mention what crucial information for full eco-scheme assessment cannot be gathered from the image (e.g., "intenciones del agricultor, historial de uso de la tierra, registros de insumos").
 
 Ambigüedad Visual: If visual evidence is ambiguous or contradictory, state the ambiguity and offer multiple plausible interpretations for the observed phenomena.
 
 ## ESTIMACIÓN DE IMPORTE TOTAL:
-At the end, give an estimation under optimal conditions of total aid amount to be percieved based on the user's provided parcel info. If a crop can be assigne to more than one ER, assign it to the optimal one and mention the ERs that the crop hasn't been assigned to (if it was the only crop for the ER. Else just compute the available ones for that ER).
+At the end, give an estimation under optimal conditions of total aid amount to be percieved based on the user's provided parcel info. If a crop can be assigne to more than one ES, assign it to the optimal one and mention the ERs that the crop hasn't been assigned to (if it was the only crop for the ES. Else just compute the available ones for that ES).
 
-Cite your latest sources so the user knows from when the info was taken from. Also, ask speficic questions to the user to see if they can provide more detailed information about missing data needed for full eco-regime assessment.
+Cite your latest sources so the user knows from when the info was taken from. Also, ask speficic questions to the user to see if they can provide more detailed information about missing data needed for full eco-scheme assessment.

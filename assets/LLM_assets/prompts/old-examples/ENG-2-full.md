@@ -27,18 +27,18 @@
 
 ### P5 - Biodiversity Spaces
 
-*   **Justification:** The presence of unproductive zones (IM) could be accounted for within the eco-regime of biodiversity spaces, provided that they meet the established criteria.
+*   **Justification:** The presence of unproductive zones (IM) could be accounted for within the eco-scheme of biodiversity spaces, provided that they meet the established criteria.
 *   **Estimated amount:** The unit amount is **48.56 €/ha**.
-*   **Limitations:** It is not possible to determine from the image, neither the exact amount of biodiversity spaces, nor their distribution, nor their adequacy to the criteria of the eco-regime.
+*   **Limitations:** It is not possible to determine from the image, neither the exact amount of biodiversity spaces, nor their distribution, nor their adequacy to the criteria of the eco-scheme.
 *   **Impact of Resolution:** The resolution of the image limits the precise accounting of landscape elements.
 *   **Data Gaps:** Information is needed on the SIGPAC classification of the parcel and the total surface area of the farm to determine the required percentage.
-*   **Visual Ambiguity:** It is not possible to know if the unproductive surfaces meet the requirements for their classification and accounting within this eco-regime (for example, biodiversity margins with specific characteristics).
+*   **Visual Ambiguity:** It is not possible to know if the unproductive surfaces meet the requirements for their classification and accounting within this eco-scheme (for example, biodiversity margins with specific characteristics).
 
 ### P6 - Spontaneous or Sown Vegetation Covers
 
 *   **Justification:** This practice is applicable to woody crops, such as olive groves (OV). The aim is to promote carbon capture, reduce erosion, and improve biodiversity through the establishment of a living plant cover.
 *   **Estimated amount:** For the Peninsula, the amount amounts to **60.08 €/ha (without plurianuality) or 85.08 €/ha (with plurianuality)**, if the surface is less than 15 ha, and to **42.056 €/ha (without plurianuality) or 67.056 €/ha (with plurianuality)**, if the surface is greater than 15 ha. For the Islands, the amount amounts to **100.08 €/ha (without plurianuality) or 125.08 €/ha (with plurianuality)**, if the surface is less than 15 ha, and to **82.056 €/ha (without plurianuality) or 107.056 €/ha (with plurianuality)**, if the surface is greater than 15 ha.
-*   **Limitations:** It is not possible to visually determine if there is a plant cover, nor if it complies with the requirements of the eco-regime P6, based on the image.
+*   **Limitations:** It is not possible to visually determine if there is a plant cover, nor if it complies with the requirements of the eco-scheme P6, based on the image.
 *   **Impact of Resolution:** The resolution of the image does not allow determining the presence of plant cover and its compliance with the requirements.
 *   **Data Gaps:** It is essential to know if there is a plant cover in the olive grove and if it meets the criteria for the permanence period established by the competent authority (four months between October 1 and March 31).
 *   **Visual Ambiguity:** The homogeneity of the olive grove vegetation could indicate plant cover, but it cannot be assured with certainty.
@@ -48,13 +48,13 @@
 *   **Justification:** This practice, also applicable to woody crops, seeks to promote carbon capture, the maintenance of soil moisture, the control of erosion, and the improvement of organic matter through the use of pruning remains as an inert cover.
 *   **Estimated amount:** For the Peninsula, the amount amounts to **60.08 €/ha (without plurianuality) or 85.08 €/ha (with plurianuality)**, if the surface is less than 15 ha, and to **42.056 €/ha (without plurianuality) or 67.056 €/ha (with plurianuality)**, if the surface is greater than 15 ha. For the Islands, the amount amounts to **100.08 €/ha (without plurianuality) or 125.08 €/ha (with plurianuality)**, if the surface is less than 15 ha, and to **82.056 €/ha (without plurianuality) or 107.056 €/ha (with plurianuality)**, if the surface is greater than 15 ha.
 *   **Limitations:** It is not possible to visually determine if pruning remains have been applied to the parcel.
-*   **Impact of Resolution:** The resolution of the image does not allow determining if pruning remains have been applied and if they meet the requirements of the eco-regime.
+*   **Impact of Resolution:** The resolution of the image does not allow determining if pruning remains have been applied and if they meet the requirements of the eco-scheme.
 *   **Data Gaps:** It is essential to know if pruning remains have been used as an inert cover and if the established management criteria are met.
 *   **Visual Ambiguity:** The image does not provide information on the management of pruning remains.
 
 ## TOTAL AMOUNT ESTIMATION:
 
-*   **P3 (Crop rotation with improving species):** **701,07 €** (without plurianuality) / **1.089,94 €** (with plurianuality) - *TA has been assigned to this ER because the amount to be received is greater.*
+*   **P3 (Crop rotation with improving species):** **701,07 €** (without plurianuality) / **1.089,94 €** (with plurianuality) - *TA has been assigned to this ES because the amount to be received is greater.*
 *   **P4 (No-Till Farming):** Already assigned
 *   **P5 (Biodiversity Spaces):** The area destined for the unproductive zones is 1.06 ha. The total amount to be received would be **51,44 €**.
 *   **P6 (Spontaneous or Sown Vegetation Covers):** The surface of the olive grove is 96,39 ha. The total amount to be received would be:

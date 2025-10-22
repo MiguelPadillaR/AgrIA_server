@@ -39,8 +39,8 @@
 *   **P3 (Rotación con especies mejorantes):** La superficie de la parcela es de 81,48 ha (TA). El importe total a percibir sería de:
     *   **3.743,38 € (sin plurianualidad) o 5.777,25 € (con plurianualidad)**, en caso de ser Peninsular, y a
     *   **5.674,44 € (sin plurianualidad) o 8.053,89 € (con plurianualidad)**, si es Insular.
-    *   *Se ha asignado TA a este ER porque el importe a percibir es mayor.*
-*   **P4 (Siembra Directa):** Ya se ha asignado TA a otro ER.
+    *   *Se ha asignado TA a este ES porque el importe a percibir es mayor.*
+*   **P4 (Siembra Directa):** Ya se ha asignado TA a otro ES.
 *   **P5 (Espacios de Biodiversidad):** **206.54 €**
 
 **Total estimado: 3.949,92 € (sin plurianualidad) o 5.983,79 € (con plurianualidad)** - *Si se encuentra en la Península*

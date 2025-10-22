@@ -1,6 +1,6 @@
 THIS IS A SHORT DESCRIPTION IMAGE PROMPT.
 
-Analyze the provided satellite image of agricultural land. Given the image date and crop type, generate a concise description of key visual cues and suggest possible eco-regimes (ERs) based on these cues and the context documents you may have recieved. The LLM has no access to historical data or external information beyond the provided inputs.
+Analyze the provided satellite image of agricultural land. Given the image date and crop type, generate a concise description of key visual cues and suggest possible eco-schemes (ERs) based on these cues and the context documents you may have recieved. The LLM has no access to historical data or external information beyond the provided inputs.
 
 Image date and land uses will be provided in and orderly manner.
 
@@ -10,16 +10,16 @@ Output Format: in markdown, do not wrap it in a MD block, just raw text. Use thi
 Provide a brief, 2-4 sentence summary of the image. Focus on the most salient visual features and use land use and surface is such data has been provided via prompt. Satellite images will be in 2.5m/px resolution.
 
 **POSIBLE(S) ECORREGÍMEN(ES):**
-Provide a table with the posible eco-regimes, the viability of implementation, the estimated base amounts for Peninsular and Insular rates and the conditions to qualify for the ER. Provide a clarification to indicate the rates can be increased with pluriannuality except for the P5 eco-regime.
+Provide a table with the posible eco-schemes, the viability of implementation, the estimated base amounts for Peninsular and Insular rates and the conditions to qualify for the ES. Provide a clarification to indicate the rates can be increased with pluriannuality except for the P5 eco-scheme.
 
 **ESTIMACIÓN DE IMPORTE TOTAL:**
-Provide another table with the ER type, the land uses assigned to it, the total surface covered and the estimated Peninsular base and pluriannuality amounts. Make a clarification to indicate Peninsular rates are being used. To get the amounts, multiply the surface times the unit rate from the ER given on the previous table. For plurianuallity amounts, use the same calculation but add 25 to the unit rate and then multiply. If some ER's are assigned to the exact same land uses and surfaces and have the same exact amount, use " to omit the row values (except the ER type) and let the user understand it's the same values under a different ER.
+Provide another table with the ES type, the land uses assigned to it, the total surface covered and the estimated Peninsular base and pluriannuality amounts. Make a clarification to indicate Peninsular rates are being used. To get the amounts, multiply the surface times the unit rate from the ES given on the previous table. For plurianuallity amounts, use the same calculation but add 25 to the unit rate and then multiply. If some ES's are assigned to the exact same land uses and surfaces and have the same exact amount, use " to omit the row values (except the ES type) and let the user understand it's the same values under a different ES.
 
 **RESULTADOS:**
-Notify the user when one land use is assigned to multiple ERs. Clarify that, under CAP regulation, only one ER can be assigned to each land use, but you'll provide the most favourable overall. Provide a bullet point list with with the following:
+Notify the user when one land use is assigned to multiple ERs. Clarify that, under CAP regulation, only one ES can be assigned to each land use, but you'll provide the most favourable overall. Provide a bullet point list with with the following:
 
-- ER válido(s): Include all of the ERs considered separated by +. If two ERs have the same amounts and land uses, use / to indicate they are the same in terms of money recieved (i.e P3/P4 + P4 + P6/P7). Make sure you include ERs that have different land uses, for Ers are usually mutually exclusive. If this happens, make sure you choose the ER that will be more benefitial on the long run.
+- ES válido(s): Include all of the ERs considered separated by +. If two ERs have the same amounts and land uses, use / to indicate they are the same in terms of money recieved (i.e P3/P4 + P4 + P6/P7). Make sure you include ERs that have different land uses, for Ers are usually mutually exclusive. If this happens, make sure you choose the ES that will be more benefitial on the long run.
 - Importe total: Indicate the total amount of the considered ERs. If two ERS have the same amount, only add it once, not twice, to the total. Separate the amounts with and without pluriannuality (if it applies) using a ' / '.
 - Aclaraciones: make any clarifications that will help the user understand the reasoning behind your resulting ERs assignation assessment.
 
-Cite your latest sources so the user knows from when the info was taken from. Also, mention what crucial information for full eco-regime assessment cannot be gathered from the image and ask the user if they can provide it
+Cite your latest sources so the user knows from when the info was taken from. Also, mention what crucial information for full eco-scheme assessment cannot be gathered from the image and ask the user if they can provide it
