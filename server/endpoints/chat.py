@@ -36,11 +36,12 @@ def send_parcel_info_to_chat():
     try:
         image_date = request.form.get('imageDate').split("/")[-1]
         land_uses = json.loads(request.form.get('landUses'))
+        query = json.loads(request.form.get('query'))
         image_filename = request.form.get('imageFilename')
         is_detailed_description: bool = "true" in str(request.form.get("isDetailedDescription")).lower()
         lang = request.form.get('lang')
 
-        response = get_parcel_description(image_date, land_uses, image_filename, is_detailed_description, lang)
+        response = get_parcel_description(image_date, land_uses, query, image_filename, is_detailed_description, lang)
 
         return jsonify({'response': response})
     except Exception as e:

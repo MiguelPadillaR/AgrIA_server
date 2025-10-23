@@ -21,23 +21,30 @@ def generate_system_instructions(prompt_json_path: str):
     full_description_prompt = load_prompt_from_json(prompt_json_path, 'long', True)
 
     # Compose system instructions from files' URI and role text data
-    exclusivity_instrucitons = """\n\n
+    exclusivity_instructions = """\n\n
 **CRITICAL EXCLUSIVITY DIRECTIVE FOR CALCULATION:**
-
 **UNBREAKABLE CAP RULE:** Ecoscheme aid is **MUTUALLY EXCLUSIVE**. Each hectare of land (Land Use) can only be assigned to **ONE SINGLE** Ecoscheme (ES).
-
 When calculating the amounts, if a Land Use (e.g., TA, OV, VI) is eligible for multiple ES, you must:
     1. **Identify** the ES that offers the **HIGHEST TOTAL AMOUNT (€/ha)**, including the pluriannuality supplement if applicable, to choose the most beneficial option.
     2. **Assign** the total area of that Land Use **exclusively** to that ES in the calculation table.
     3. For alternative ES that share the same Land Use (e.g., P5 vs P6/P7 for OV), mark the `Applicable` column with the text: **"Excluded: [Land use ID] used for [Chosen ES]"**.
     4. **NEVER** sum the payments from multiple ES for the same land area.
     """
+    tiered_calculation_instructions = """\n\n
+**TIERED CALCULATION RULE:**
+If the 'Rates' object contains 'Rate_section_1' and 'Rate_section_2' keys:
+    1.  Identify the **Threshold_ha** (L) from the 'Rates' object.
+    2.  The area to be paid at the Tier 1 rate is: AreaTier1 = Minimum(Total Area, L).
+    3.  The area to be paid at the Tier 2 rate is: AreaTier2 = Maximum(0, Total Area - L).
+    4.  The Base Payment for that ES is the sum of: $(AreaTier1 * Rate_section_1) + (AreaTier2 * Rate_section_2)$.
+    5.  If the 'Pluriannuality' field is 'Applicable', add the fixed bonus of **25.00 €/ha** (as defined in the system instructions) to the Total Area for the 'Total with Pluriannuality' column.
+"""
     short_description_instruction = f"""\n\n
-These are the description instructions, format and example for the short image description. You will use these to describe and classify a parcel whenever you are prompted with an image and the tokens {SHORT_DESC_TRIGGER} and date and crop info:\n\n###BEGIN EXAMPLE###\n{short_description_prompt}\n###END EXAMPLE###\n\nNotice how if a land use is eligible for more than one ES, you must only take the most long-term benefitial option and indicate so using the `Applicable` column as specified by the **MUTUALLY EXCLUSIVE** rule.
+These are the description instructions, format and example for the short image description. You will use these to describe and classify a parcel whenever you are prompted with an image and the tokens {SHORT_DESC_TRIGGER} and date and crop info:\n\n{short_description_prompt}\n\nNotice how if a land use is eligible for more than one ES, you must only take the most long-term benefitial option and indicate so using the `Applicable` column as specified by the **MUTUALLY EXCLUSIVE** rule.
 """
     long_description_instruction = "\n\nThese are the description instructions, format and example for the long image description. You will use these to describe and classify a parcel whenever you are prompted with an image and the tokens '" + FULL_DESC_TRIGGER +"' and date and crop info:\n\n" + full_description_prompt
     classification_instruction = "\n\nThese is the Eco-schemes classification data for each possible land use. There is an English and Spanish version. Use these to fill out the table data whenever you are prompted to describe a parcel:\n\n" + classification_data
-    system_instructions = role_prompt + exclusivity_instrucitons + short_description_instruction + long_description_instruction + classification_instruction
+    system_instructions = role_prompt + exclusivity_instructions + tiered_calculation_instructions + short_description_instruction + long_description_instruction + classification_instruction
 
     with open("sys_ins.txt", "w") as file:
         file.write(system_instructions)

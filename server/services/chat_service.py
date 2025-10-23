@@ -31,12 +31,13 @@ def get_image_description(file, is_detailed_description):
 
     return response.text
 
-def get_parcel_description(image_date, land_uses, image_filename, is_detailed_description, lang):
+def get_parcel_description(image_date, land_uses, query, image_filename, is_detailed_description, lang):
     """
     Handles the parcel information reading and description.
     Args:
         image_date (str): Date of the image.
-        land_uses (list[dict]): List of land uses present in the parcel.
+        land_uses (list[dict]): List of land uses present in the state.
+        query (list[dict]): List all parcels' detailed info. present in the state.
         image_filename (str): Name of the image file.
         is_detailed_description (bool): If True, generates a detailed description; otherwise, a short one.
         lang (str): Current interface language (`es`/ `en`).
@@ -45,7 +46,7 @@ def get_parcel_description(image_date, land_uses, image_filename, is_detailed_de
     """
     try:
         # Build image context prompt
-        image_context_data = generate_image_context_data(image_date, land_uses)
+        image_context_data = generate_image_context_data(image_date, land_uses, query)
         # Insert image context prompt and read image desc file
         image_desc_prompt =  FULL_DESC_TRIGGER if is_detailed_description else SHORT_DESC_TRIGGER
         image_desc_prompt += "\n"+image_context_data[lang]

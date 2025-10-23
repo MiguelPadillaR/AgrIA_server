@@ -16,7 +16,7 @@ def save_image_and_get_path(file) -> str:
     file.save(filepath)
     return filepath
 
-def generate_image_context_data(image_date, land_uses) -> str:
+def generate_image_context_data(image_date, land_uses, query) -> str:
     """
     Retrieves image context data for prompt generation.
     Generates both English and Spanish versions and saves them as text files.
@@ -24,6 +24,7 @@ def generate_image_context_data(image_date, land_uses) -> str:
     Args:
         image_date (str): Date of the image.
         land_uses (list[dict]): Land use metadata.
+        query (list[dict]): List all parcels' detailed info. present in the state.
     
     Returns:
         dict: {"es": str, "en": str} with Spanish and English context data.
@@ -32,13 +33,13 @@ def generate_image_context_data(image_date, land_uses) -> str:
         # Define templates for both languages
         templates = {
             "es": {
-                "header": f"FECHA DE IMAGEN: {image_date}\nPARCELAS DETECTADAS: {len(land_uses)}\n",
-                "parcel": "\n- Tipo de Uso: {type}\n- Superficie admisible (ha): {surface}\n",
+                "header": f"FECHA DE IMAGEN: {image_date}\nTIPOS DE USO DETECTADAS: {len(land_uses)}\n",
+                "parcel": "\n- Tipo de Uso: {type}\n- Superficie admisible (ha): {surface}\n- Coef. de Regadío: {irrigation_coef}%\n",
                 "footer": "\nSUPERFICIE ADMISIBLE TOTAL (ha): {total}"
             },
             "en": {
-                "header": f"IMAGE DATE: {image_date}\nPARCELS DETECTED: {len(land_uses)}\n",
-                "parcel": "\n- Land Use: {type}\n- Eligible surface (ha): {surface}\n",
+                "header": f"IMAGE DATE: {image_date}\nLAND USES DETECTED: {len(land_uses)}\n",
+                "parcel": "\n- Land Use: {type}\n- Eligible surface (ha): {surface}\n- Irrigation Coeficient: {irrigation_coef}%\n",
                 "footer": "\nTOTAL ELIGIBLE SURFACE (ha): {total}"
             }
         }
@@ -47,21 +48,42 @@ def generate_image_context_data(image_date, land_uses) -> str:
         total_surface = 0.0
 
         for use in land_uses:
-            type_ = use["uso_sigpac"]
+            land_use_type = use["uso_sigpac"]
             surface = round(float(use.get("superficie_admisible") or use.get("dn_surface", 0))/10000, 5)
 
             total_surface += surface
+            irrigation_coef = get_irrigation_coefficient(query, land_use_type)
 
             for lang in ["es", "en"]:
-                results[lang] += templates[lang]["parcel"].format(type=type_, surface=surface)
+                results[lang] += templates[lang]["parcel"].format(type=land_use_type, surface=surface, irrigation_coef=round(irrigation_coef, 2))
 
         for lang in ["es", "en"]:
             results[lang] += templates[lang]["footer"].format(total=round(total_surface, 3))
             desc_file = TEMP_DIR / f"parcel_desc-{lang}.txt"
-            print(f"\nGenerating file:\t{desc_file}")
+            print(f"\nGenerating file: {desc_file}")
             with open(desc_file, "w") as file:
                 file.write(results[lang])
 
         return results
     except Exception as e:
         print("Error while getting image context data: " + e)
+
+def get_irrigation_coefficient(query, land_use)-> float:
+    """
+    Returns the mean irrigation coeficient across all parcels in state for the specified land use.
+
+    Arguments:
+        query(list[dict]): List all parcels' detailed info. present in the state.
+        land_use (str): Land use type
+    Returns:
+        irrigation_coef (float): Total irrigation coefficient for the land use.
+    """
+    irrigation_coef = 0.0
+    parcels_with_land_use = 0
+    for parcel in query:
+        if parcel.get("uso_sigpac") == land_use:
+            value = parcel.get("coef_regadio")
+            irrigation_coef += float(value) if value is not None else 0.0
+            parcels_with_land_use += 1
+    mean_irrigation_coef = irrigation_coef / parcels_with_land_use if parcels_with_land_use > 0 else 0.0
+    return mean_irrigation_coef
