@@ -13,27 +13,27 @@ El Fondo Español de Garantía Agraria O.A. (FEGA) es el encargado de establecer
 Los IU provisionales de la campaña 2025 se han establecido con los datos de superficies solicitadas en la solicitud única de ayudas de la PAC y comunicadas al FEGA por las comunidades autónomas (CCAA).
 
 Para el cálculo de los IU provisionales se ha tenido en cuenta:
-* Un **complemento de plurianualidad de $25 €/ha$** en las prácticas de siembra directa y de cubiertas vegetales, que se paga íntegramente a los titulares que renuevan este compromiso en la próxima campaña.
+* Un **complemento de plurianualidad de 25 €/ha** en las prácticas de siembra directa y de cubiertas vegetales, que se paga íntegramente a los titulares que renuevan este compromiso en la próxima campaña.
 * La condición de **insularidad** de las superficies de las **Islas Baleares** en los Ecorregímenes en los que aplica
 
 ## Importes Unitarios Provisionales para el Pago de Anticipos (Campaña 2025)
 
 | Ecorregimen | Tipo | Tramo 1 Umbral (ha) | Importe Tramo 1 (€/ha) | Tramo 2 Umbral (ha) | Importe Tramo 2 (€/ha) | Complemento Plurianualidad |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Pastoreo y Biodiversidad en Pastos Húmedos** | | $\le65$ | 43,640000 | $>65$ | 43,640000 | No |
-| **Pastoreo y Biodiversidad en Pastos Mediterráneos** | Peninsular | $\le95$ | 27,270000 | $>95$ | 27,270000 | No |
-| | Insular | $\le95$ | 49,270000 | $>95$ | 49,270000 | No |
-| **Rotación y Siembra Directa en Secano** | Peninsular | $\le70$ | 44,320000 | $>70$ | 31,024000 | Sí |
-| | Insular | $\le70$ | 72,320000 | $>70$ | 59,024000 | Sí |
-| **Rotación y Siembra Directa en Secano Húmedo** | | $\le30$ | 62,986183 | $>30$ | 46,180000 | Sí |
-| **Rotación y Siembra Directa en Regadío** | Peninsular | $\le25$ | 141,742439 | $>25$ | 99,219707 | Sí |
-| | Insular | $\le25$ | 221,742439 | $>25$ | 179,219707 | Sí |
-| **Cubiertas Vegetales/Inertes en Leñosos Llanos** | Peninsular | $\le15$ | 59,120000 | $>15$ | 41,384000 | Sí |
-| | Insular | $\le15$ | 99,120000 | $>15$ | 81,384000 | Sí |
-| **Cubiertas Vegetales/Inertes en Leñosos Pendiente Media** | Peninsular | $\le15$ | 110,560000 | $>15$ | 77,392000 | Sí |
-| | Insular | $\le15$ | 174,560000 | $>15$ | 141,392000 | Sí |
-| **Cubiertas Vegetales/Inertes en Leñosos Pendiente Elevada/Bancales** | Peninsular | $\le15$ | 131,381037 | $>15$ | 102,910000 | Sí |
-| | Insular | $\le15$ | 219,381037 | $>15$ | 190,910000 | Sí |
+| **Pastoreo y Biodiversidad en Pastos Húmedos** | | 65 | 43,640000 | >65 | 43,640000 | No |
+| **Pastoreo y Biodiversidad en Pastos Mediterráneos** | Peninsular | 95 | 27,270000 | >95 | 27,270000 | No |
+| | Insular | 95 | 49,270000 | >95 | 49,270000 | No |
+| **Rotación y Siembra Directa en Secano** | Peninsular | 70 | 44,320000 | >70 | 31,024000 | Sí |
+| | Insular | 70 | 72,320000 | >70 | 59,024000 | Sí |
+| **Rotación y Siembra Directa en Secano Húmedo** | | 30 | 62,986183 | >30 | 46,180000 | Sí |
+| **Rotación y Siembra Directa en Regadío** | Peninsular | 25 | 141,742439 | >25 | 99,219707 | Sí |
+| | Insular | 25 | 221,742439 | >25 | 179,219707 | Sí |
+| **Cubiertas Vegetales/Inertes en Leñosos Llanos** | Peninsular | 15 | 59,120000 | >15 | 41,384000 | Sí |
+| | Insular | 15 | 99,120000 | >15 | 81,384000 | Sí |
+| **Cubiertas Vegetales/Inertes en Leñosos Pendiente Media** | Peninsular | 15 | 110,560000 | >15 | 77,392000 | Sí |
+| | Insular | 15 | 174,560000 | >15 | 141,392000 | Sí |
+| **Cubiertas Vegetales/Inertes en Leñosos Pendiente Elevada/Bancales** | Peninsular | 15 | 131,381037 | >15 | 102,910000 | Sí |
+| | Insular | 15 | 219,381037 | >15 | 190,910000 | Sí |
 | **Espacios de Biodiversidad en Cultivos y Permanentes** | | N/A | 42,996797 | N/A | N/A | No |
 | **Espacios de Biodiversidad en Cultivos Bajo Agua** | | N/A | 145,098595 | N/A | N/A | No |
 
