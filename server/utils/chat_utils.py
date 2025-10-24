@@ -33,13 +33,15 @@ def generate_image_context_data(image_date, land_uses, query) -> str:
         # Define templates for both languages
         templates = {
             "es": {
-                "header": f"FECHA DE IMAGEN: {image_date}\nTIPOS DE USO DETECTADAS: {len(land_uses)}\n",
-                "parcel": "\n- Tipo de Uso: {type}\n- Superficie admisible (ha): {surface}\n- Coef. de Regadío: {irrigation_coef}%\n",
+                "header": f"\nFECHA DE IMAGEN: {image_date}\nTIPOS DE USO DETECTADAS: {len(land_uses)}\n",
+                "parcel": "\n- Tipo de Uso: {type}\n- Superficie admisible (ha): {surface}\n- Coef. de Regadío: {irrigation}%\n",
+                "slope": "- Pendiente media: {slope}%\n",
                 "footer": "\nSUPERFICIE ADMISIBLE TOTAL (ha): {total}"
             },
             "en": {
-                "header": f"IMAGE DATE: {image_date}\nLAND USES DETECTED: {len(land_uses)}\n",
-                "parcel": "\n- Land Use: {type}\n- Eligible surface (ha): {surface}\n- Irrigation Coeficient: {irrigation_coef}%\n",
+                "header": f"\nIMAGE DATE: {image_date}\nLAND USES DETECTED: {len(land_uses)}\n",
+                "parcel": "\n- Land Use: {type}\n- Eligible surface (ha): {surface}\n- Irrigation Coeficient: {irrigation}%\n",
+                "slope": "- Slope Coeficient: {slope}%\n",
                 "footer": "\nTOTAL ELIGIBLE SURFACE (ha): {total}"
             }
         }
@@ -52,10 +54,12 @@ def generate_image_context_data(image_date, land_uses, query) -> str:
             surface = round(float(use.get("superficie_admisible") or use.get("dn_surface", 0))/10000, 5)
 
             total_surface += surface
-            irrigation_coef = get_irrigation_coefficient(query, land_use_type)
+            irrigation_coef, slope_coef = get_irrigation_coefficient(query, land_use_type)
 
             for lang in ["es", "en"]:
-                results[lang] += templates[lang]["parcel"].format(type=land_use_type, surface=surface, irrigation_coef=round(irrigation_coef, 2))
+                results[lang] += templates[lang]["parcel"].format(type=land_use_type, surface=surface, irrigation=round(irrigation_coef, 2))
+                if slope_coef > 0:
+                    results[lang] += templates[lang]["slope"].format(slope=round(slope_coef, 2))
 
         for lang in ["es", "en"]:
             results[lang] += templates[lang]["footer"].format(total=round(total_surface, 3))
@@ -70,20 +74,30 @@ def generate_image_context_data(image_date, land_uses, query) -> str:
 
 def get_irrigation_coefficient(query, land_use)-> float:
     """
-    Returns the mean irrigation coeficient across all parcels in state for the specified land use.
+    Returns the mean irrigation and slope coefficient across all parcels in state for the specified land use.
 
     Arguments:
         query(list[dict]): List all parcels' detailed info. present in the state.
         land_use (str): Land use type
     Returns:
-        irrigation_coef (float): Total irrigation coefficient for the land use.
+        coefs (tuple(float)): Mean irrigation and slope coefficient for the land use.
     """
+    woody_crops_list = ["CF", "CI", "CS", "CV", "FF", "FL", "FS", "FV", "FY", "OC", "OF", "OV", "VF", "VI", "VO"]
     irrigation_coef = 0.0
+    slope_coef = 0.0
     parcels_with_land_use = 0
+
     for parcel in query:
         if parcel.get("uso_sigpac") == land_use:
             value = parcel.get("coef_regadio")
             irrigation_coef += float(value) if value is not None else 0.0
+            # Get slope for woody crops only
+            if land_use.split("-")[0].replace(" ", "") in woody_crops_list:
+                value = parcel.get("pendiente_media")
+                slope_coef += float(value) if value is not None else 0.0
             parcels_with_land_use += 1
+
     mean_irrigation_coef = irrigation_coef / parcels_with_land_use if parcels_with_land_use > 0 else 0.0
-    return mean_irrigation_coef
+    mean_slope_coef = slope_coef / parcels_with_land_use if parcels_with_land_use > 0 else 0.0
+
+    return mean_irrigation_coef, mean_slope_coef

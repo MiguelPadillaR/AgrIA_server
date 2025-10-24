@@ -15,7 +15,7 @@ The parcel's image, date from October 12th, 2024, is characterized by a strong p
 | **P6/P7 - Plant Cover (Permanent Crops - Flat)** | Possible | 41.384 €/ha | 81.384 €/ha | Live cover OR shred and distribute pruning remains. (**Section 2** applied: Area > 15 ha) |
 | **Non-Eligible** | Possible | N/A | N/A | This category is reserved for non-agricultural land. |
 
-**Pluriannuality Bonus:** An additional **25.00 €/ha** is paid for **P3/P4 and P6/P7**.
+***Pluriannuality Bonus:** An additional **25.00 €/ha** is paid for **P3/P4 and P6/P7**.*
 
 ---
 
@@ -38,8 +38,10 @@ The parcel's image, date from October 12th, 2024, is characterized by a strong p
 
 **RESULTS:**
 
-- **Valid ES: P1 + P3/P4 + P5 (A/B) + P6/P7**
-- **Total amount: 7550.45€ / 10050.45€** (without or with pluriannuality)
+| Applicable Eco-scheme* | Total Aid (w/o Plur.) | Total Aid (with Plur.) |
+| :---: | :---: | :---: |
+| **P1 + P3/P4 + P5 (A/B) + P6/P7** | **7550.45 €** | **10050.45 €** |
+
 - **Clarifications:** P3/P4 payment includes a lower rate for the 10.00 ha exceeding the 70 ha threshold. P6/P7 payment includes a lower rate for the 5.00 ha exceeding the 15 ha threshold. The total pluriannuality bonus of 2500.00 € is applied to the 100.00 ha of eligible land (TA + OV).
 
 To offer a more precise valuation of the parcel, I would need to know the following:
