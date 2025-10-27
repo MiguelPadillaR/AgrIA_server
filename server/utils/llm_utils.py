@@ -1,10 +1,10 @@
-from ..config.constants import BASE_CONTEXT_PATH, BASE_PROMPTS_PATH, FULL_DESC_TRIGGER, MIME_TYPES, SHORT_DESC_TRIGGER
+from ..config.constants import BASE_CONTEXT_PATH, BASE_PROMPTS_PATH, CALCULATIONS_RULE, CONTEXT_DOCUMENTS_FILE, EXCLUSIVITY_RULE, FULL_DESC_TRIGGER, MIME_TYPES, PROMPT_LIST_FILE, SHORT_DESC_TRIGGER
 from server.services.llm_services import upload_context_document
 from google.genai.types import Content, Part
 import json
 import os
 
-def generate_system_instructions(prompt_json_path: str):
+def generate_system_instructions(prompt_json_path: str= PROMPT_LIST_FILE):
     """
     Sets up the initial model's system instructions and context documents for the chat.
     
@@ -21,33 +21,12 @@ def generate_system_instructions(prompt_json_path: str):
     full_description_prompt = load_prompt_from_json(prompt_json_path, 'long', True)
 
     # Compose system instructions from files' URI and role text data
-    exclusivity_instructions = """\n\n
-**CRITICAL EXCLUSIVITY DIRECTIVE FOR CALCULATION:**
-**UNBREAKABLE CAP RULE:** Ecoscheme aid is **MUTUALLY EXCLUSIVE**. Each hectare of land (Land Use) can only be assigned to **ONE SINGLE** Ecoscheme (ES).
-When calculating the amounts, if a Land Use (e.g., TA, OV, VI) is eligible for multiple ES, you must:
-    1. **Identify** the ES that offers the **HIGHEST TOTAL AMOUNT (€/ha)**, including the pluriannuality supplement if applicable, to choose the most beneficial option.
-    2. **Assign** the total area of that Land Use **exclusively** to that ES in the calculation table.
-    3. For alternative ES that share the same Land Use (e.g., P5 vs P6/P7 for OV), mark the `Applicable` column with the text: **"Excluded: [Land use ID] used for [Chosen ES]"**.
-    4. **NEVER** sum the payments from multiple ES for the same land area.
-    """
-    tiered_calculation_instructions = """\n\n
-**TIERED CALCULATION RULE:**
-If the 'Rates' object contains 'Tier_1' (`Tramo_1` in Spanish) and 'Tier_2' (`Tramo_2` in Spanish) keys:
-    1.  Identify the **Threshold_ha** (L) from the 'Rates' object. Below or equal to this area, use Tier 1; above i, use Tier 2.
-    2.  The area to be paid at the Tier 1 rate is: AreaTier1 = Minimum(Total Area, L).
-    3.  The area to be paid at the Tier 2 rate is: AreaTier2 = Maximum(0, Total Area - L).
-    4.  The Base Payment for that ES is the sum of: (AreaTier1 * Tier_1) + (AreaTier2 * Tier_2).
-    5.  If the 'Pluriannuality' field is 'Applicable', add the fixed bonus of **25.00 €/ha** (as defined in the system instructions) to the Total Area for the 'Total with Pluriannuality' column.
-"""
     short_description_instruction = f"""\n\n
 These are the description instructions, format and example for the short image description. You will use these to describe and classify a parcel whenever you are prompted with an image and the tokens {SHORT_DESC_TRIGGER} and date and crop info:\n\n{short_description_prompt}\n\nNotice how if a land use is eligible for more than one ES, you must only take the most long-term benefitial option and indicate so using the `Applicable` column as specified by the **MUTUALLY EXCLUSIVE** rule.
 """
     long_description_instruction = "\n\nThese are the description instructions, format and example for the long image description. You will use these to describe and classify a parcel whenever you are prompted with an image and the tokens '" + FULL_DESC_TRIGGER +"' and date and crop info:\n\n" + full_description_prompt
     classification_instruction = "\n\nThese is the Eco-schemes classification data for each possible land use. There is an English and Spanish version. Use these to fill out the table data whenever you are prompted to describe a parcel:\n\n" + classification_data
-    system_instructions = role_prompt + exclusivity_instructions + tiered_calculation_instructions + short_description_instruction + long_description_instruction + classification_instruction
-
-    with open("sys_ins.txt", "w") as file:
-        file.write(system_instructions)
+    system_instructions = role_prompt + EXCLUSIVITY_RULE + CALCULATIONS_RULE + short_description_instruction + long_description_instruction + classification_instruction
 
     return system_instructions
 
@@ -85,18 +64,18 @@ def get_description_prompt(base_path, prompt_data, is_image_desc_prompt):
     Returns:
         content (str): The full constructed description prompt to pass to the LLM.
     """
-    desc_filename = prompt_data["prompt_filepath"]
-    prompt_path = os.path.join(base_path, desc_filename).replace("\\", "/")
-
-    with open(prompt_path, 'r', encoding='utf-8') as pf:
-        content = pf.read()
-
     if is_image_desc_prompt:
         prompt_example_dir = os.path.join(base_path, prompt_data["examples"]).replace("\\", "/")
         for prompt_example_path in os.listdir(prompt_example_dir):
             prompt_example_path = os.path.join(prompt_example_dir, prompt_example_path)
             with open(prompt_example_path, 'r', encoding='utf-8') as f:
                 content = "\n" + f.read()
+    else:
+        desc_filename = prompt_data["prompt_filepath"]
+        prompt_path = os.path.join(base_path, desc_filename).replace("\\", "/")
+
+        with open(prompt_path, 'r', encoding='utf-8') as pf:
+            content = pf.read()
 
     return content
 
@@ -123,7 +102,7 @@ def load_documents_from_json(json_path: str, base_path: str = BASE_CONTEXT_PATH)
         documents.append(doc_filepath)
     return documents
 
-def set_initial_history(documents_json_path: str):
+def set_initial_history(documents_json_path: str=CONTEXT_DOCUMENTS_FILE):
     """
     Constructs the initial history for a chat session, including examples & context documents.
 

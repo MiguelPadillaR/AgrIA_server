@@ -10,10 +10,10 @@ import rasterio
 
 from PIL import Image
 
-from ....benchmark.constants import BM_DATA_DIR
+from ....benchmark.sr.constants import BM_DATA_DIR
 
 from ....config.constants import GET_SR_BENCHMARK, SR_BANDS, SR5M_DIR
-from ....benchmark.utils import copy_file_to_dir
+from ....benchmark.sr.utils import copy_file_to_dir
 
 from .utils import percentile_stretch, stack_bgrn, make_grid
 from .L1BSR_wrapper import L1BSR

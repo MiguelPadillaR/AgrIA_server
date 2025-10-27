@@ -7,9 +7,9 @@ import traceback
 from flask import abort
 from sigpac_tools.find import find_from_cadastral_registry, geometry_from_coords
 
-from ..benchmark.compare_sr_metrics import compare_sr_metrics
+from ..benchmark.sr.compare_sr_metrics import compare_sr_metrics
 
-from ..benchmark.constants import BM_DATA_DIR, BM_RES_DIR
+from ..benchmark.sr.constants import BM_DATA_DIR, BM_RES_DIR
 
 from .sen2sr.utils import is_in_spain
 from .sen2sr.get_sr_image import get_sr_image
@@ -99,7 +99,8 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
     time1 = datetime.now()-init
     msg1 = f"\nTIME TAKEN (SENTINEL HUB / MINIO + SR4S): {time1}" if sigpac_image_url else ""
     init2 = datetime.now()
-    sigpac_image_url = download_sen2sr_parcel_image(geometry, date)
+    sigpac_image_name = download_sen2sr_parcel_image(geometry, date)
+    sigpac_image_url = f"{os.getenv('API_URL')}/uploads/{os.path.basename(sigpac_image_name)}?v={int(time.time())}"
     msg2 = f"\nTIME TAKEN (SEN2SR): {datetime.now()-init2}"
     msg3 = ''
     if GET_SR_BENCHMARK:
@@ -140,9 +141,8 @@ def download_sen2sr_parcel_image(geometry, date):
     start_date = (formatted_date - timedelta(days=delta)).strftime("%Y-%m-%d")
 
     sigpac_image_name = os.path.basename(get_sr_image(lat, lon, bands, start_date, end_date, sr_size))
-    sigpac_image_url = f"{os.getenv('API_URL')}/uploads/{os.path.basename(sigpac_image_name)}?v={int(time.time())}"
 
-    return sigpac_image_url
+    return sigpac_image_name
 
 def download_parcel_image(cadastral_reference, geojson_data, list_zones_utm, year, month, bands):
     try:

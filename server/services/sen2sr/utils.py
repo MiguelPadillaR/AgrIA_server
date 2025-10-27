@@ -11,7 +11,7 @@ from PIL import Image, ImageEnhance
 
 from ...config.constants import GET_SR_BENCHMARK
 
-from ...benchmark.utils import copy_file_to_dir
+from ...benchmark.sr.utils import copy_file_to_dir
 from .constants import BRIGHTNESS_FACTOR, COMPARISON_PNG_FILEPATH, GAMMA, PNG_DIR, SPAIN_MAINLAND, TIF_DIR
 
 # --------------------
