@@ -13,6 +13,11 @@
     "role": {
         "name": "role",
         "prompt_filepath": "LLM-role_prompt.txt"
+    },
+    "classification": {
+        "name": "classification",
+        "prompt_filepath": "classification.json"
     }
+
 
 }

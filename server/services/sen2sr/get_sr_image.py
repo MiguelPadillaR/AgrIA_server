@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from rasterio.mask import mask
 
 from .constants import *
-from .utils import apply_gamma, brighten, lonlat_to_utm_epsg, save_to_png, save_to_tif, get_cloudless_time_indices, make_pixel_faithful_comparison, reorder_bands, save_png
+from .utils import lonlat_to_utm_epsg, save_to_png, save_to_tif, get_cloudless_time_indices, make_pixel_faithful_comparison, reorder_bands
 from ...config.constants import RESOLUTION, TEMP_DIR
 
 def get_sr_image(lat: float, lon: float, bands: list, start_date: str, end_date: str, size: int):

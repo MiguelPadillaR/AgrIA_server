@@ -11,7 +11,7 @@ from PIL import Image, ImageEnhance
 
 from ...config.constants import GET_SR_BENCHMARK
 
-from ...benchmark.utils import copy_file_to_dir
+from ...benchmark.sr.utils import copy_file_to_dir
 from .constants import BRIGHTNESS_FACTOR, COMPARISON_PNG_FILEPATH, GAMMA, PNG_DIR, SPAIN_MAINLAND, TIF_DIR
 
 # --------------------
@@ -95,11 +95,7 @@ def save_to_png(image_nparray, filepath, lat=None, apply_gamma_correction=False)
         print(f"🧭 Applied latitude-based brightness correction (lat={lat:.2f}, factor={brightness_factor:.3f})")
 
     # Continue with normal save pipeline
-    save_png(
-        image_nparray,
-        filepath,
-        apply_gamma_correction=apply_gamma_correction
-    )
+    save_png(image_nparray, filepath, apply_gamma_correction=apply_gamma_correction)
     print(f"✅ Saved {filepath} with corrected colors and brightness normalization")
 
 def save_png(arr, path, enhance_contrast=True, contrast_factor=1.5, apply_gamma_correction=False, gamma=GAMMA, transparent_nodata=True):
@@ -110,7 +106,7 @@ def save_png(arr, path, enhance_contrast=True, contrast_factor=1.5, apply_gamma_
     - `enhance_contrast`: apply linear contrast boost
     - `contrast_factor`: multiplier for contrast enhancement (>1 = more contrast)
     - `apply_gamma`: apply gamma correction for punchy blacks/whites
-    - `gamma` <1 darkens shadows / brightens highlights
+    - `gamma` darkens shadows / brightens highlights
     - `transparent_nodata`: if True, black nodata areas will be transparent
     """
     rgb = np.transpose(arr[:3], (1, 2, 0))  # (H,W,3)
@@ -179,10 +175,17 @@ def get_cloudless_time_indices(scl: DataArray, cloud_threshold = 0.01):
         elif cloud_fraction < min_threshold:
             min_threshold = cloud_fraction
             min_index = t
-            
-    if len(valid_indices) == 0 and min_index > -1:
-        print(f"No time indices with cloud fraction <= {cloud_threshold:.3%}. Using index {min_index} with minimum cloud fraction {min_threshold:.3%}.")
-        valid_indices.append(min_index)
+    
+    if len(valid_indices) == 0:
+        if min_index > -1:
+            print(f"No time indices with cloud fraction <= {cloud_threshold:.3%}. Using index {min_index} with minimum cloud fraction {min_threshold:.3%}.")
+            valid_indices.append(min_index)
+        else:
+           # No valid or even partially valid images found
+            raise ValueError(
+                f"❌ No cloud-free or minimally cloudy Sentinel-2 images found "
+                f"for the selected area and date range (threshold = {cloud_threshold:.2%})."
+            ) 
     print("Valid time indices (cloud < 1%):", valid_indices)
     return valid_indices
 

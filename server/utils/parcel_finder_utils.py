@@ -881,10 +881,21 @@ def bbox_from_polygon(polygon_geojson: dict, resolution_m: int = RESOLUTION, min
         [list(coord) for coord in ring]
         for ring in geom["coordinates"]
     ]
-
-    geom["CRS"] = polygon_geojson["CRS"]
+    geom["CRS"] = guess_crs_from_coords(geom["coordinates"][0])
 
     return geom
+
+def guess_crs_from_coords(coords):
+    xs = [pt[0] for pt in coords]
+    ys = [pt[1] for pt in coords]
+    
+    if all(-180 <= x <= 180 for x in xs) and all(-90 <= y <= 90 for y in ys):
+        return "EPSG:4326"  # Lat/lon in degrees
+    if all(abs(x) < 20000000 and abs(y) < 20000000 for x, y in zip(xs, ys)):
+        return "EPSG:3857"  # Web Mercator
+    if all(100000 < x < 1000000 and 0 < y < 10000000 for x, y in zip(xs, ys)):
+        return "UTM or national CRS (needs region)"
+    return "Unknown"
 
 def polygon_pixel_size(geojson_polygon, resolution=RESOLUTION):
     """

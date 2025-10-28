@@ -10,8 +10,10 @@ import rasterio
 
 from PIL import Image
 
+from ....benchmark.sr.constants import BM_DATA_DIR
+
 from ....config.constants import GET_SR_BENCHMARK, SR_BANDS, SR5M_DIR
-from ....benchmark.utils import copy_file_to_dir
+from ....benchmark.sr.utils import copy_file_to_dir
 
 from .utils import percentile_stretch, stack_bgrn, make_grid
 from .L1BSR_wrapper import L1BSR
@@ -99,16 +101,17 @@ def process_directory(input_dir, output_dir=SR5M_DIR, save_as_tif=True):
             continue
         filename, __ = os.path.splitext(base)
         prefix_parts = filename.split(f"-{band}", 1)[0].split('_')
-        prefix = f'SR_{prefix_parts[0]}_{prefix_parts[1]}'
-        if prefix not in groups:
-            groups[prefix] = {}
-        groups[prefix][band] = f
+        sr_prefix = f'SR_{prefix_parts[0]}_{prefix_parts[1]}'
+        og_prefix = f'GT_SR4S'
+        if sr_prefix not in groups:
+            groups[sr_prefix] = {}
+        groups[sr_prefix][band] = f
 
     # Perform SR if filename has all SR_BANDS files
-    for prefix, band_files in groups.items():
+    for sr_prefix, band_files in groups.items():
         missing = set(SR_BANDS) - set(band_files.keys())
         if missing:
-            print(f"Skipping {prefix}, missing bands: {missing}")
+            print(f"Skipping {sr_prefix}, missing bands: {missing}")
             continue
 
         b02 = rasterio.open(band_files["B02"]).read(1)
@@ -136,23 +139,27 @@ def process_directory(input_dir, output_dir=SR5M_DIR, save_as_tif=True):
 
         # Save PNG
         output_dir.mkdir(parents=True, exist_ok=True)
-        out_png = os.path.join(output_dir, f"{prefix}.png")
+        out_png = os.path.join(output_dir, f"{sr_prefix}.png")
         sr_image_path = out_png
         save_rgb_png(sr_u16, out_png)
         print(f"Saved PNG: {out_png}")
 
         # Save TIF
         if save_as_tif or GET_SR_BENCHMARK:
-            out_tif = os.path.join(output_dir, f"{prefix}.tif")
-            save_multiband_tif(sr_u16, band_files["B02"], out_tif)
-            print(f"Saved TIF: {out_tif}")
+            sr_out_tif = os.path.join(output_dir, f"{sr_prefix}.tif")
+            timestamp = str(time.time())
+            og_out_tif = os.path.join(BM_DATA_DIR, f"{timestamp}_{og_prefix}.tif")
+            save_multiband_tif(sr_u16, band_files["B02"], sr_out_tif)
+            print(f"Saved TIF: {sr_out_tif}")
+            save_multiband_tif(img_bgrn, band_files["B02"], og_out_tif)
+            print(f"Saved TIF: {og_out_tif}")
             if GET_SR_BENCHMARK:
-                copy_file_to_dir(out_tif, is_sr4s=True)
+                copy_file_to_dir(sr_out_tif, is_sr4s=True)
 
         # Make and save comparison grid
         comp_dir = output_dir / "comparison"
         comp_dir.mkdir(parents=True, exist_ok=True)
-        comp_png = comp_dir / f"{prefix}_comparison.png"
+        comp_png = comp_dir / f"{sr_prefix}_comparison.png"
         grid = make_grid([rgb_before_u8_resized,
                         percentile_stretch(np.stack([sr_u16[...,2], sr_u16[...,1], sr_u16[...,0]], axis=-1))],
                         ncols=2

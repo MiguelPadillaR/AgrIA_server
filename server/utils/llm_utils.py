@@ -1,10 +1,10 @@
-from ..config.constants import BASE_CONTEXT_PATH, BASE_PROMPTS_PATH, FULL_DESC_TRIGGER, MIME_TYPES, SHORT_DESC_TRIGGER
+from ..config.constants import BASE_CONTEXT_PATH, BASE_PROMPTS_PATH, CALCULATIONS_RULE, CONTEXT_DOCUMENTS_FILE, EXCLUSIVITY_RULE, FULL_DESC_TRIGGER, MIME_TYPES, PROMPT_LIST_FILE, SHORT_DESC_TRIGGER
 from server.services.llm_services import upload_context_document
 from google.genai.types import Content, Part
 import json
 import os
 
-def generate_system_instructions(prompt_json_path: str):
+def generate_system_instructions(prompt_json_path: str= PROMPT_LIST_FILE):
     """
     Sets up the initial model's system instructions and context documents for the chat.
     
@@ -16,25 +16,28 @@ def generate_system_instructions(prompt_json_path: str):
     """
     # Upload files and read role and description files
     role_prompt = load_prompt_from_json(prompt_json_path)
-    short_description_prompt = load_prompt_from_json(prompt_json_path,is_image_desc_prompt= True, is_detailed_description=False)
-    full_description_prompt = load_prompt_from_json(prompt_json_path, is_image_desc_prompt= True, is_detailed_description=True)
+    classification_data = load_prompt_from_json(prompt_json_path, 'classification')
+    short_description_prompt = load_prompt_from_json(prompt_json_path,'short', True)
+    full_description_prompt = load_prompt_from_json(prompt_json_path, 'long', True)
 
-    # Compose system insrtuctions from files' URI and role text data
-    short_description_instruction = "\n\nThis is the description instructions, format and example for the short image description. You will use these to describe it whenever you are prompted with an image and the tokens '" + SHORT_DESC_TRIGGER +"' and date and crop info:\n\n" + short_description_prompt
-    long_description_instruction = "\n\nThis is the description instructions, format and example for the long image description. You will use these to describe it whenever you are prompted with an image and the tokens '" + FULL_DESC_TRIGGER +"' and date and crop info:\n\n" + full_description_prompt
-
-    system_instructions = role_prompt + short_description_instruction + long_description_instruction
+    # Compose system instructions from files' URI and role text data
+    short_description_instruction = f"""\n\n
+These are the description instructions, format and example for the short image description. You will use these to describe and classify a parcel whenever you are prompted with an image and the tokens {SHORT_DESC_TRIGGER} and date and crop info:\n\n{short_description_prompt}\n\nNotice how if a land use is eligible for more than one ES, you must only take the most long-term benefitial option and indicate so using the `Applicable` column as specified by the **MUTUALLY EXCLUSIVE** rule.
+"""
+    long_description_instruction = "\n\nThese are the description instructions, format and example for the long image description. You will use these to describe and classify a parcel whenever you are prompted with an image and the tokens '" + FULL_DESC_TRIGGER +"' and date and crop info:\n\n" + full_description_prompt
+    classification_instruction = "\n\nThese is the Eco-schemes classification data for each possible land use. There is an English and Spanish version. Use these to fill out the table data whenever you are prompted to describe a parcel:\n\n" + classification_data
+    system_instructions = role_prompt + EXCLUSIVITY_RULE + CALCULATIONS_RULE + short_description_instruction + long_description_instruction + classification_instruction
 
     return system_instructions
 
-def load_prompt_from_json(json_path: str, base_path: str = BASE_PROMPTS_PATH, is_image_desc_prompt: bool = False, is_detailed_description: bool = False) -> dict:
+def load_prompt_from_json(json_path: str, prompt_type_key: str = 'role', is_image_desc_prompt: bool = False, base_path: str = BASE_PROMPTS_PATH) -> dict:
     """
     Reads a JSON file to get the prompt description and returns the content of the specified prompt file.
     Args:
         json_path (str): Path to the JSON file containing prompt metadata.
-        base_path (str): Base path where the JSON and prompt files are located. Default: `BASE_PROMPTS_PATH`.
+        prompt_type_key (str): JSON key of the prompt info.
         is_image_desc_prompt (bool): If True, reads files as the image description prompt; otherwise, it reads them as role prompts. Default: `False`.
-        is_detailed_description (bool): If True, sends trigger for long description, other wise sends short desc. trigger. Default: `False`.
+        base_path (str): Base path where the JSON and prompt files are located. Default: `BASE_PROMPTS_PATH`.
     Returns:
         str: The content of the prompt file specified in the JSON.
     """
@@ -43,10 +46,7 @@ def load_prompt_from_json(json_path: str, base_path: str = BASE_PROMPTS_PATH, is
     # Read JSON content
     with open(full_json_path, 'r', encoding='utf-8') as json_file:
         meta = json.load(json_file)
-    if is_image_desc_prompt:
-        prompt_type = 'short' if not is_detailed_description else 'long'
-    else:
-        prompt_type = 'role'
+    prompt_type = prompt_type_key
 
     prompt_data = meta.get(prompt_type)
     content = get_description_prompt(base_path, prompt_data, is_image_desc_prompt)
@@ -64,18 +64,18 @@ def get_description_prompt(base_path, prompt_data, is_image_desc_prompt):
     Returns:
         content (str): The full constructed description prompt to pass to the LLM.
     """
-    desc_filename = prompt_data["prompt_filepath"]
-    prompt_path = os.path.join(base_path, desc_filename).replace("\\", "/")
-
-    with open(prompt_path, 'r', encoding='utf-8') as pf:
-        content = pf.read()
-
     if is_image_desc_prompt:
         prompt_example_dir = os.path.join(base_path, prompt_data["examples"]).replace("\\", "/")
         for prompt_example_path in os.listdir(prompt_example_dir):
             prompt_example_path = os.path.join(prompt_example_dir, prompt_example_path)
             with open(prompt_example_path, 'r', encoding='utf-8') as f:
-                content += "\n" + f.read()
+                content = "\n" + f.read()
+    else:
+        desc_filename = prompt_data["prompt_filepath"]
+        prompt_path = os.path.join(base_path, desc_filename).replace("\\", "/")
+
+        with open(prompt_path, 'r', encoding='utf-8') as pf:
+            content = pf.read()
 
     return content
 
@@ -102,9 +102,9 @@ def load_documents_from_json(json_path: str, base_path: str = BASE_CONTEXT_PATH)
         documents.append(doc_filepath)
     return documents
 
-def set_initial_history(documents_json_path: str):
+def set_initial_history(documents_json_path: str=CONTEXT_DOCUMENTS_FILE):
     """
-    Constructs the initial history for a chat session, including context documents.
+    Constructs the initial history for a chat session, including examples & context documents.
 
     Args:
         documents_json_path: The path to the JSON file containing paths to context documents.
@@ -126,7 +126,7 @@ def set_initial_history(documents_json_path: str):
         doc_paths_list = []
 
     if doc_paths_list:
-        document_parts.append(Part(text="Use the following files as context documents for the task. You may display tables and quote or reference information directly from the documents:"))
+        document_parts.append(Part(text="Use the following files as context documents for the task. You may display tables and quote or reference information directly from these documents:"))
 
         for doc_path in doc_paths_list:
             if not doc_path:
@@ -138,7 +138,7 @@ def set_initial_history(documents_json_path: str):
             try:
                 uploaded_doc = upload_context_document(doc_path)
                 if uploaded_doc and uploaded_doc.uri:
-                    print(f"Successfully uploaded document. URI: {uploaded_doc.uri}")
+                    print(f"Successfully uploaded document. {os.path.basename(doc_path)} URI: {uploaded_doc.uri}")
                     document_parts.append(Part(text=f"Document: {os.path.basename(doc_path)}"))
                     # Add the document URI part
                     document_parts.append(Part.from_uri(file_uri=uploaded_doc.uri, mime_type=mime_type))

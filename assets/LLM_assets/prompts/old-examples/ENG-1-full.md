@@ -27,19 +27,19 @@
 
 ### P5 - Biodiversity Spaces
 
-*   **Justification:** The presence of forest zones (FO), unproductive areas (IM), grasslands (PS), and shrub pastures (PR) can be accounted for in the eco-regime for biodiversity spaces.
+*   **Justification:** The presence of forest zones (FO), unproductive areas (IM), grasslands (PS), and shrub pastures (PR) can be accounted for in the eco-scheme for biodiversity spaces.
 *   **Estimated amount:** The unit amount is **48.56 €/ha**.
 *   **Limitations:** The image does not allow determining the exact quantity of biodiversity spaces or their distribution, nor the SIGPAC classification, required for the detailed evaluation.
 *   **Impact of Resolution:** The image resolution limits the precise accounting of landscape elements.
 *   **Data Gaps:** Information is needed about the SIGPAC classification of the parcel and the total surface area of the farm to determine the required percentage.
-*   **Visual Ambiguity:** It is not possible to know if the unproductive surfaces meet the requirements for their classification and accounting within this eco-regime (for example, biodiversity margins with specific characteristics).
+*   **Visual Ambiguity:** It is not possible to know if the unproductive surfaces meet the requirements for their classification and accounting within this eco-scheme (for example, biodiversity margins with specific characteristics).
 
 ## TOTAL AMOUNT ESTIMATION:
 
 *   **P1 (Extensive Grazing):** The surface of PA, PS and PR that are viable for grazing is 78,49 ha.
     *   Assuming the farm is in the Peninsula, the amount is **2.817,12 €** (Tramo 1) and **3.414,65 €** (Tramo 2)
     *   Assuming the farm is in the Islands, the amount is **4.547,09 €** (Tramo 1) and **3.860,32 €** (Tramo 2)
-*   **P3 (Crop rotation with improving species):** **32.661,47 €** (without plurianuality) / **50.387,54 €** (with plurianuality) - *TA has been assigned to this ER because the amount to be received is greater.*
+*   **P3 (Crop rotation with improving species):** **32.661,47 €** (without plurianuality) / **50.387,54 €** (with plurianuality) - *TA has been assigned to this ES because the amount to be received is greater.*
 *   **P5 (Biodiversity Spaces):** **35.549,37 €**
 
 **Total estimated (Peninsula): 71.027,99 € (without plurianuality) / 88.754,06 € (with plurianuality)**

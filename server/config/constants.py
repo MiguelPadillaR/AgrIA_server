@@ -9,6 +9,26 @@ PROMPT_LIST_FILE = "prompt_list.json"
 
 TEMP_DIR = Path('temp/')
 
+EXCLUSIVITY_RULE = """\n\n
+**CRITICAL EXCLUSIVITY DIRECTIVE FOR CALCULATION:**
+**UNBREAKABLE CAP RULE:** Ecoscheme aid is **MUTUALLY EXCLUSIVE**. Each hectare of land (Land Use) can only be assigned to **ONE SINGLE** Ecoscheme (ES).
+When calculating the amounts, if a Land Use (e.g., TA, OV, VI) is eligible for multiple ES, you must:
+    1. **Identify** the ES that offers the **HIGHEST TOTAL AMOUNT (€/ha)**, including the pluriannuality supplement if applicable, to choose the most beneficial option.
+    2. **Assign** the total area of that Land Use **exclusively** to that ES in the calculation table.
+    3. For alternative ES that share the same Land Use (e.g., P5 vs P6/P7 for OV), mark the `Applicable` column with the text: **"Excluded: [Land use ID] used for [Chosen ES]"**.
+    4. **NEVER** sum the payments from multiple ES for the same land area.
+    """
+
+CALCULATIONS_RULE = """\n\n
+**TIERED CALCULATION RULE:**
+If the 'Rates' object contains 'Tier_1' (`Tramo_1` in Spanish) and 'Tier_2' (`Tramo_2` in Spanish) keys:
+    1.  Identify the **Threshold_ha** (L) from the 'Rates' object. Below or equal to this area, use Tier 1; above i, use Tier 2.
+    2.  The area to be paid at the Tier 1 rate is: AreaTier1 = Minimum(Total Area, L).
+    3.  The area to be paid at the Tier 2 rate is: AreaTier2 = Maximum(0, Total Area - L).
+    4.  The Base Payment for that ES is the sum of: (AreaTier1 * Tier_1) + (AreaTier2 * Tier_2).
+    5.  If the 'Pluriannuality' field is 'Applicable', add the fixed bonus of **25.00 €/ha** (as defined in the system instructions) to the Total Area for the 'Total with Pluriannuality' column.
+"""
+
 FULL_DESC_TRIGGER = '###DESCRIBE_LONG_IMAGE###'
 SHORT_DESC_TRIGGER = '###DESCRIBE_SHORT_IMAGE###'
 
@@ -27,7 +47,6 @@ ANDALUSIA_TILES = ["29SPC", "29SQC", "30STH", "30SUH", "30SVH", "30SWH", "30SXH"
         "30SWG", "30SVG", "30SUG", "30STG", "29SQB" ,"29SPB", "30STF", "30SUF", 
         "30SVF", "30SWF"]
 
-
 SR_BANDS = ["B02", "B03", "B04", "B08"]
 BANDS_DIR = TEMP_DIR / "bands"
 MERGED_BANDS_DIR = TEMP_DIR / "merged_bands"
@@ -40,4 +59,4 @@ SEN2SR_SR_DIR = TEMP_DIR / "sr_2.5m"
 GET_SR_BENCHMARK = True
 
 if GET_SR_BENCHMARK:
-    print("⚠️  WARNING: SUPER-RES BENCHMARK IS ACTIVE. This will execute both SR4S and SEN2SR pipelines, slowing all parcel fetching processes. To deactivate it, set the `GET_SR_BENCHMARK` to `False` in the `Agria_server/server/config/constants.py` file")
+    print("⚠️  WARNING: SUPER-RES BENCHMARK IS ACTIVE. This will execute both SR4S and SEN2SR pipelines (in that order), which will slow down all parcel fetching processes. To deactivate it, set the `GET_SR_BENCHMARK` to `False` in the `Agria_server/server/config/constants.py` file")

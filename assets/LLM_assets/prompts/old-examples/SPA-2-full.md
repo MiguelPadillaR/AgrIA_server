@@ -11,7 +11,7 @@ OLIVAR
 
 *   **Justificación:** La práctica P6 es aplicable a cultivos leñosos, como el olivar (OV). El objetivo es promover la captura de carbono, reducir la erosión y mejorar la biodiversidad mediante el establecimiento de una cubierta vegetal viva. La imagen, tomada en abril, podría indicar la presencia de cubierta vegetal, lo que podría ser válido para este ecorregímen.
 *   **Estimación de importe:** La superficie de olivar es de 74.659,44 m2 (7,47 ha), y, en condiciones óptimas, el importe asciende a **42,056 €/ha (sin plurianualidad) o 67,056 €/ha (con plurianualidad)**, si es Peninsular, y a **100,080 €/ha (sin plurianualidad) o 125,080 €/ha (con plurianualidad)**, si es Insular.
-*   **Limitaciones:** No es posible determinar visualmente si hay cubierta vegetal en la parcela, ni tampoco si esta cumple con los requisitos para el ER P6. Se requiere información sobre la duración y características de la cubierta.
+*   **Limitaciones:** No es posible determinar visualmente si hay cubierta vegetal en la parcela, ni tampoco si esta cumple con los requisitos para el ES P6. Se requiere información sobre la duración y características de la cubierta.
 *   **Impacto de la Resolución:** La resolución de la imagen no permite determinar la presencia de cubierta vegetal y su cumplimiento de los requisitos.
 *   **Gaps de Datos Auxiliares:** Es imprescindible conocer si existe cubierta vegetal en el olivar y si cumple los criterios de periodo de permanencia establecidos por la autoridad competente (cuatro meses entre el 1 de octubre y el 31 de marzo).
 *   **Ambigüedad Visual:** La homogeneidad de la vegetación del olivar podría indicar cubierta vegetal, pero no se puede asegurar con certeza.

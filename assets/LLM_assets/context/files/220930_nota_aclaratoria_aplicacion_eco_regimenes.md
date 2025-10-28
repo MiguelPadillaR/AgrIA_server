@@ -20,22 +20,6 @@ Para solicitar los eco regímenes, en la Solicitud Única de Ayuda, se debe indi
 
 El solicitante puede acogerse a los eco regímenes de forma total o parcial, en toda o parte de su superficie, combinando diferentes prácticas en distintas parcelas agrícolas.  El anexo I incluye ejemplos de estas posibilidades de aplicación. 
 
-La siguiente tabla resume los 9 EE.RR. según el PEPAC aprobado, con sus códigos de intervención, opciones de prácticas permitidas e importes de ayuda estimados para 2023. 
-
-| Código Intervención | Nombre del Eco regímen | Opciones de prácticas posibles para su cumplimiento | Importe unitario planificado en 2023 (€/ha) |
-|---|---|---|---|
-| 1PD31001801V1 | Agricultura de Carbono y Agroecología: Pastoreo extensivo, siega y biodiversidad en las superficies de Pastos Húmedos | Pastoreo Extensivo (P1); Establecimiento de islas de biodiversidad (P2A); Siega sostenible (P2B) | 62,16  |
-| 1PD31001802V1 | Agricultura de Carbono y Agroecología: Pastoreo extensivo, siega y biodiversidad en las superficies de Pastos Mediterráneos | Pastoreo Extensivo (P1); Establecimiento de islas de biodiversidad (P2A); Siega sostenible (P2B) | 40,96  |
-| 1PD31001803V1 | Agricultura de Carbono y Agroecología: rotaciones y siembra directa en tierras de cultivo de secano | Rotación de cultivos con especies mejorantes (P3); Siembra Directa (P4) | 47,67  |
-| 1PD31001804V1 | Agricultura de Carbono y Agroecología: rotaciones y siembra directa en tierras de cultivo de secano húmedo | Rotación de cultivos con especies mejorantes (P3); Siembra Directa (P4) | 85,72  |
-| 1PD31001805V1 | Agricultura de Carbono y Agroecología: rotaciones y siembra directa en tierras de cultivo de regadío | Rotación de cultivos con especies mejorantes (P3); Siembra Directa (P4) | 151,99  |
-| 1PD31001806V1 | Agricultura de Carbono: cubiertas vegetales y cubiertas inertes en cultivos leñosos en terrenos llanos | Cubierta vegetal espontánea o sembrada (P6); Cubierta Inerte (P7) | 61,07  |
-| 1PD31001807V1 | Agricultura de Carbono: cubiertas vegetales y cubiertas inertes en cultivos leñosos en terrenos de pendiente media | Cubierta vegetal espontánea o sembrada (P6); Cubierta Inerte (P7) | 113,95  |
-| 1PD31001808V1 | Agricultura de Carbono: cubiertas vegetales y cubiertas inertes en cultivos leñosos en terrenos de elevada pendiente | Cubierta vegetal espontánea o sembrada (P6); Cubierta Inerte (P7) | 165,17  |
-| 1PD31001809V1 | Agroecología: Espacios de biodiversidad en tierras de cultivo y cultivos permanentes | Opciones Generales (P5); Opciones específicas para cultivos bajo agua | 56,05 (156,78 para cultivos bajo agua)  |
-
-*Nota: Esta tabla recoge los importes correspondientes a la Península. Existen importes específicos para Islas Baleares.* 
-
 La ayuda se percibe por cada hectárea solicitada si se realiza al menos una de las prácticas descritas para el eco régimen, y solo se puede cobrar una ayuda por hectárea, incluso si se realizan múltiples prácticas en la misma hectárea.  El importe de la ayuda es el mismo dentro del eco régimen, independientemente de la práctica elegida.  Si el productor se compromete a realizar la práctica P4 o P6 de forma consecutiva en la misma superficie en 2023 y 2024 (compromiso de plurianualidad), recibirá 25 €/ha adicionales.  A partir de 2024, este complemento se aplicará si la práctica se repite en la misma parcela que en el año anterior.  La verificación de los requisitos se realizará sobre el conjunto de parcelas donde se haya declarado la práctica. 
 
 ---
@@ -74,9 +58,9 @@ Esta práctica exige destinar un porcentaje de la superficie total acogida a sup
 * 3% en arroz (puede sustituirse por gestión sostenible de la lámina de agua). 
 
 Para las tierras de cultivo, estos porcentajes son adicionales a los exigidos por la BCAM 8, que afecta a toda la superficie de tierras de cultivo de la explotación.  La BCAM 8 requiere un 4% de superficie no productiva en toda la explotación, reducible al 3% si con el eco régimen se alcanza el 7% total.  Existe un listado amplio de "espacios de biodiversidad" con coeficientes de ponderación para su cumplimiento (Anexo II de este documento, corresponde al Anexo XVII del proyecto de RD PEPAC).  Los requisitos deben cumplirse sobre el total de parcelas acogidas para cada tipo de uso del suelo: 
-* **Tierras de cultivo:** Se deben destinar los porcentajes mencionados a superficies o elementos no productivos en el conjunto de tierras de cultivo solicitadas para este ER.  El solicitante puede compensar entre superficies de secano y regadío, aplicando un coeficiente (ejemplo 3 del anexo I). 
-* **Arroz:** El 3% se aplica al conjunto de tierras de arroz solicitadas para este ER.  Se puede dedicar una parte a espacios de biodiversidad y otra a la gestión de la lámina de agua. 
-* **Cultivos permanentes:** El 4% debe destinarse a superficies o elementos no productivos en el conjunto de tierras de cultivo permanente solicitadas para este ER. 
+* **Tierras de cultivo:** Se deben destinar los porcentajes mencionados a superficies o elementos no productivos en el conjunto de tierras de cultivo solicitadas para este ES.  El solicitante puede compensar entre superficies de secano y regadío, aplicando un coeficiente (ejemplo 3 del anexo I). 
+* **Arroz:** El 3% se aplica al conjunto de tierras de arroz solicitadas para este ES.  Se puede dedicar una parte a espacios de biodiversidad y otra a la gestión de la lámina de agua. 
+* **Cultivos permanentes:** El 4% debe destinarse a superficies o elementos no productivos en el conjunto de tierras de cultivo permanente solicitadas para este ES. 
 
 #### 2.1.4. P5. Prácticas destinadas al cultivo del arroz: 
 Diseñadas para las condiciones específicas del cultivo.  Incluyen espacios de biodiversidad y gestión sostenible de la lámina de agua (mediante una de las cuatro medidas del PEPAC²).  La autoridad competente puede determinar condiciones específicas para el manejo de la lámina de agua por prevención, control o erradicación de plagas, y establecerá el tiempo de permanencia de la lámina de agua. 
@@ -110,7 +94,7 @@ Las comunidades autónomas pueden permitir, excepcionalmente, labores de manteni
 El Reglamento de Ejecución 2022/1317³ autoriza a los Estados Miembros a establecer excepciones para el año 2023 en la aplicación de la norma BCAM 7 (rotación y diversificación en tierras de cultivo) y el primer requisito de la BCAM 8 (porcentaje mínimo de superficie agrícola dedicada a superficies y elementos no productivos).  España ha hecho uso de esta autorización, lo cual se ha incluido en la disposición transitoria del Real Decreto de condicionalidad reforzada. 
 ³ Reglamento de Ejecución (UE) 2022/1317 de la Comisión de 27 de julio de 2022. 
 
-Este reglamento establece que las derogaciones en cuanto a las BCAM 7 y 8 no cambian la línea de base para el cumplimiento de los requisitos de eco regímenes ni de medidas agroambientales.  Esto implica que las BCAM 7 y 8 deben seguir siendo respetadas si se desea aplicar un ER basado en exigencias de la misma naturaleza. 
+Este reglamento establece que las derogaciones en cuanto a las BCAM 7 y 8 no cambian la línea de base para el cumplimiento de los requisitos de eco regímenes ni de medidas agroambientales.  Esto implica que las BCAM 7 y 8 deben seguir siendo respetadas si se desea aplicar un ES basado en exigencias de la misma naturaleza. 
 
 Así, para los Eco regímenes del PEPAC de España: 
 * La derogación de la BCAM 7 exime de aplicar la rotación y la diversificación de las parcelas en 2023.  Sin embargo, la BCAM 7 en el PEPAC de España exige una rotación a medio plazo (tras un máximo de tres años), por lo que en 2024 se deberá comprobar que todas las parcelas de la explotación han rotado al menos una vez entre 2021 y 2024. 
@@ -158,13 +142,13 @@ Explotación de 100 hectáreas de tierras de cultivo (50 de secano + 50 de regad
 * Percibirá ayuda por la práctica de siembra directa por las 30 ha acogidas (con importe correspondiente al regadío). 
 * Acogerse a la práctica de espacios de biodiversidad en 20 ha de regadío y 10 ha de secano: 
     * Al menos, tendrá que contar con espacios de biodiversidad que representen al menos 0,8 ha de la superficie de regadío (4% de 20 ha) y 0,7 ha de la superficie de secano (7% de 10 ha). 
-    * Dentro de la superficie acogida a este ER (en este caso 30 ha), se podrán realizar compensaciones entre las superficies de cultivo de secano o de regadío que vayan a dejarse fuera de producción para convertirse en superficies no productivas.  Para estas compensaciones se aplicará un coeficiente, ya que los porcentajes mínimos a cumplir son diferentes: 
+    * Dentro de la superficie acogida a este ES (en este caso 30 ha), se podrán realizar compensaciones entre las superficies de cultivo de secano o de regadío que vayan a dejarse fuera de producción para convertirse en superficies no productivas.  Para estas compensaciones se aplicará un coeficiente, ya que los porcentajes mínimos a cumplir son diferentes: 
         * El coeficiente para convertir superficie de regadío a secano es de 1,75 (7/4). 
         * El coeficiente para convertir superficie de secano a regadío es de 0,57 (4/7). 
     * Así, se podría asignar todo al secano de la siguiente forma: $(0,8 \times 1,75) + 0,7 = 1,4 + 0,7 = 2,1$ ha. 
     * Del mismo modo, se podría asignar todo al regadío: $0,8 + (0,7 \times 0,57) = 0,8 + 0,4 = 1,2$ ha. 
     * Para cumplir con la línea de base, tendrá que contar con otras 4 ha de espacios de biodiversidad, para dar cumplimiento a la BCAM 8 (4% de 100 ha, dado que el cumplimiento es para todas las TC de la explotación).  Esas 4 ha pueden establecerse en cualquier zona de las TC de la explotación. 
-* Percibirá ayuda por la práctica de espacios de biodiversidad por las 30 ha acogidas.  Es condición necesaria para poder cobrar este ER el contar con al menos un derecho de pago básico. 
+* Percibirá ayuda por la práctica de espacios de biodiversidad por las 30 ha acogidas.  Es condición necesaria para poder cobrar este ES el contar con al menos un derecho de pago básico. 
 
 **Ejemplo 4:** 
 100 ha de pastos (60 ha son declaradas con aprovechamiento pastoreo y 40 ha declaradas con aprovechamiento siega). 
@@ -175,7 +159,7 @@ Explotación de 100 hectáreas de tierras de cultivo (50 de secano + 50 de regad
     * acogerse a la práctica de siega sostenible en 40 ha (cumpliendo con el período improductivo de 60 días establecido por la autoridad competente y con el número de cortes previsto según la altitud).  Percibiría la ayuda en las ha de pastos objeto de pastoreo y en las 40 ha de siega si cumple los requisitos en todas ellas. 
     * acogerse a la práctica de islas de biodiversidad en 30 ha (de tal modo que dejaría sin segar el 7% de esta superficie del 1 de enero al 31 de agosto) y no solicitar acogerse a ninguna práctica en 10 ha de pastos de aprovechamiento siega.  Percibiría la ayuda en las ha de pastos objeto de pastoreo extensivo y en estas 30 ha de siega (se establece el 7% sin segar y percibe la ayuda por las 30 ha). 
     * acogerse a la práctica de siega sostenible en 30 ha (cumpliendo con el período improductivo de 60 días establecido por la autoridad competente y con el número de cortes previsto según la altitud) y no solicitar acogerse a ninguna práctica en 10 ha de pastos de aprovechamiento siega.  Percibiría la ayuda en la ha de pastos objeto de pastoreo y en las que 30 ha de siega si cumple los requisitos en todas ellas. 
-    * No podrá acogerse a la práctica de islas de biodiversidad en 20 ha y a la práctica de siega sostenible en 20 ha (los beneficiarios pueden solicitar acogerse sólo a una de estas prácticas: islas de biodiversidad o siega sostenible en las todas las ha de pastos por las que soliciten el ER y cuyo aprovechamiento declarado en la SU sea siega). 
+    * No podrá acogerse a la práctica de islas de biodiversidad en 20 ha y a la práctica de siega sostenible en 20 ha (los beneficiarios pueden solicitar acogerse sólo a una de estas prácticas: islas de biodiversidad o siega sostenible en las todas las ha de pastos por las que soliciten el ES y cuyo aprovechamiento declarado en la SU sea siega). 
 * Acogerse a la práctica de pastoreo extensivo en 35 ha de pastos y: 
     * Mismas posibilidades respecto a las 40 ha de aprovechamiento siega que en el caso anterior. 
     * Respecto a las 25 ha en las que ha declarado aprovechamiento en base a pastoreo, pero no se acogen a la práctica de pastoreo sostenible, tampoco podrán acogerse a la práctica de siega sostenible o islas de biodiversidad, por lo que no podrían beneficiarse de ningún eco régimen. 

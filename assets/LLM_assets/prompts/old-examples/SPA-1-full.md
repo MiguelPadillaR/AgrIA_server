@@ -36,8 +36,8 @@
 
 ## ESTIMACIÓN DE IMPORTE TOTAL:
 
-*   **P3 (Rotación con especies mejorantes):** **6.126,31 €** (con plurianualidad) - *Se ha asignado TA a este ER porque el importe a percibir es mayor.*
-*   **P4 (Siembra Directa):** Ya se ha asignado TA a otro ER.
+*   **P3 (Rotación con especies mejorantes):** **6.126,31 €** (con plurianualidad) - *Se ha asignado TA a este ES porque el importe a percibir es mayor.*
+*   **P4 (Siembra Directa):** Ya se ha asignado TA a otro ES.
 *   **P5 (Espacios de Biodiversidad):** **286,59 €**
 
 **Total estimado: 6.412,90 €**
