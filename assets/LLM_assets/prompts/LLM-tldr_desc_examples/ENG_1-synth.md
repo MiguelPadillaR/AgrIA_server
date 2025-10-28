@@ -9,7 +9,7 @@ The parcel's image, date from October 12th, 2024, is characterized by a strong p
 | **Ecoscheme** | **Viability** | **Estimated Rate (Peninsular)*** | **Estimated Rate (Insular)*** | **Conditions** |
 | :--- | :--- | :--- | :--- | :--- |
 | **P1 - Extensive Grazing (Mediterr. Pastures)** | High | 27.27 €/ha | 49.27 €/ha | Maintain livestock density, respect non-grazing period. (**Section 2** applied: Area > 95 ha) |
-| **P3/P4 - Rotation/No-Till (Rainfed)** | High | 31.024 €/ha | 59.024 €/ha | Rotate 50% of crop area or leave 40% untilled. (**Section 2** applied: Area > 70 ha) |
+| **P3/P4 - Rotation/No-Till (Rainfed)** | High | 31.024 €/ha | 59.024 €/ha | Rotate 50% of crop area or leave 40% untilled for land extensions>10ha. (**Section 2** applied: Area > 70 ha) |
 | **P5 (A) - Biodiversity Spaces (Cultivated/Permanent)** | High | 42.99 €/ha | N/A | Reserve a minimum strip in cultivated land. (Flat Rate) |
 | **P5 (B) - Biodiversity Spaces (Under Water)** | Possible | 145.10 €/ha | N/A | Applicable to cultivated areas under water (e.g., rice fields). (Flat Rate) |
 | **P6/P7 - Plant Cover (Permanent Crops - Flat)** | Possible | 41.384 €/ha | 81.384 €/ha | Live cover OR shred and distribute pruning remains. (**Section 2** applied: Area > 15 ha) |
