@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
 
-from .benchmark.constants import BM_DATA_DIR, BM_RES_DIR
+from .benchmark.sr.constants import BM_DATA_DIR, BM_RES_DIR
 
 from .config.constants import TEMP_DIR
 from .config.env_config import UI_URL
