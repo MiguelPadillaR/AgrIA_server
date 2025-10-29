@@ -56,7 +56,7 @@ RESOLUTION = 10
 
 SEN2SR_SR_DIR = TEMP_DIR / "sr_2.5m"
 
-GET_SR_BENCHMARK = True
+GET_SR_BENCHMARK = False
 
 if GET_SR_BENCHMARK:
     print("⚠️  WARNING: SUPER-RES BENCHMARK IS ACTIVE. This will execute both SR4S and SEN2SR pipelines (in that order), which will slow down all parcel fetching processes. To deactivate it, set the `GET_SR_BENCHMARK` to `False` in the `Agria_server/server/config/constants.py` file")

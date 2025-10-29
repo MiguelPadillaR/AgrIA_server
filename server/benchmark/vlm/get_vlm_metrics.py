@@ -7,7 +7,8 @@ from datetime import datetime, timedelta
 from PIL import Image
 from google import genai
 from google.genai import types
-from sigpac_tools.find import find_from_cadastral_registry
+
+from ...services.sigpac_tools_v2.find import find_from_cadastral_registry
 import re
 
 from ...utils.parcel_finder_utils import reset_dir
