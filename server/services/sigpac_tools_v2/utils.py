@@ -1,12 +1,12 @@
 import requests
 import structlog
-import json
+
 from collections import defaultdict
 
 from shapely.geometry import shape, mapping
 from shapely.ops import unary_union
 
-from ._globals import PROVINCES_BY_COMMUNITY, SIGPACV2_DIR
+from ._globals import PROVINCES_BY_COMMUNITY
 
 logger = structlog.get_logger()
 
@@ -105,12 +105,7 @@ def get_parcel_metadata_and_geometry(base_endpoint: str) -> dict:
     full_json = response.json()
 
     geometry = get_geometry(full_json)
-    with open(SIGPACV2_DIR / "geometry_debug.json", "w") as f:
-        json.dump(geometry, f, indent=4)
-
     metadata = get_metadata(full_json)
-    with open(SIGPACV2_DIR / "metadata_debug.json", "w") as f:
-        json.dump(metadata, f, indent=4)
 
     return geometry, metadata
 
@@ -135,6 +130,8 @@ def get_geometry(full_json: dict)-> dict:
     if not all_geometries:
         raise ValueError("No geometries found in the provided JSON data.")
 
+    logger.info("Found full metadata and geometry info for parcel.")
+
     # Merge all geometries into one (union of polygons)
     merged_geometry = unary_union(all_geometries)
 
@@ -144,6 +141,7 @@ def get_geometry(full_json: dict)-> dict:
     # Add CRS
     crs = f'{str(full_json["crs"]["type"]).lower()}:{full_json["crs"]["properties"]["code"]}'
     full_parcel_geometry['CRS'] = crs
+    logger.info("Extracted geometry successfully.")
 
     return full_parcel_geometry
 
@@ -236,6 +234,7 @@ def get_metadata(full_json: dict)-> dict:
         "vigencia": None,
         "vuelo": None
     }
+    logger.info("Extracted metadata successfully.")
 
     return full_parcel_metadata
 

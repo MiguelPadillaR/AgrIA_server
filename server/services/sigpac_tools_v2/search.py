@@ -1,8 +1,9 @@
 import requests
 import structlog
 
+from ...utils.parcel_finder_utils import build_cadastral_reference
 from ._globals import BASE_URL, QUERY_URL
-from .utils import find_community, get_parcel_metadata_and_geometry
+from .utils import find_community, get_parcel_metadata_and_geometry, read_cadastral_registry
 
 logger = structlog.get_logger()
 
@@ -28,31 +29,23 @@ def search(data: dict) -> dict:
         If the community is not specified and it is required to search for the location
     """
     comm = data.get("community", None)
-    prov = data.get("province", None)
+    provi = data.get("province", None)
     muni = data.get("municipality", None)
     polg = data.get("polygon", None)
     parc = data.get("parcel", None)
 
-    crs = data.get("crs", None)
-    lat = data.get("lat", None)
-    lon = data.get("lon", None)
 
     if not comm:
-        if not prov:
+        if not provi:
             raise ValueError(
                 '"Community" has not been specified, neither has been "province" and it is compulsory to find the community associated'
             )
         else:
-            comm = find_community(prov)
+            comm = find_community(provi)
 
-    if crs and lat and lon:
-        logger.info(f"Searching for specified parcel in coords: {lat}, {lon} .")
-        base_endpoint = f"{BASE_URL}/{QUERY_URL}/recinfobypoint/{crs}/{lat}{lon}"
-        response = get_parcel_metadata_and_geometry(base_endpoint)
-        return response
-    elif comm and prov and muni and polg and parc:
+    if comm and provi and muni and polg and parc:
         logger.info("Searching for specified parcel.")
-        base_endpoint = f"{BASE_URL}/{QUERY_URL}/recinfoparc/{prov}/{muni}/0/0/{polg}/{parc}.geojson"
+        base_endpoint = f"{BASE_URL}/{QUERY_URL}/recinfoparc/{provi}/{muni}/0/0/{polg}/{parc}.geojson"
         geometry, metadata = get_parcel_metadata_and_geometry(base_endpoint)
         return geometry, metadata
     else:
