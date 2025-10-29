@@ -2,7 +2,7 @@ import requests
 import structlog
 
 from ._globals import BASE_URL, QUERY_URL
-from .utils import find_community, get_parcel_data_and_geometry
+from .utils import find_community, get_parcel_metadata_and_geometry
 
 logger = structlog.get_logger()
 
@@ -32,7 +32,6 @@ def search(data: dict) -> dict:
     muni = data.get("municipality", None)
     polg = data.get("polygon", None)
     parc = data.get("parcel", None)
-    id = data.get("id_inm", None)
 
     crs = data.get("crs", None)
     lat = data.get("lat", None)
@@ -49,52 +48,13 @@ def search(data: dict) -> dict:
     if crs and lat and lon:
         logger.info(f"Searching for specified parcel in coords: {lat}, {lon} .")
         base_endpoint = f"{BASE_URL}/{QUERY_URL}/recinfobypoint/{crs}/{lat}{lon}"
-        response = get_parcel_data_and_geometry(base_endpoint)
+        response = get_parcel_metadata_and_geometry(base_endpoint)
         return response
-    elif comm:
-        if prov:
-            if muni:
-                if polg:
-                    if parc:
-                        # if id:
-                        #     logger.info("Searching for the specified enclosure.")
-                        #     base_endpoint = f"{BASE_URL}/{QUERY_URL}/recinfo/{prov}/{muni}/0/0/{polg}/{parc}"
-                        #     response = get_parcel_data_and_geometry(base_endpoint)
-                        #     return response
-                        # else:    
-                        #     logger.info("Searching for all parcels for cadastral code.")
-                        #     base_endpoint = f"{BASE_URL}/{QUERY_URL}/recinfoparc/{prov}/{muni}/0/0/{polg}/{parc}"
-                        #     response = get_parcel_data_and_geometry(base_endpoint)
-                        #     return response
-                        logger.info("Searching for specified parcel.")
-                        base_endpoint = f"{BASE_URL}/{QUERY_URL}/recinfoparc/{prov}/{muni}/0/0/{polg}/{parc}"
-                        response = get_parcel_data_and_geometry(base_endpoint)
-                        return response
-                    else:
-                        logger.info(f"Searching for the parcels of the polygon {polg}")
-                        base_endpoint = f"{BASE_URL}/{QUERY_URL}/refcatparcela/{prov}/{muni}/0/0/{polg}/{parc}"
-                        response = get_parcel_data_and_geometry(base_endpoint)
-                        return response
-                else:
-                    logger.info(
-                        f"Searching for the polygons of the municipality {muni}"
-                    )
-                    base_endpoint = f"{BASE_URL}/{QUERY_URL}/recinfoparc/{prov}/{muni}/0/0/{polg}/{parc}"
-                    response = get_parcel_data_and_geometry(base_endpoint)
-                    return response
-            else:
-                logger.info(f"Searching for the municipalities of the province {prov}")
-                base_endpoint = f"{BASE_URL}/codigossigpac/municipio{prov}.json"
-                response = requests.get(base_endpoint)
-                json = response.json()
-                return json
-        else:
-            logger.info(f"Searching for the provinces of Spain")
-            base_endpoint = f"{BASE_URL}/codigossigpac/provincia.json"
-            response = requests.get(base_endpoint)
-            json = response.json()
-            return json
-
+    elif comm and prov and muni and polg and parc:
+        logger.info("Searching for specified parcel.")
+        base_endpoint = f"{BASE_URL}/{QUERY_URL}/recinfoparc/{prov}/{muni}/0/0/{polg}/{parc}.geojson"
+        geometry, metadata = get_parcel_metadata_and_geometry(base_endpoint)
+        return geometry, metadata
     else:
         raise ValueError(
             '"Community" has not been specified and it could have not been found from the "province" parameter'

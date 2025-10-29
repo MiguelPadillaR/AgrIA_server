@@ -1,7 +1,12 @@
 import requests
 import structlog
+import json
+from collections import defaultdict
 
-from sigpac_tools._globals import PROVINCES_BY_COMMUNITY
+from shapely.geometry import shape, mapping
+from shapely.ops import unary_union
+
+from ._globals import PROVINCES_BY_COMMUNITY, SIGPACV2_DIR
 
 logger = structlog.get_logger()
 
@@ -23,7 +28,6 @@ def find_community(province_id: int) -> int:
         if province_id in provincias:
             return comunidad
     return None
-
 
 def read_cadastral_registry(registry: str) -> dict:
     """Read the cadastral reference, validates it and return its data as a dictionary.
@@ -80,8 +84,7 @@ def read_cadastral_registry(registry: str) -> dict:
         "control": reg_control,
     }
 
-
-def get_parcel_data_and_geometry(base_endpoint: str) -> dict:
+def get_parcel_metadata_and_geometry(base_endpoint: str) -> dict:
     """Extract parcel metadata and geometry and returns them in a single JSON.
     
     Parameters
@@ -97,20 +100,144 @@ def get_parcel_data_and_geometry(base_endpoint: str) -> dict:
         ValueError: If the reference is not valid
         NotImplementedError: If the reference is urban
     """
-    print("BASE ENDPOINT:", base_endpoint + '.json')
-    keys = ["json", "geojson"]
-    data = {}
-    for key in keys:
-        url = f"{base_endpoint}.{key}"
-        response = requests.get(url)
-        response.raise_for_status()
-        data[key] = response.json()
-    data["json"][0]["wkt"] = data["geojson"]
-    data["json"][0]["geojson"] = data["json"][0].pop("wkt")
-    merged_json = data["json"]
-    print("JSON:\n", merged_json)
-    return merged_json
+    response = requests.get(base_endpoint)
+    response.raise_for_status()
+    full_json = response.json()
 
+    geometry = get_geometry(full_json)
+    with open(SIGPACV2_DIR / "geometry_debug.json", "w") as f:
+        json.dump(geometry, f, indent=4)
+
+    metadata = get_metadata(full_json)
+    with open(SIGPACV2_DIR / "metadata_debug.json", "w") as f:
+        json.dump(metadata, f, indent=4)
+
+    return geometry, metadata
+
+def get_geometry(full_json: dict)-> dict:
+    """ Extract parcel geometry info from all of the indificual encolusres info JSON file.
+    
+    Parameters:
+    ----------
+        full_json (dict): All parcel's enclousure info JSON data
+        
+    Returns:
+    -------
+        full_parcel_geometry (dict): GeoJSON for overall parcel geometry
+
+    Raises
+    -------
+        ValueError: If no geometries were found
+    """
+    # Extract all geometries from features
+    all_geometries = [shape(feature["geometry"]) for feature in full_json["features"]]
+
+    if not all_geometries:
+        raise ValueError("No geometries found in the provided JSON data.")
+
+    # Merge all geometries into one (union of polygons)
+    merged_geometry = unary_union(all_geometries)
+
+    # Convert back to GeoJSON format
+    full_parcel_geometry = mapping(merged_geometry)
+
+    # Add CRS
+    crs = f'{str(full_json["crs"]["type"]).lower()}:{full_json["crs"]["properties"]["code"]}'
+    full_parcel_geometry['CRS'] = crs
+
+    return full_parcel_geometry
+
+def get_metadata(full_json: dict)-> dict:
+    """Extract parcel metadata and geometry and returns them in a single JSON.
+    
+    Parameters:
+    ----------
+        full_json (dict): All parcel's enclousure info JSON data
+        
+    Returns:
+    -------
+        full_parcel_metadata (dict): JSON metadata for the overall parcel
+
+    Raises
+    -------
+        ValueError: If no data was found
+
+    """
+
+    # Prepare outputs
+    query = []
+    land_use = []
+    total_surface = 0.0
+
+    for feature in full_json.get("features", []):
+        properties = feature.get("properties", {})
+        
+        # Extract and enrich info
+        dn_surface = properties.get("superficie")
+        uso_sigpac = properties.get("uso_sigpac")
+        superficie_admisible = dn_surface
+        inctexto = referencia_cat = None
+
+        # Query info
+        query_cols = ["admisibilidad", "altitud", "coef_regadio", "incidencias", 
+                      "pendiente_media", "recinto", "region", "uso_sigpac"]
+        query_entry = {col: properties.get(col) for col in query_cols}
+        query_entry.update({
+            "dn_surface": superficie_admisible,
+            "inctexto": inctexto,
+            "superficie_admisible": superficie_admisible,
+            "uso_sigpac" : uso_sigpac
+        })
+
+        # Land use info
+        land_use_entry = {
+            "dn_superficie": dn_surface,
+            "superficie_admisible": dn_surface,
+            "uso_sigpac": properties.get("uso_sigpac")
+        }
+
+        # Append to lists
+        query.append(query_entry)
+        land_use.append(land_use_entry)
+
+        # Add surface to total parcel surface
+        total_surface += dn_surface
+
+    # Parcel info
+    parcel_info_cols = ["provincia", "municipio", "agregado", "poligono", "parcela"]
+    parcel_info_entry = {col: properties.get(col) for col in parcel_info_cols}
+    parcel_info_entry.update({
+        "referencia_cat": referencia_cat,
+        "dn_surface": total_surface
+    })
+
+    # --- GROUP LAND USES ---
+    land_use_summary = defaultdict(float)
+    for entry in land_use:
+        uso = entry.get("uso_sigpac")
+        if uso:
+            land_use_summary[uso] += float(entry.get("dn_superficie", 0.0))
+
+    # Convert back to list of dicts for output
+    land_use_grouped = [
+        {"uso_sigpac": uso, "dn_superficie": round(area, 4), "superficie_admisible": round(area, 4)}
+        for uso, area in land_use_summary.items()
+    ]
+
+    # Build final parcel metadata
+    full_parcel_metadata = {
+        "arboles": None,
+        "convergencia": None,
+        "id": None,
+        "isRecin": None,
+        "parcelaInfo": parcel_info_entry,
+        "query": query,
+        "usos": land_use_grouped,
+        "vigencia": None,
+        "vuelo": None
+    }
+
+    return full_parcel_metadata
 
 def validate_cadastral_registry(reference: str) -> None:
     """Validate the cadastral reference
