@@ -4,14 +4,14 @@ import structlog
 from ...utils.parcel_finder_utils import build_cadastral_reference
 
 from ._globals import BASE_URL,QUERY_URL
-from .search import search
-from .utils import  read_cadastral_registry
 
 logger = structlog.get_logger()
 
 
-def geometry_from_coords(lat: float, lon: float, crs: str = "4258") -> dict:
-    """Gets the geometry of the given coordinates and reference in the given layer
+def generate_cadastral_ref_from_coords(lat: float, lon: float, crs: str = "4258") -> str:
+    """Gets the cadastral reference of the given coordinates and reference in the given parcel.
+    WARNING: The result is synthetic and does not necesarilly match a real SIGPAC cadastral reference.
+    However, it works for the system's scope.
 
     Parameters
     ----------
@@ -24,8 +24,8 @@ def geometry_from_coords(lat: float, lon: float, crs: str = "4258") -> dict:
 
     Returns
     -------
-    dict
-        Geojson geometry of the found reference
+    str
+        Cadastral code of the found reference
 
     Raises
     ------
@@ -53,6 +53,6 @@ def geometry_from_coords(lat: float, lon: float, crs: str = "4258") -> dict:
     cadastral_ref = build_cadastral_reference(provi, munic, polig, parcel)
     logger.info(f'Associated synthetic cadastral reference: {cadastral_ref}')
     
-    geometry, _ = search(read_cadastral_registry(cadastral_ref))
+    # geometry, _ = search(read_cadastral_registry(cadastral_ref))
 
-    return geometry
+    return cadastral_ref

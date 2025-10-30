@@ -6,7 +6,7 @@ import traceback
 
 from flask import abort
 from .sigpac_tools_v2.find import find_from_cadastral_registry
-from .sigpac_tools_v2.locate import  geometry_from_coords
+from .sigpac_tools_v2.locate import  generate_cadastral_ref_from_coords
 
 from ..benchmark.sr.compare_sr_metrics import compare_sr_metrics
 
@@ -45,35 +45,18 @@ def get_parcel_image(cadastral_reference: str, date: str, is_from_cadastral_refe
     if cadastral_reference:
         geometry, metadata = find_from_cadastral_registry(cadastral_reference)
     elif not is_from_cadastral_reference:
-        # Generate metadata from user input
-        metadata = json.loads(parcel_metadata)
-
         if not parcel_geometry and not coordinates:
             raise ValueError("GeoJSON data or parcel coordinates must be provided when not using cadastral reference.")
         elif parcel_geometry:
             # Retrieve geometry from map drawing geometry
             geometry = json.loads(parcel_geometry)
-        else:
+            # Generate metadata from user input
+            metadata = json.loads(parcel_metadata)
+        elif coordinates:
             # Retrieve geometry from coordinates
-            lat, lng = coordinates    
-            feature_collection = geometry_from_coords(lat, lng)
-            # if feature_collection['type'] == "FeatureCollection" and len(feature_collection['features']) > 1:
-            #     # Find parcel associated to coordinates
-            #     feature = find_nearest_feature_to_point(feature_collection, coordinates[0], coordinates[1])
-            #     if feature:
-            #         geometry = feature["geometry"]
-            #     else:
-            #         # Use all parcels found as parcel image
-            #         geometry = merge_and_convert_to_geometry(feature_collection) 
-            # elif len(feature_collection['features']) < 1:
-            #     # Generate bbox geojson from coord
-            #     lat, lon = coordinates
-            #     is_spain = is_in_spain(lon, lat)
-            #     min_size = min_size if is_spain else 512
-            #     geometry = get_bbox_from_center(lat, lon, min_size, min_size, RESOLUTION).geojson
-            # else:
-            # Only one parcel found
-            geometry = feature_collection
+            lat, lng = coordinates
+            cadastral_ref = generate_cadastral_ref_from_coords(lat, lng)
+            geometry, metadata = find_from_cadastral_registry(cadastral_ref)
     else:
         raise ValueError("Cadastral reference missing. Reference must be provided when not using location or GeoJSON/coordinates")
     # Get GeoJSON data and dataframe and list of UTM zones

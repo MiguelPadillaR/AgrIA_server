@@ -1,0 +1,26 @@
+{
+  "name": "Spain (Territory-Only BBoxes)",
+  "unit": "Decimal Degrees",
+  "zones": [
+    {
+      "id": "Peninsula_Este",
+      "desc": "Bloque principal de España (Central, Sur y Este) con exclusión de solapamiento con Portugal.",
+      "bbox": [-6.00, 35.90, 3.50, 43.80]
+    },
+    {
+      "id": "Peninsula_Noroeste",
+      "desc": "Territorio Noroeste (Galicia y áreas adyacentes), separado para evitar incluir Portugal.",
+      "bbox": [-9.30, 41.80, -6.00, 43.80]
+    },
+    {
+      "id": "Baleares",
+      "desc": "Islas Baleares (Archipiélago)",
+      "bbox": [1.10, 38.40, 4.40, 40.50]
+    },
+    {
+      "id": "Canarias",
+      "desc": "Islas Canarias (Archipiélago)",
+      "bbox": [-18.20, 27.60, -13.30, 29.50]
+    }
+  ]
+}

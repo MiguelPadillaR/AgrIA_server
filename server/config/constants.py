@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 MODEL_NAME = "gemini-2.0-flash-lite"
 BASE_CONTEXT_PATH = Path("./assets/LLM_assets/context")
@@ -42,6 +43,10 @@ MIME_TYPES = {
     'jpg': 'image/jpeg',
     'png': 'image/png',
 }
+
+SPAIN_JSON = Path("./assets/geojson_assets/spain.json")
+with open(SPAIN_JSON, 'r') as file:
+    SPAIN_ZONES = json.load(file)
 
 ANDALUSIA_TILES = ["29SPC", "29SQC", "30STH", "30SUH", "30SVH", "30SWH", "30SXH", "30SYH", "30SXG", 
         "30SWG", "30SVG", "30SUG", "30STG", "29SQB" ,"29SPB", "30STF", "30SUF", 

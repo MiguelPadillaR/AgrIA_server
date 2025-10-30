@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 from ..config.constants import TEMP_DIR
-from ..utils.parcel_finder_utils import check_cadastral_data, reset_dir
+from ..utils.parcel_finder_utils import check_cadastral_data, is_coord_in_zones, reset_dir
 from ..services.parcel_finder_service import get_parcel_image
 from flask import Blueprint, make_response, request, jsonify, send_from_directory
 
@@ -85,6 +85,16 @@ def find_parcel():
         return jsonify({'response': response})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@parcel_finder_bp.route('/is-coord-in-zone', methods=['POST'])
+def is_coord_in_zone():
+    try:
+        lat = float(request.form.get('lat'))
+        lng = float(request.form.get('lng'))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid or missing coordinates"}), 400
+
+    return jsonify({"response": is_coord_in_zones(lng, lat)}), 200
 
 @parcel_finder_bp.route('/uploads/<filename>')
 def uploaded_file(filename):

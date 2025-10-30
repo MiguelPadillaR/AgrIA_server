@@ -8,7 +8,7 @@ from pyproj import Transformer, CRS
 from ..services.sr4s.im.get_image_bands import download_from_sentinel_hub
 from ..services.sr4s.sr.get_sr_image import process_directory
 from ..services.sr4s.sr.utils import percentile_stretch, set_reflectance_scale
-from ..config.constants import ANDALUSIA_TILES, TEMP_DIR, SR_BANDS, RESOLUTION, BANDS_DIR, MERGED_BANDS_DIR, MASKS_DIR, SR5M_DIR
+from ..config.constants import ANDALUSIA_TILES, SPAIN_ZONES, TEMP_DIR, SR_BANDS, RESOLUTION, BANDS_DIR, MERGED_BANDS_DIR, MASKS_DIR, SR5M_DIR
 
 from ..config.minio_client import minioClient, bucket_name
 from collections import defaultdict
@@ -947,3 +947,25 @@ def polygon_pixel_size(geojson_polygon, resolution=RESOLUTION):
     max_dim_px = max(width_px, height_px)
 
     return max_dim_px
+
+def is_coord_in_zones(lon: float, lat: float, zones_json: dict = SPAIN_ZONES) -> str | None:
+    """
+    Checks if a (lon, lat) coordinate falls within any given zone's bounding box.
+
+    Args:
+        lon (float): Longitude in decimal degrees
+        lat (float): Latitude in decimal degrees
+        zones_json (dict): Dictionary with "zones" list, each containing "bbox"
+
+    Returns:
+        bool: Whether the coordinates are within any of the given zones.
+    """
+    is_in_zone = False
+    zones_list = zones_json["zones"]
+    i = 0
+    while not is_in_zone and i < len(zones_list):
+        zone = zones_list[i]
+        min_lon, min_lat, max_lon, max_lat = zone["bbox"]
+        is_in_zone = min_lon <= lon <= max_lon and min_lat <= lat <= max_lat
+        i += 1
+    return is_in_zone
