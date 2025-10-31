@@ -12,7 +12,7 @@
       "Ecoscheme_Subtype": "Irrigated",
       "Land_Use_Class_Eligible": "TA (22.75 ha)",
       "Total_Area_ha": 22.74751,
-      "Base_Payment_EUR": 3224.28,
+      "Total_Base_Payment_EUR": 3224.28,
       "Total_with_Pluriannuality_EUR": 3792.97,
       "Applicable": "Yes (Tier 1 Applied)"
     },
@@ -22,7 +22,7 @@
       "Ecoscheme_Subtype": "Medium Slope",
       "Land_Use_Class_Eligible": "VI, FY (9.49 ha)",
       "Total_Area_ha": 9.48632,
-      "Base_Payment_EUR": 1048.27,
+      "Total_Base_Payment_EUR": 1048.27,
       "Total_with_Pluriannuality_EUR": 1285.43,
       "Applicable": "Yes (Tier 1 Applied)"
     },
@@ -32,7 +32,7 @@
       "Ecoscheme_Subtype": null,
       "Land_Use_Class_Eligible": "MT, PA, PR, PS (5.27 ha)",
       "Total_Area_ha": 5.26666,
-      "Base_Payment_EUR": 143.68,
+      "Total_Base_Payment_EUR": 143.68,
       "Total_with_Pluriannuality_EUR": 143.68,
       "Applicable": "Yes (Tier 1 Applied)"
     },
@@ -42,7 +42,7 @@
       "Ecoscheme_Subtype": "Under Water",
       "Land_Use_Class_Eligible": "AG (0.41 ha)",
       "Total_Area_ha": 0.40991,
-      "Base_Payment_EUR": 59.47,
+      "Total_Base_Payment_EUR": 59.47,
       "Total_with_Pluriannuality_EUR": 59.47,
       "Applicable": "Yes (Flat Rate)"
     },
@@ -52,7 +52,7 @@
       "Ecoscheme_Subtype": null,
       "Land_Use_Class_Eligible": "CA, ED, FO, IM, ZU",
       "Total_Area_ha": 6.01926,
-      "Base_Payment_EUR": "N/A",
+      "Total_Base_Payment_EUR": "N/A",
       "Total_with_Pluriannuality_EUR": "N/A",
       "Applicable": "N/A"
     }

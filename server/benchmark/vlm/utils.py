@@ -19,5 +19,5 @@ def n_random_dates_between(date1: str, date2: str, n: int):
     return dates
 
 # Example:
-dates = n_random_dates_between("2024-01-01", "2024-12-31", 5)
-print(dates)
+# dates = n_random_dates_between("2024-01-01", "2024-12-31", 5)
+# print(dates)

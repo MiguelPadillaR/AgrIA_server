@@ -83,7 +83,7 @@ def get_sr_image(lat: float, lon: float, bands: list, start_date: str, end_date:
 # --------------------
 # Sentinel-2 cube
 # --------------------
-def download_sentinel_cubo(lat: float, lon: float, bands: list, start_date: str, end_date: str, size: int, crs: str, cloud_threshold: float = 0.01):
+def download_sentinel_cubo(lat: float, lon: float, bands: list, start_date: str, end_date: str, size: int, crs: str, cloud_threshold: float = 0.01, max_retries: int = 3, retry_days_shift: int = 15):
     """
     Download Sentinel's imagery data cubo and uses SCL band to filter the least cloudy data within date range.
     Arguments:
@@ -99,33 +99,46 @@ def download_sentinel_cubo(lat: float, lon: float, bands: list, start_date: str,
     Returns:
         cloudless_image_data (array): Cloudless image data array
     """
-    da = cubo.create(
-        lat= lat,
-        lon= lon,
-        collection="sentinel-2-l2a",
-        bands= bands,
-        start_date=start_date,
-        end_date=end_date,
-        edge_size=size,
-        resolution=RESOLUTION,
-    )
-    # Take cloudless time slices
-    scl = da.sel(band="SCL")
-    cloudless_image_data = da.isel(time=get_cloudless_time_indices(scl, cloud_threshold)[-1])  # get most recent image
-    cloudless_image_data = cloudless_image_data.sel(band=bands[:-1])  # drop SCL band
+    for attempt in range(max_retries):
+        try:
+            print(f"🌍 Attempt {attempt+1}/{max_retries}: {start_date} → {end_date}")
+            
+            da = cubo.create(
+                lat=lat,
+                lon=lon,
+                collection="sentinel-2-l2a",
+                bands=bands,
+                start_date=start_date,
+                end_date=end_date,
+                edge_size=size,
+                resolution=RESOLUTION,
+            )
 
-    # Get acquisition date from the 'time' coordinate
-    acq_date = cloudless_image_data["time"].values
-    # Convert from numpy.datetime64 to 'yyyy-mm-dd' string
-    acq_date_str = np.datetime_as_string(acq_date, unit='D')
+            # Find cloudless time index
+            scl = da.sel(band="SCL")
+            cloudless_date = get_cloudless_time_indices(scl, cloud_threshold)[-1]
+            cloudless_image_data = da.isel(time=cloudless_date).sel(band=bands[:-1])  # drop SCL band
 
-    # True CRS is EPSG:4326 (lon/lat degrees)
-    cloudless_image_data = cloudless_image_data.rio.write_crs(crs)
-    # Reproject to UTM zone 30N
-    cloudless_image_data = cloudless_image_data.rio.reproject(crs)
-    
-    print("☁️  Downloaded cloudless data!")
-    return cloudless_image_data, str(acq_date_str)
+            # Get acquisition date and reproject
+            acq_date = cloudless_image_data["time"].values
+            acq_date_str = np.datetime_as_string(acq_date, unit='D')
+            cloudless_image_data = cloudless_image_data.rio.write_crs(crs).rio.reproject(crs)
+
+            print(f"☁️ Cloudless image found on {acq_date_str}!")
+            return cloudless_image_data, str(acq_date_str)
+
+        except ValueError as e:
+            print(f"⚠️ {e}")
+            if attempt < max_retries - 1:
+                # Shift the date range backwards by `retry_days_shift` days
+                new_start = datetime.fromisoformat(start_date) - timedelta(days=retry_days_shift)
+                new_end = datetime.fromisoformat(end_date) - timedelta(days=retry_days_shift)
+                start_date, end_date = new_start.strftime("%Y-%m-%d"), new_end.strftime("%Y-%m-%d")
+                print(f"🔁 Retrying with earlier range: {start_date} → {end_date}")
+                continue
+            else:
+                print("❌ No valid images found after all retries.")
+                raise
 
 # --------------------
 # Cropping SR parcel with polygon

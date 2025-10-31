@@ -183,10 +183,10 @@ def get_cloudless_time_indices(scl: DataArray, cloud_threshold = 0.01):
         else:
            # No valid or even partially valid images found
             raise ValueError(
-                f"❌ No cloud-free or minimally cloudy Sentinel-2 images found "
-                f"for the selected area and date range (threshold = {cloud_threshold:.2%})."
+                f"❌ No cloud-free or minimally cloudy Sentinel-2 images found (min threshold = {min_threshold:.2%}) "
+                f"for the selected area and date range (original threshold = {cloud_threshold:.2%})."
             ) 
-    print("Valid time indices (cloud < 1%):", valid_indices)
+    print(f"Valid time indices (cloud = {min_threshold:.2%}):", valid_indices)
     return valid_indices
 
 def prepare_rgb(arr, is_tensor=False):

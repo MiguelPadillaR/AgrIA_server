@@ -5,6 +5,7 @@
 *.kml
 *.png
 *.tif*
+*.tsv
 *assets/.scripts
 *model*
 *data*

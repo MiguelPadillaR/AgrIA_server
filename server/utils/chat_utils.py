@@ -51,7 +51,7 @@ def generate_image_context_data(image_date, land_uses, query) -> str:
 
         for use in land_uses:
             land_use_type = use["uso_sigpac"]
-            surface = round(float(use.get("superficie_admisible") or use.get("dn_surface", 0))/10000, 5)
+            surface = float(use.get("superficie_admisible") or use.get("dn_surface", 0))
 
             total_surface += surface
             irrigation_coef, slope_coef = get_irrigation_coefficient(query, land_use_type)
