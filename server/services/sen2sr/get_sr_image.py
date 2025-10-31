@@ -111,7 +111,8 @@ def download_sentinel_cubo(lat: float, lon: float, bands: list, start_date: str,
     )
     # Take cloudless time slices
     scl = da.sel(band="SCL")
-    cloudless_image_data = da.isel(time=get_cloudless_time_indices(scl, cloud_threshold)[-1])  # get most recent image
+    cloudless_date = get_cloudless_time_indices(scl, cloud_threshold)[-1] # get most recent image
+    cloudless_image_data = da.isel(time=cloudless_date) 
     cloudless_image_data = cloudless_image_data.sel(band=bands[:-1])  # drop SCL band
 
     # Get acquisition date from the 'time' coordinate

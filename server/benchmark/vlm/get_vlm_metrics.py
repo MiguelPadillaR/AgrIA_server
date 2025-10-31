@@ -60,6 +60,7 @@ def get_parcel_data_and_description(cadastral_ref, image_date):
     query = metadata.get('query', None)
     parcel_metadata = generate_image_context_data(image_date, land_uses, query)
     parcel_desc = parcel_metadata['en']
+    print(f"[DEBUG]\tParcel description: {parcel_desc}")
     
     # Extract parcel area safely
     total_parcel_area = None
@@ -136,63 +137,115 @@ def extract_and_save_json(raw_text, image_filepath):
 
     return json_data, json_filepath
 
-for cadastral_ref in cadastral_ref_list:
-    if len(cadastral_ref) is not 20:
-        continue
-    init_time = datetime.now()
-    out_row  = pd.DataFrame(columns = out_col_names)
-    
-    # Get parcel input data
-    image_date = dates[i]
-    geometry, parcel_desc = get_parcel_data_and_description(cadastral_ref, image_date)
-    image_filepath = get_parcel_image(cadastral_ref, geometry, image_date)
-    
-    # Add data to input df
-    new_row = pd.DataFrame([{
-        'cadastral_ref': cadastral_ref,
-        'parcel_desc': parcel_desc,  # Assuming 'en' for English description
-        'sr_image_filepath': image_filepath
-    }])
+try:
+    for cadastral_ref in cadastral_ref_list:
+        if len(cadastral_ref) is not 20:
+            continue
+        init_time = datetime.now()
+        out_row  = pd.DataFrame(columns = out_col_names)
+        
+        # Get parcel input data
+        print("Dates length:", len(dates))
+        print("Index:", i)
+        image_date = dates[i]
+        geometry, parcel_desc = get_parcel_data_and_description(cadastral_ref, image_date)
+        image_filepath = get_parcel_image(cadastral_ref, geometry, image_date)
+        
+        # Add data to input df
+        new_row = pd.DataFrame([{
+            'cadastral_ref': cadastral_ref,
+            'parcel_desc': parcel_desc,  # Assuming 'en' for English description
+            'sr_image_filepath': image_filepath
+        }])
 
-    input_df = pd.concat([input_df, new_row], ignore_index=True)
-    print(f"[DEBUG]\tInput DataFrame updated ({len(input_df)} entries)")
-    
-    reset_dir(TEMP_DIR)
-    
-    exec_time = str(timedelta(seconds=(datetime.now() - init_time).total_seconds()))
+        input_df = pd.concat([input_df, new_row], ignore_index=True)
+        print(f"[DEBUG]\tInput DataFrame updated ({len(input_df)} entries)")
+        
+        reset_dir(TEMP_DIR)
+        
+        exec_time = str(timedelta(seconds=(datetime.now() - init_time).total_seconds()))
 
-    # Run LLM and parse reply
-    raw_text = get_llm_response(image_filepath, parcel_desc).text
-    json_data, json_filepath = extract_and_save_json(raw_text, image_filepath)
+        # Run LLM and parse reply
+        raw_text = get_llm_response(image_filepath, parcel_desc).text.strip()
 
-    # Add data to output df
-    json_df = pd.json_normalize(json_data, sep='.')
-    # json_df.to_csv(BM_DIR / "lol.tsv", sep="\t", index=False)
+        # Split into lines and remove first line (e.g., ```json or BEGIN)
+        lines = raw_text.splitlines()
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
 
-    out_row = pd.DataFrame([{
-        'cadastral_ref': cadastral_ref,
-        'parcel_area': json_df.get('Total_Parcel_Area_ha', [None])[0],
-        'predicted_ecoschemes': json_df.get('Final_Results.Applicable_Ecoschemes', [None])[0],
-        'predicted_base_aid': json_df.get('Final_Results.Total_Aid_without_Pluriannuality_EUR', [None])[0],
-        'predicted_plur_aid': json_df.get('Final_Results.Total_Aid_with_Pluriannuality_EUR', [None])[0],
-        'exec_time': exec_time,
-    }])
-    
-    out_df = pd.concat([out_df, out_row], ignore_index=True)
-    print(f"[DEBUG]\tOutput DataFrame updated ({len(out_df)} entries)")
+        # Walk backward to find last closing brace
+        end_idx = len(lines)
+        for j in range(len(lines) - 1, -1, -1):
+            if "}" in lines[j]:
+                end_idx = j + 1
+                break
 
-    i+=1
-    time_taken = (datetime.now() - init_time).total_seconds()
-    time_taken_formatted = str(timedelta(seconds=time_taken))
-    print(f"[DEBUG]\tTime taken for parcel processing {time_taken_formatted}")
-    total_time += time_taken
+        # Keep only JSON portion
+        cleaned_text = "\n".join(lines[:end_idx]).replace("```", "").strip()
 
-total_time_formatted = str(timedelta(seconds=total_time))
-print(f"[DEBUG]\tBENCHMARK EXEC. TIME {total_time_formatted}")
-# Save dataframes
-input_filepath = BM_DIR / "input_data.tsv"
-out_filepath = BM_DIR / "output_data.tsv"
-input_df.to_csv(input_filepath, sep="\t", index=False)
-out_df.to_csv(out_filepath, sep="\t", index=False)
-print(f"[DEBUG]\tInput & output dataframes saved to:\n{input_filepath}\n{out_filepath}")
+        # Sanity check
+        if not cleaned_text or "{" not in cleaned_text:
+            print("[WARNING] No valid JSON found in LLM response, skipping...")
+            continue  # safely skip this iteration
+
+        # Write to temp file
+        output_path = BM_DIR / "temp_file.json"
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(cleaned_text)
+
+        # --- Read it back safely ---
+        try:
+            with open(output_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except json.JSONDecodeError as e:
+            print(f"[ERROR] Failed to decode JSON: {e}")
+            print("[DEBUG] Cleaned text preview:\n", cleaned_text[:300])
+            continue  # skip broken JSONs
+
+        # --- Normalize JSON into dataframe ---
+        json_df = pd.json_normalize(
+            data,
+            record_path=["Estimated_Total_Payment"],
+            meta=[
+                "Report_Type",
+                "Total_Parcel_Area_ha",
+                ["Calculation_Context", "Rate_Applied"],
+                ["Calculation_Context", "Source"],
+                ["Final_Results", "Total_Aid_without_Pluriannuality_EUR"],
+                ["Final_Results", "Total_Aid_with_Pluriannuality_EUR"],
+            ],
+            errors="ignore"
+)
+        output_path1 = BM_DIR / "temp_lol.tsv"
+        json_df.to_csv(BM_DIR / "lol.tsv", sep="\t", index=False)
+
+        out_row = pd.DataFrame([{
+            'cadastral_ref': cadastral_ref,
+            'parcel_area': json_df.get('Total_Parcel_Area_ha', [None])[0],
+            'land_uses_amount': len(parcel_desc.split("Land")) - 1,
+            'predicted_ecoschemes': json_df.get('Ecoscheme_ID', [None])[0],
+            'predicted_base_aid': json_df.get('Final_Results.Total_Aid_without_Pluriannuality_EUR', [None])[0],
+            'predicted_plur_aid': json_df.get('Final_Results.Total_Aid_with_Pluriannuality_EUR', [None])[0],
+            'exec_time': exec_time,
+        }])
+        
+        out_df = pd.concat([out_df, out_row], ignore_index=True)
+        print(f"[DEBUG]\tOutput DataFrame updated ({len(out_df)} entries)")
+
+        i+=1
+        time_taken = (datetime.now() - init_time).total_seconds()
+        time_taken_formatted = str(timedelta(seconds=time_taken))
+        print(f"[DEBUG]\tTime taken for parcel processing {time_taken_formatted}")
+        total_time += time_taken
+        if i == 5: break
+        else: continue
+finally:
+    total_time_formatted = str(timedelta(seconds=total_time))
+    print(f"[DEBUG]\tBENCHMARK EXEC. TIME {total_time_formatted}")
+    # Save dataframes
+    input_filepath = BM_DIR / "input_data.tsv"
+    out_filepath = BM_DIR / "output_data.tsv"
+    input_df.to_csv(input_filepath, sep="\t", index=False)
+    out_df.to_csv(out_filepath, sep="\t", index=False)
+    print(f"[DEBUG]\tInput & output dataframes saved to:\n{input_filepath}\n{out_filepath}")
 
