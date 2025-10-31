@@ -17,7 +17,7 @@ from ...config.constants import SEN2SR_SR_DIR, TEMP_DIR
 from ...services.sen2sr.constants import GEOJSON_FILEPATH
 
 
-from .constants import BM_DIR, BM_JSON_DIR, BM_SR_IMAGES_DIR
+from .constants import BM_DIR, BM_JSON_DIR, BM_LLM_DIR, BM_SR_IMAGES_DIR
 from ...services.parcel_finder_service import download_sen2sr_parcel_image
 from ..sr.utils import copy_file_to_dir
 from ...utils.chat_utils import generate_image_context_data
@@ -26,15 +26,21 @@ from ...config.llm_client import client
 from .llm_setup import generate_system_instructions
 from .utils import n_random_dates_between
 
-
+# init dirs
+os.makedirs(BM_LLM_DIR, exist_ok=True)
+os.makedirs(BM_JSON_DIR, exist_ok=True)
+os.makedirs(BM_SR_IMAGES_DIR, exist_ok=True)
 
 # Setup input dataframe
-input_col_names =  ['cadastral_ref', 'parcel_desc', 'sr_image_filepath']
+input_col_names =  ['cadastral_ref', 'image_date', 'parcel_desc', 'sr_image_filepath']
 out_col_names =  ['cadastral_ref', 'parcel_area', 'land_uses_amount', 'applicable_ecoschemes', 'predicted_ecoschemes', 'applicable_base_aid','predicted_base_aid', 'applicable_plur_aid','predicted_plur_aid', 'ecoschemes_F1', 'base_aid_diff', 'plur_aid_diff', 'base_aid_MAE', 'plur_aid_MAE', 'plur_aid_MAPE', 'base_aid_MAPE', 'exec_time']
 input_df  = pd.DataFrame(columns = input_col_names)
 out_df  = pd.DataFrame(columns = out_col_names)
 
 print("[DEBUG]\tDataFrames initialized")
+
+timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
 
 # Get all cadastral references
 cadastral_ref_list = ["26002A001000010000EQ", "14048A001001990000RM","45054A067000090000QA", "43157A024000010000KE", "34039A005000020000YQ", "27020A319000010000QL", "43022A037000430000JO", "50074A045000370000KA", "50074A014000730000KS", "25015A501101860000RF", "25142A002000430000BP", "22121A007001610000UD", "22145A011000110000PI", "22061A018000530000GG", "26002A004009350000EI", "41079A057000020000JR", "41012A018000030000TX", "23086A02500051FA", "23060A065002370000EX", "29055A040000040000HL", "41062A012001000000UQ", "41062A012000960000UB", ""]  # TODO
@@ -102,55 +108,6 @@ def get_llm_response(image_filepath, parcel_desc):
 
     return response
 
-def extract_and_save_json(raw_text, image_filepath):
-    # Split into lines and remove first line (e.g., ```json or BEGIN)
-    lines = raw_text.splitlines()
-    if lines and lines[0].startswith("```"):
-        lines = lines[1:]
-
-    # Walk backward to find last closing brace
-    end_idx = len(lines)
-    for j in range(len(lines) - 1, -1, -1):
-        if "}" in lines[j]:
-            end_idx = j + 1
-            break
-
-    # Keep only JSON portion
-    cleaned_text = "\n".join(lines[:end_idx]).replace("```", "").strip()
-
-    # Sanity check
-    if not cleaned_text or "{" not in cleaned_text:
-        print("[WARNING] No valid JSON found in LLM response, skipping...")
-
-    # Write to temp file
-    output_path = BM_DIR / "temp_file.json"
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write(cleaned_text)
-
-    # --- Read it back safely ---
-    try:
-        with open(output_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-    except json.JSONDecodeError as e:
-        print(f"[ERROR] Failed to decode JSON: {e}")
-        print("[DEBUG] Cleaned text preview:\n", cleaned_text[:300])
-
-    # --- Normalize JSON into dataframe ---
-    json_df = pd.json_normalize(
-        data,
-        record_path=["Estimated_Total_Payment"],
-        meta=[
-            "Report_Type",
-            "Total_Parcel_Area_ha",
-            ["Calculation_Context", "Rate_Applied"],
-            ["Calculation_Context", "Source"],
-            ["Final_Results", "Total_Aid_without_Pluriannuality_EUR"],
-            ["Final_Results", "Total_Aid_with_Pluriannuality_EUR"],
-        ],
-        errors="ignore"
-    )
-    return json_df
-
 def extract_json_from_reply(raw_text: str):
     # Split into lines and remove first line (e.g., ```json or BEGIN)
     lines = raw_text.splitlines()
@@ -175,7 +132,7 @@ def extract_json_from_reply(raw_text: str):
         print("[WARNING] No valid JSON found in LLM response, skipping...")
 
     # Write to temp file
-    output_path = BM_DIR / "temp_file.json"
+    output_path = BM_LLM_DIR / f"{cadastral_ref}_out.json"
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(cleaned_text)
 
@@ -208,8 +165,8 @@ def extract_json_from_reply(raw_text: str):
 try:
     i = 0
     total_time = 0
-    reset_dir(BM_JSON_DIR)
     reset_dir(BM_SR_IMAGES_DIR)
+    reset_dir(BM_LLM_DIR)
     for cadastral_ref in cadastral_ref_list:
         if len(cadastral_ref) is not 20:
             continue
@@ -226,6 +183,7 @@ try:
         # Add data to input df
         new_row = pd.DataFrame([{
             'cadastral_ref': cadastral_ref,
+            'image_date': image_date,
             'parcel_desc': parcel_desc,  # Assuming 'en' for English description
             'sr_image_filepath': image_filepath
         }])
@@ -240,8 +198,6 @@ try:
         # Run LLM and parse reply
         raw_text = get_llm_response(image_filepath, parcel_desc).text.strip()
         json_df = extract_json_from_reply(raw_text)
-        output_path1 = BM_DIR / "temp_lol.tsv"
-        json_df.to_csv(BM_DIR / "lol.tsv", sep="\t", index=False)
 
         out_row = pd.DataFrame([{
             'cadastral_ref': cadastral_ref,
@@ -264,9 +220,12 @@ try:
 finally:
     total_time_formatted = str(timedelta(seconds=total_time))
     print(f"[DEBUG]\tBENCHMARK EXEC. TIME {total_time_formatted}")
+    input_df = input_df.fillna(0)
+    out_df = out_df.fillna(0)
+
     # Save dataframes
-    input_filepath = BM_DIR / "input_data.tsv"
-    out_filepath = BM_DIR / "output_data.tsv"
+    input_filepath = BM_JSON_DIR / f"{timestamp}_in.tsv"
+    out_filepath = BM_JSON_DIR / f"{timestamp}_out.tsv"
     input_df.to_csv(input_filepath, sep="\t", index=False)
     out_df.to_csv(out_filepath, sep="\t", index=False)
     print(f"[DEBUG]\tInput & output dataframes saved to:\n{input_filepath}\n{out_filepath}")

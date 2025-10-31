@@ -8,9 +8,9 @@ import os, glob
 from .constants import BM_DATA_DIR, BM_SR_DIR, BM_RES_DIR
 from .utils import *
 
-def compare_sr_metrics():
-    gt_files = sorted(glob.glob(str(BM_DATA_DIR / "*.tif")))
-    sr_files = sorted(glob.glob(str(BM_SR_DIR / "*.tif")))
+def compare_sr_metrics(gt_dir: str=BM_DATA_DIR, sr_dir: str=BM_SR_DIR):
+    gt_files = sorted(glob.glob(str(gt_dir / "*.tif")))
+    sr_files = sorted(glob.glob(str(sr_dir / "*.tif")))
 
     if not gt_files or not sr_files:
         raise FileNotFoundError("Missing ground truth or SR files")
@@ -69,7 +69,6 @@ def compare_sr_metrics():
     print(f"📁 Saved combined results to: {csv_path}")
     print(df[["filename_gt", "filename_sr", "model_name", "PSNR", "SSIM", "RMSE", "SAM_rad", "ERGAS"]])
     return csv_path
-
 
 def compute_metrics_for_pair(gt_path, sr_path, model_name=None, ratio=2, auto_normalize=True):
     """Compute metrics for a single GT/SR pair."""
