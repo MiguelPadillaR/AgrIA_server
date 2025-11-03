@@ -38,9 +38,13 @@ The parcel's image, date from October 12th, 2024, is characterized by a strong p
 
 **RESULTS:**
 
+<center>
+
 | Applicable Eco-scheme* | Total Aid (w/o Plur.) | Total Aid (with Plur.) |
 | :---: | :---: | :---: |
 | **P1 + P3/P4 + P5 (A/B) + P6/P7** | **7550.45 €** | **10050.45 €** |
+
+</center>
 
 - **Clarifications:** P3/P4 payment includes a lower rate for the 10.00 ha exceeding the 70 ha threshold. P6/P7 payment includes a lower rate for the 5.00 ha exceeding the 15 ha threshold. The total pluriannuality bonus of 2500.00 € is applied to the 100.00 ha of eligible land (TA + OV).
 

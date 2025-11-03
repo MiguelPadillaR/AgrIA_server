@@ -2,6 +2,7 @@
 import json
 import os
 import pandas as pd
+import structlog
 
 from datetime import datetime, timedelta
 from PIL import Image
@@ -9,15 +10,12 @@ from google import genai
 from google.genai import types
 
 from ...services.sigpac_tools_v2.find import find_from_cadastral_registry
-import re
-
 from ...utils.parcel_finder_utils import reset_dir
-
 from ...config.constants import SEN2SR_SR_DIR, TEMP_DIR
 from ...services.sen2sr.constants import GEOJSON_FILEPATH
 
 
-from .constants import BM_DIR, BM_JSON_DIR, BM_LLM_DIR, BM_SR_IMAGES_DIR
+from .constants import BM_JSON_DIR, BM_LLM_DIR, BM_SR_IMAGES_DIR, CADASTRAL_REF_LIST_PAPER, DATES_PAPER, IS_PAPER_DATA
 from ...services.parcel_finder_service import download_sen2sr_parcel_image
 from ..sr.utils import copy_file_to_dir
 from ...utils.chat_utils import generate_image_context_data
@@ -37,21 +35,19 @@ out_col_names =  ['cadastral_ref', 'parcel_area', 'land_uses_amount', 'applicabl
 input_df  = pd.DataFrame(columns = input_col_names)
 out_df  = pd.DataFrame(columns = out_col_names)
 
-print("[DEBUG]\tDataFrames initialized")
+logger = structlog.get_logger()
+
+logger.debug(f"DataFrames initialized")
 
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-
-# Get all cadastral references
-cadastral_ref_list = ["26002A001000010000EQ", "14048A001001990000RM","45054A067000090000QA", "43157A024000010000KE", "34039A005000020000YQ", "27020A319000010000QL", "43022A037000430000JO", "50074A045000370000KA", "50074A014000730000KS", "25015A501101860000RF", "25142A002000430000BP", "22121A007001610000UD", "22145A011000110000PI", "22061A018000530000GG", "26002A004009350000EI", "41079A057000020000JR", "41012A018000030000TX", "23086A02500051FA", "23060A065002370000EX", "29055A040000040000HL", "41062A012001000000UQ", "41062A012000960000UB", ""]  # TODO
-# Get all parcel descriptions
-to_date = datetime.today()
-to_date = datetime(year=2025, month=4, day=7)
-from_date = to_date - timedelta(days=4 * 365)
-dates = n_random_dates_between(from_date.strftime("%Y-%m-%d"), to_date.strftime("%Y-%m-%d"), len(cadastral_ref_list))
-
-print(f"[DEBUG]\tGenerated random dates: {dates}")
-
+def setup_ndates(n_dates:int, to_date: datetime=datetime.today(), delta_days: int=4 * 365):
+    # Get all parcel descriptions
+    from_date = to_date - timedelta(days=delta_days)
+    dates = n_random_dates_between(from_date.strftime("%Y-%m-%d"), to_date.strftime("%Y-%m-%d"), n_dates)
+    logger.debug(f"Generated random dates: {dates}")
+    
+    return dates
 
 def get_parcel_data_and_description(cadastral_ref, image_date):
     # Get parcel metadata and geometry
@@ -59,27 +55,27 @@ def get_parcel_data_and_description(cadastral_ref, image_date):
     os.makedirs(SEN2SR_SR_DIR, exist_ok=True)
     with open(GEOJSON_FILEPATH, "w") as file:
         file.write(str(geometry).replace("'", '"').replace("(","[").replace(")","]"))  # format GeoJSON correctly
-    print(f"[DEBUG]\tMetadata keys: {list(metadata.keys())}")
+    logger.debug(f"Metadata keys: {list(metadata.keys())}")
 
     # Get parcel's description
     land_uses = metadata.get('usos', None)
     query = metadata.get('query', None)
     parcel_metadata = generate_image_context_data(image_date, land_uses, query)
     parcel_desc = parcel_metadata['en']
-    print(f"[DEBUG]\tParcel description: {parcel_desc}")
+    logger.debug(f"Parcel description: {parcel_desc}")
     
     # Extract parcel area safely
     total_parcel_area = None
     if isinstance(parcel_metadata, dict) and 'TOTAL ELIGIBLE SURFACE (ha):' in parcel_metadata.get('en', ''):
         total_parcel_area = float(parcel_metadata['en'].split("TOTAL ELIGIBLE SURFACE (ha):")[-1])
-    print(f"[DEBUG]\tParcel area: {total_parcel_area}, Image date: {image_date}")
+    logger.debug(f"Parcel area: {total_parcel_area}, Image date: {image_date}")
  
     return geometry, parcel_desc
 
 def get_parcel_image(cadastral_ref, geometry, image_date):    
     # Get and save SR parcel image
     sr_image_filepath = os.path.join(TEMP_DIR, download_sen2sr_parcel_image(geometry, image_date))
-    print(f"[DEBUG]\tSR image downloaded: {sr_image_filepath}")
+    logger.debug(f"SR image downloaded: {sr_image_filepath}")
     image_filepath = copy_file_to_dir(str(sr_image_filepath), BM_SR_IMAGES_DIR)
     
     # Rename file
@@ -87,15 +83,15 @@ def get_parcel_image(cadastral_ref, geometry, image_date):
     new_image_filepath = BM_SR_IMAGES_DIR / (filepath_no_ext + f"_{cadastral_ref}{ext}")
     os.rename(image_filepath, new_image_filepath)
     image_filepath = new_image_filepath
-    print(f"[DEBUG]\tSR image copied to: {new_image_filepath}")
+    logger.debug(f"SR image copied to: {new_image_filepath}")
 
     return image_filepath
 
 def get_llm_response(image_filepath, parcel_desc): 
     prompt = f"Describe the parcels based on the following information and image:\n\n{parcel_desc}"
-    print(f"[DEBUG]\tPrompt generated: {prompt[:100]}...")
+    logger.debug(f'Prompt generated:\n"{prompt[:150]}..."')
     image = Image.open(image_filepath)
-    print(f"[DEBUG]\tImage loaded for inference")
+    logger.debug(f"Image loaded for inference")
 
     response = client.models.generate_content(
         model="gemini-2.5-flash",
@@ -104,7 +100,7 @@ def get_llm_response(image_filepath, parcel_desc):
             ),
         contents=[image, prompt]
     )
-    print(f"[DEBUG]\tAgrIA's response:\n---BEGIN\n{response.text}\n---END")
+    logger.debug(f"AgrIA's response:\n---BEGIN\n{response.text}\n---END")
 
     return response
 
@@ -122,7 +118,7 @@ def extract_json_from_reply(raw_text: str):
         found = start_idx is not None  and end_idx is not None
         i += 1
         j -= 1
-    print(f"[DEBUG]\tJSON found between lines {start_idx} and {end_idx}.")
+    logger.debug(f"JSON found between lines {start_idx} and {end_idx}.")
 
     # Keep only JSON portion
     cleaned_text = "\n".join(lines[start_idx:end_idx]).replace("```", "").strip()
@@ -144,7 +140,7 @@ def extract_json_from_reply(raw_text: str):
     except json.JSONDecodeError as e:
         print(f"[ERROR] Failed to decode JSON: {e}")
         print("[DEBUG] Cleaned text preview:\n", cleaned_text[:300])
-    print("[DEBUG]\Data from JSON file:\n", data)
+    logger.debug(f"Data from JSON file:\n{data}")
 
     # --- Normalize JSON into dataframe ---
     json_df = pd.json_normalize(
@@ -167,15 +163,19 @@ try:
     total_time = 0
     reset_dir(BM_SR_IMAGES_DIR)
     reset_dir(BM_LLM_DIR)
+
+    # Get all cadastral references and date data
+    cadastral_ref_list = CADASTRAL_REF_LIST_PAPER if IS_PAPER_DATA else ["26002A001000010000EQ", "14048A001001990000RM","45054A067000090000QA", "43157A024000010000KE", "34039A005000020000YQ", "27020A319000010000QL", "43022A037000430000JO", "50074A045000370000KA", "50074A014000730000KS", "25015A501101860000RF", "25142A002000430000BP", "22121A007001610000UD", "22145A011000110000PI", "22061A018000530000GG", "26002A004009350000EI", "41079A057000020000JR", "41012A018000030000TX", "23086A02500051FA", "23060A065002370000EX", "29055A040000040000HL", "41062A012001000000UQ", "41062A012000960000UB", ""]  # TODO
+    dates = DATES_PAPER if IS_PAPER_DATA else setup_ndates(len(cadastral_ref_list))
+
     for cadastral_ref in cadastral_ref_list:
         if len(cadastral_ref) is not 20:
             continue
         init_time = datetime.now()
+        # Set output row
         out_row  = pd.DataFrame(columns = out_col_names)
         
         # Get parcel input data
-        print("Dates length:", len(dates))
-        print("Index:", i)
         image_date = dates[i]
         geometry, parcel_desc = get_parcel_data_and_description(cadastral_ref, image_date)
         image_filepath = get_parcel_image(cadastral_ref, geometry, image_date)
@@ -184,49 +184,52 @@ try:
         new_row = pd.DataFrame([{
             'cadastral_ref': cadastral_ref,
             'image_date': image_date,
-            'parcel_desc': parcel_desc,  # Assuming 'en' for English description
+            'parcel_desc':  parcel_desc ,  # Assuming 'en' for English description
             'sr_image_filepath': image_filepath
         }])
 
         input_df = pd.concat([input_df, new_row], ignore_index=True)
-        print(f"[DEBUG]\tInput DataFrame updated ({len(input_df)} entries)")
+        logger.debug(f"Input DataFrame updated ({len(input_df)} entries)")
         
         reset_dir(TEMP_DIR)
         
-        exec_time = str(timedelta(seconds=(datetime.now() - init_time).total_seconds()))
 
-        # Run LLM and parse reply
+        # Run LLM and get response
         raw_text = get_llm_response(image_filepath, parcel_desc).text.strip()
+        exec_time = str(timedelta(seconds=(datetime.now() - init_time).total_seconds()))
+        # Parse LLM reply
         json_df = extract_json_from_reply(raw_text)
-
+        sorted_list = json_df["Ecoscheme_ID"].values.tolist().sort()
+        es_list = str(sorted_list).replace("'", "").replace('"', "").replace("[", "").replace("]", "") if IS_PAPER_DATA else sorted_list
         out_row = pd.DataFrame([{
             'cadastral_ref': cadastral_ref,
             'parcel_area': json_df.get('Total_Parcel_Area_ha', [None])[0],
             'land_uses_amount': len(parcel_desc.split("Land")) - 1,
-            'predicted_ecoschemes': json_df["Ecoscheme_ID"].values.tolist(),
+            'predicted_ecoschemes': es_list,
             'predicted_base_aid': json_df.get('Final_Results.Total_Aid_without_Pluriannuality_EUR', [None])[0],
             'predicted_plur_aid': json_df.get('Final_Results.Total_Aid_with_Pluriannuality_EUR', [None])[0],
             'exec_time': exec_time,
         }])
         
         out_df = pd.concat([out_df, out_row], ignore_index=True)
-        print(f"[DEBUG]\tOutput DataFrame updated ({len(out_df)} entries)")
+        logger.debug(f"Output DataFrame updated ({len(out_df)} entries)")
 
         i+=1
         time_taken = (datetime.now() - init_time).total_seconds()
         time_taken_formatted = str(timedelta(seconds=time_taken))
-        print(f"[DEBUG]\tTime taken for parcel processing {time_taken_formatted}")
+        logger.debug(f"Time taken for parcel processing {time_taken_formatted}")
         total_time += time_taken
 finally:
     total_time_formatted = str(timedelta(seconds=total_time))
-    print(f"[DEBUG]\tBENCHMARK EXEC. TIME {total_time_formatted}")
+    logger.debug(f"BENCHMARK EXEC. TIME {total_time_formatted}")
     input_df = input_df.fillna(0)
     out_df = out_df.fillna(0)
 
     # Save dataframes
-    input_filepath = BM_JSON_DIR / f"{timestamp}_in.tsv"
-    out_filepath = BM_JSON_DIR / f"{timestamp}_out.tsv"
+    prefix = "PAPER_" if IS_PAPER_DATA else ""
+    input_filepath = BM_JSON_DIR / f"{prefix}{timestamp}_in.tsv"
+    out_filepath = BM_JSON_DIR / f"{prefix}{timestamp}_out.tsv"
     input_df.to_csv(input_filepath, sep="\t", index=False)
     out_df.to_csv(out_filepath, sep="\t", index=False)
-    print(f"[DEBUG]\tInput & output dataframes saved to:\n{input_filepath}\n{out_filepath}")
+    logger.debug(f"Input & output dataframes saved to:\n{input_filepath}\n{out_filepath}")
 
