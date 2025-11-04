@@ -199,8 +199,8 @@ try:
         exec_time = str(timedelta(seconds=(datetime.now() - init_time).total_seconds()))
         # Parse LLM reply
         json_df = extract_json_from_reply(raw_text)
-        sorted_list = json_df["Ecoscheme_ID"].values.tolist().sort()
-        es_list = str(sorted_list).replace("'", "").replace('"', "").replace("[", "").replace("]", "") if IS_PAPER_DATA else sorted_list
+        es_list = json_df["Ecoscheme_ID"].values.tolist().sort()
+        # es_list = str(es_list).replace("'", "").replace('"', "").replace("[", "").replace("]", "") if IS_PAPER_DATA else es_list
         out_row = pd.DataFrame([{
             'cadastral_ref': cadastral_ref,
             'parcel_area': json_df.get('Total_Parcel_Area_ha', [None])[0],
