@@ -1,6 +1,10 @@
 import re
 import json
+import structlog
 from decimal import Decimal, ROUND_HALF_UP
+
+from .constants import CLASSIFICATION_OUT_DIR, OG_CLASSIFICATION_FILEPATH
+from ...utils.parcel_finder_utils import reset_dir
 
 # Fixed constant for the pluriannuality bonus (€25.00/ha) as per instructions
 PLURIANNUALITY_BONUS_PER_HA = Decimal('25.00')
@@ -9,6 +13,8 @@ PLURIANNUALITY_BONUS_PER_HA = Decimal('25.00')
 ROUNDING_RATE = Decimal('0.000001') # 6 decimals for applied rate
 ROUNDING_AREA = Decimal('0.0001')   # 4 decimals for total area
 ROUNDING_PAYMENT = Decimal('0.01')  # 2 decimals for total payments
+
+logger = structlog.get_logger()
 
 # --- Main Calculation Function (Modified) ---
 
@@ -125,6 +131,8 @@ def calculate_ecoscheme_payment_exclusive(input_data_str: str, rules_json_str: s
          f"The total pluriannuality bonus of {pluriannuality_bonus_total.quantize(ROUNDING_PAYMENT, rounding=ROUND_HALF_UP)} EUR is applied to the {pluri_area.quantize(ROUNDING_PAYMENT, rounding=ROUND_HALF_UP)} ha of eligible land (calculated using Peninsular rates).",
     ]
 
+    clarifications = []
+
     final_results = {
         "Applicable_Ecoschemes": sorted(list(set(applicable_ecoschemes))),
         "Total_Aid_without_Pluriannuality_EUR": float(total_aid_no_pluriannuality.quantize(ROUNDING_PAYMENT, rounding=ROUND_HALF_UP)),
@@ -156,12 +164,12 @@ def get_ecoscheme_rules_data(rules_data_list) -> dict:
     for rule in rules_data_list:
         scheme_full_name = rule['Ecoscheme']
         
-        if scheme_full_name == 'Non-Eligible':
-            non_eligible_uses.update(rule['Land_Uses'].split(', '))
-            continue
 
         scheme_parts = scheme_full_name.split(' - ')
-        scheme_id = scheme_parts[0] 
+        if len(scheme_parts) < 2:
+            non_eligible_uses.update(rule['Land_Uses'].split(', '))
+            continue
+        scheme_id = scheme_parts[0]
         scheme_name = scheme_parts[1].split('(')[0].strip()
         scheme_subtype = scheme_full_name.split('(')[-1].strip(')')
         
@@ -195,11 +203,10 @@ def get_base_rate_details(rates: dict, threshold: Decimal, keys: list = ["Penins
     for key in keys:
         key_rates = rates.get(key)
         if key_rates is None: continue # Skip if rate type is missing
-        
         if isinstance(key_rates, dict):
             # Tiered rates (Tier_1, Tier_2, Threshold_ha)
-            tier1 = Decimal(str(key_rates['Tier_1']))
-            tier2 = Decimal(str(key_rates['Tier_2']))
+            tier1 = 0 if '/' in str(key_rates['Tier_1']) else Decimal(str(key_rates['Tier_1']))
+            tier2 = 0 if '/' in str(key_rates['Tier_2']) else Decimal(str(key_rates['Tier_2']))
             base_rate_details[key] = {'Tier_1': tier1, 'Tier_2': tier2, 'Threshold_ha': threshold}
         else:
             # Flat rate
@@ -320,7 +327,11 @@ def calculate_payments_for_rate_type(area: Decimal, rate_details: dict, pluri_ap
     
     if pluri_applicable:
         payment_with_pluri = area * (current_rate + PLURIANNUALITY_BONUS_PER_HA)
-        
+    
+    payment_with_pluri = Decimal(str(payment_with_pluri))
+    current_rate = Decimal(str(current_rate))
+    base_payment = Decimal(str(base_payment))
+    
     return {
         "Applied_Base_Payment_EUR": float(current_rate.quantize(ROUNDING_RATE, rounding=ROUND_HALF_UP)),
         "Total_Base_Payment_EUR": float(base_payment.quantize(ROUNDING_PAYMENT, rounding=ROUND_HALF_UP)),
@@ -333,19 +344,8 @@ def calculate_payments_for_rate_type(area: Decimal, rate_details: dict, pluri_ap
 import json
 import os
 
-classificiation_filepath =  os.path.join(os.getcwd(), "AgrIA_server/assets/LLM_assets/prompts/classification.json")
-out_path = "lol.json"
-print("classificiation_filepath", classificiation_filepath)
-
-with open(classificiation_filepath, 'r') as file:
-    all_rules_list = json.load(file)["EN"]
-
-# Convert the list of dictionaries back into a valid JSON string
-rules_json_str = json.dumps(all_rules_list) 
-
-print("rules_json_str", rules_json_str[:150], "...")
-print("type", type(rules_json_str))
-input = """IMAGE DATE: 2025-6-6
+cad_ref_dict = {
+    "26002A001000010000EQ": """IMAGE DATE: 2025-6-6
 LAND USES DETECTED: 13
 
 - Land Use: TA
@@ -403,11 +403,79 @@ LAND USES DETECTED: 13
 - Slope Coeficient: 1.7%
 
 TOTAL ELIGIBLE SURFACE (ha): 45.733
+""",
+    "14048A001001990000RM": """IMAGE DATE: 2024-10-19
+LAND USES DETECTED: 2
+
+- Land Use: OV
+- Eligible surface (ha): 7.4659
+- Irrigation Coeficient: 0.0%
+- Slope Coeficient: 12.4%
+
+- Land Use: CA
+- Eligible surface (ha): 0.0352
+- Irrigation Coeficient: 0.0%
+
+TOTAL ELIGIBLE SURFACE (ha): 7.501
+
+""",
+    "45054A067000090000QA": """IMAGE DATE: 2025-03-30
+LAND USES DETECTED: 2
+
+- Land Use: IM
+- Eligible surface (ha): 0.0065
+- Irrigation Coeficient: 0.0%
+
+- Land Use: TA
+- Eligible surface (ha): 42.8326
+- Irrigation Coeficient: 0.0%
+
+TOTAL ELIGIBLE SURFACE (ha): 42.839
+
+""",
+    "43157A024000010000KE": """IMAGE DATE: 2024-03-15
+LAND USES DETECTED: 4
+
+- Land Use: OV
+- Eligible surface (ha): 30.7162
+- Irrigation Coeficient: 0.0%
+- Slope Coeficient: 4.7%
+
+- Land Use: PR
+- Eligible surface (ha): 0.3574
+- Irrigation Coeficient: 0.0%
+
+- Land Use: IM
+- Eligible surface (ha): 0.0966
+- Irrigation Coeficient: 0.0%
+
+- Land Use: ED
+- Eligible surface (ha): 0.0065
+- Irrigation Coeficient: 0.0%
+
+TOTAL ELIGIBLE SURFACE (ha): 31.177
+
 """
+}
 
-dict = calculate_ecoscheme_payment_exclusive(input, str(rules_json_str))
-print("dict",dict)
+languages = ["EN", "ES"]
+classification_filepath =  OG_CLASSIFICATION_FILEPATH
 
-with open(out_path, 'w') as file:
-    json.dump(dict, file, indent=4)
+os.makedirs(CLASSIFICATION_OUT_DIR, exist_ok=True)
+reset_dir(CLASSIFICATION_OUT_DIR)
 
+for lang in languages:
+    lang.lower()
+    # Get classification JSON data
+    with open(classification_filepath, 'r') as file:
+        all_rules_list = json.load(file)[lang]
+    # Convert the list of dictionaries back into a valid JSON string
+    rules_json_str = json.dumps(all_rules_list) 
+
+    # Get ecoschemes classification
+    for key in cad_ref_dict.keys():
+        output_dict = calculate_ecoscheme_payment_exclusive(cad_ref_dict[key], str(rules_json_str))
+        out_path = CLASSIFICATION_OUT_DIR / f"{key}_example_{lang}.json"
+        with open(out_path, 'w') as file:
+            json.dump(output_dict, file, indent=4)
+        logger.info(f"Ecoscheme classification saved to {out_path}")

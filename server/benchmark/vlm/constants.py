@@ -30,3 +30,57 @@ with BM_PROMPT_LIST_FILE.open("w") as f:
 CADASTRAL_REF_LIST_PAPER = ["26002A001000010000EQ", "41004A033000290000IG","46113A023000420000RL", "06900A766000030000WA"]
 DATES_PAPER = ["2025-6-6", "2025-4-5", "2024-3-22", "2024-10-21"]
 IS_PAPER_DATA = False
+
+# Ecoschemes classification data
+CLASSIFICATION_OUT_DIR = BM_DIR / "classif_out"
+
+FULL_DESC_SYS_INSTR_EN = """## GENERATION DIRECTIVES FOR STRUCTURED MARKDOWN REPORT
+
+**GOAL:** Generate a single, comprehensive "EcoScheme Payment Estimate" report in Markdown (MD) format by strictly merging the provided calculated JSON data, the pre-generated Description text, and the pre-generated Clarifications text. The LLM's task is **MAPPING and RENDERING**, not generating the core analysis (Description/Clarifications).
+
+### I. REPORT STRUCTURE AND FORMATTING
+1.  **Structure:** The final report **MUST** contain four sections in this order: `DESCRIPTION`, `POSSIBLE ECO-SCHEMES`, `ESTIMATED TOTAL PAYMENT`, and `RESULTS`.
+2.  **Language:** Render the report in the same language as the initial user prompt (e.g., if the user prompts in English, use English table headers and text).
+3.  **Visual:** Use the exact Markdown table formatting, headings, bolding, and horizontal rules (`---`) as shown in the provided examples.
+
+### II. GEOGRAPHICAL CONTEXT AND DEFAULTS
+1.  **Default Region:** All initial reports must use **Peninsular** rates for calculated totals and table values, as defined by the `Calculation_Context.Rate_Applied`.
+2.  **Context Switching:** If the user explicitly asks to view the results for the **Insular** region, use the corresponding values under the `"Insular"` key in the JSON for the tables and totals.
+
+### III. DATA MAPPING RULES
+
+| MD SECTION | DATA SOURCE (JSON Key) | MAPPING/RULE |
+| :--- | :--- | :--- |
+| **DESCRIPTION** | *Pre-Generated Description Text* | Insert the full text. Ensure `Total_Parcel_Area_ha` is correctly inserted if it was a placeholder in the text. |
+| **POSSIBLE ECO-SCHEMES** | `Estimated_Total_Payment` (Iterate all) | Use `Ecoscheme_Name` and `Peninsular/Insular.Applied_Base_Payment_EUR` for the rate columns. Use the relevant scheme from the **Classification Data** for `Conditions` and `Pluriannuality Bonus`. |
+| **ESTIMATED TOTAL PAYMENT**| `Estimated_Total_Payment` (Iterate all) | Use **Peninsular** values for `Total_Base_Payment_EUR` and `Total_with_Pluriannuality_EUR`. Use `Peninsular.Applicable` for the 'Applicable' column. |
+| **RESULTS (Summary Table)**| `Final_Results` | Join `Applicable_Ecoschemes` with a plus sign (`+`). Use `Total_Aid_without_Pluriannuality_EUR` and `Total_Aid_with_Pluriannuality_EUR` for the totals. |
+| **RESULTS (Clarifications)**| *Pre-Generated Clarifications Text* | Insert the entire bulleted list of pre-generated clarifications verbatim into the `RESULTS` section. |
+"""
+
+FULL_DESC_SYS_INSTR_ES = """## Instrucciones Concisas para el LLM
+
+Para que el LLM pueda replicar con precisión este formato, se recomienda el siguiente conjunto de instrucciones, que asume que el LLM recibirá el JSON de datos y un texto pre-generado para la **Descripción** y las **Aclaraciones** (en el idioma deseado).
+
+### **DIRECTIVAS DE GENERACIÓN DE INFORMES (ESPAÑOL)**
+
+**Objetivo:** Generar un informe completo y estructurado en Markdown (MD) en español, fusionando el JSON de cálculo (`Input JSON`) con textos pre-generados (`Descripción` y `Aclaraciones`).
+
+**REGLAS DE FORMATO:**
+1.  **Idioma:** Output **solo** en español.
+2.  **Estructura:** Seguir estrictamente el orden y formato de las cuatro secciones: `DESCRIPCIÓN`, `ECORREGÍMENES POSIBLES`, `PAGO TOTAL ESTIMADO`, y `RESULTADOS`.
+
+**MAPEO DE DATOS:**
+
+| Sección | Columna/Placeholder | Fuente de Datos (JSON Key) | Regla Específica |
+| :--- | :--- | :--- | :--- |
+| **DESCRIPCIÓN** | Párrafo Descriptivo | *Texto Pre-Generado* | Insertar `Total_Parcel_Area_ha` dentro del texto. |
+| **ECORREGÍMENES POSIBLES** | Ecorégimen, Importes | `Estimated_Total_Payment` y `Classification Data` (ES) | Usar todos los Ecorregímenes listados en `Estimated_Total_Payment`. Usar `Applied_Base_Payment_EUR` para la columna de tasa. |
+| **PAGO TOTAL ESTIMADO** | Importes (€) | `Estimated_Total_Payment` (Peninsular) | Usar **solo** los valores bajo la clave `"Peninsular"` para `Total_Base_Payment_EUR` y `Total_with_Pluriannuality_EUR`. |
+| **RESULTADOS** | Total Ayuda | `Final_Results` | Unir `Applicable_Ecoschemes` con ` + ` para el título de la tabla. |
+| **RESULTADOS** | Aclaraciones | *Texto Pre-Generado* | Insertar el listado de Aclaraciones como puntos. |
+
+**REGLA DE CONTEXTO GEOGRÁFICO:** El informe inicial debe usar las tasas **Peninsulares**. Si el usuario solicita un cambio a la región **Insular**, el LLM debe regenerar las tablas `ECORREGÍMENES POSIBLES` y `PAGO TOTAL ESTIMADO` utilizando los valores de la clave `"Insular"`.
+
+ Fuente del JSON: Provisional base rates for Eco-schemes, 2025 CAP Campaign.
+ Fuente del JSON de Clasificación: `system_instructions.md`"""
