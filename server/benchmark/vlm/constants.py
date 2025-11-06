@@ -29,10 +29,12 @@ with BM_PROMPT_LIST_FILE.open("w") as f:
 # AgrIA Paper data
 CADASTRAL_REF_LIST_PAPER = ["26002A001000010000EQ", "41004A033000290000IG","46113A023000420000RL", "06900A766000030000WA"]
 DATES_PAPER = ["2025-6-6", "2025-4-5", "2024-3-22", "2024-10-21"]
-IS_PAPER_DATA = False
+USE_PAPER_DATA = False
 
 # Ecoschemes classification data
 CLASSIFICATION_OUT_DIR = BM_DIR / "classif_out"
+
+LANG = "en"
 
 FULL_DESC_SYS_INSTR_EN = """## GENERATION DIRECTIVES FOR STRUCTURED MARKDOWN REPORT
 
@@ -52,7 +54,7 @@ FULL_DESC_SYS_INSTR_EN = """## GENERATION DIRECTIVES FOR STRUCTURED MARKDOWN REP
 | MD SECTION | DATA SOURCE (JSON Key) | MAPPING/RULE |
 | :--- | :--- | :--- |
 | **DESCRIPTION** | *Pre-Generated Description Text* | Insert the full text. Ensure `Total_Parcel_Area_ha` is correctly inserted if it was a placeholder in the text. |
-| **POSSIBLE ECO-SCHEMES** | `Estimated_Total_Payment` (Iterate all) | Use `Ecoscheme_Name` and `Peninsular/Insular.Applied_Base_Payment_EUR` for the rate columns. Use the relevant scheme from the **Classification Data** for `Conditions` and `Pluriannuality Bonus`. |
+| **POSSIBLE ECO-SCHEMES** | `Estimated_Total_Payment` (Iterate all) | Use this format for the Ecoscheme column: `Ecoscheme_ID` - `Ecoscheme_Name` (`Ecoscheme_Subtype` if there is one). Use `Peninsular/Insular.Applied_Base_Payment_EUR` for the rate columns. Use the relevant scheme from the **Classification Data** for `Conditions` and `Pluriannuality Bonus`. |
 | **ESTIMATED TOTAL PAYMENT**| `Estimated_Total_Payment` (Iterate all) | Use **Peninsular** values for `Total_Base_Payment_EUR` and `Total_with_Pluriannuality_EUR`. Use `Peninsular.Applicable` for the 'Applicable' column. |
 | **RESULTS (Summary Table)**| `Final_Results` | Join `Applicable_Ecoschemes` with a plus sign (`+`). Use `Total_Aid_without_Pluriannuality_EUR` and `Total_Aid_with_Pluriannuality_EUR` for the totals. |
 | **RESULTS (Clarifications)**| *Pre-Generated Clarifications Text* | Insert the entire bulleted list of pre-generated clarifications verbatim into the `RESULTS` section. |
@@ -75,12 +77,12 @@ Para que el LLM pueda replicar con precisión este formato, se recomienda el sig
 | Sección | Columna/Placeholder | Fuente de Datos (JSON Key) | Regla Específica |
 | :--- | :--- | :--- | :--- |
 | **DESCRIPCIÓN** | Párrafo Descriptivo | *Texto Pre-Generado* | Insertar `Total_Parcel_Area_ha` dentro del texto. |
-| **ECORREGÍMENES POSIBLES** | Ecorégimen, Importes | `Estimated_Total_Payment` y `Classification Data` (ES) | Usar todos los Ecorregímenes listados en `Estimated_Total_Payment`. Usar `Applied_Base_Payment_EUR` para la columna de tasa. |
+| **ECORREGÍMENES POSIBLES** | Ecorrégimen, Importes | `Estimated_Total_Payment` y `Classification Data` (ES) | Usar todos los Ecorregímenes listados en `Estimated_Total_Payment`. Usar este formato para la columna de Ecorrégimen: `Ecoscheme_ID` - `Ecoscheme_Name` (`Ecoscheme_Subtype` si hubiera) Usar `Applied_Base_Payment_EUR` para la columna de tasa. |
 | **PAGO TOTAL ESTIMADO** | Importes (€) | `Estimated_Total_Payment` (Peninsular) | Usar **solo** los valores bajo la clave `"Peninsular"` para `Total_Base_Payment_EUR` y `Total_with_Pluriannuality_EUR`. |
 | **RESULTADOS** | Total Ayuda | `Final_Results` | Unir `Applicable_Ecoschemes` con ` + ` para el título de la tabla. |
 | **RESULTADOS** | Aclaraciones | *Texto Pre-Generado* | Insertar el listado de Aclaraciones como puntos. |
 
 **REGLA DE CONTEXTO GEOGRÁFICO:** El informe inicial debe usar las tasas **Peninsulares**. Si el usuario solicita un cambio a la región **Insular**, el LLM debe regenerar las tablas `ECORREGÍMENES POSIBLES` y `PAGO TOTAL ESTIMADO` utilizando los valores de la clave `"Insular"`.
 
- Fuente del JSON: Provisional base rates for Eco-schemes, 2025 CAP Campaign.
- Fuente del JSON de Clasificación: `system_instructions.md`"""
+ Fuente: Importes Unitarios Provisionales, Campaña PAC 2025.
+ """
