@@ -105,7 +105,7 @@
     {
       "Ecoscheme": "P6/P7 - Plant Cover (Flat Woody Crops)",
       "Land_Uses": "CF, CI, CS, CV, FF, FL, FS, FV, FY, OC, OF, OV, VF, VI, VO",
-      "Conditions": "Live cover from Oct 1st to Mar 31st OR Shred and distribute remains uniformly over the surface.",
+      "Conditions": "Live cover from Oct 1st to Mar 31st OR Shred and distribute remains uniformly over the surface. Less than 5% slope coefficient.",
       "Rates": {
         "Pluriannuality": "Applicable",
         "Threshold_ha": 15,
@@ -122,7 +122,7 @@
     {
       "Ecoscheme": "P6/P7 - Plant Cover (Medium Slope)",
       "Land_Uses": "CF, CI, CS, CV, FF, FL, FS, FV, FY, OC, OF, OV, VF, VI, VO",
-      "Conditions": "Live cover from Oct 1st to Mar 31st OR Shred and distribute remains uniformly over the surface.",
+      "Conditions": "Live cover from Oct 1st to Mar 31st OR Shred and distribute remains uniformly over the surface. Slope coefficient between 5% and 30%.",
       "Rates": {
         "Pluriannuality": "Applicable",
         "Threshold_ha": 15,
@@ -139,7 +139,7 @@
     {
       "Ecoscheme": "P6/P7 - Plant Cover (Steep Slope/Terraces)",
       "Land_Uses": "CF, CI, CS, CV, FF, FL, FS, FV, FY, OC, OF, OV, VF, VI, VO",
-      "Conditions": "Live cover from Oct 1st to Mar 31st OR Shred and distribute remains uniformly over the surface.",
+      "Conditions": "Live cover from Oct 1st to Mar 31st OR Shred and distribute remains uniformly over the surface. Slope coeffcient must be over 30%.",
       "Rates": {
         "Pluriannuality": "Applicable",
         "Threshold_ha": 15,
@@ -272,7 +272,7 @@
     {
       "Ecoscheme": "P6/P7 - Cubiertas Vegetales o Espontáneas (Terrenos Llanos)",
       "Land_Uses": "CF, CI, CS, CV, FF, FL, FS, FV, FY, OC, OF, OV, VF, VI, VO",
-      "Conditions": "Cubierta viva de 1 Oct hasta 31 Marzo O Triturar y distribuir restos de poda de forma uniforme sobre superficie.",
+      "Conditions": "Cubierta viva de 1 Oct hasta 31 Marzo O Triturar y distribuir restos de poda de forma uniforme sobre superficie. Pendiente menor al 5%.",
       "Rates": {
         "Pluriannuality": "Si",
         "Threshold_ha": 15,
@@ -289,7 +289,7 @@
     {
       "Ecoscheme": "P6/P7 - Cubiertas Vegetales o Espontáneas (Pendiente Media)",
       "Land_Uses": "CF, CI, CS, CV, FF, FL, FS, FV, FY, OC, OF, OV, VF, VI, VO",
-      "Conditions": "Cubierta viva de 1 Oct hasta 31 Marzo O Triturar y distribuir restos de poda de forma uniforme sobre superficie.",
+      "Conditions": "Cubierta viva de 1 Oct hasta 31 Marzo O Triturar y distribuir restos de poda de forma uniforme sobre superficie. Pendiente entre el 5% y el 30%.",
       "Rates": {
         "Pluriannuality": "Si",
         "Threshold_ha": 15,
@@ -306,7 +306,7 @@
     {
       "Ecoscheme": "P6/P7 - Cubiertas Vegetales o Espontáneas (Pendiente Elevada/Bancales)",
       "Land_Uses": "CF, CI, CS, CV, FF, FL, FS, FV, FY, OC, OF, OV, VF, VI, VO",
-      "Conditions": "Cubierta viva de 1 Oct hasta 31 Marzo O Triturar y distribuir restos de poda de forma uniforme sobre superficie.",
+      "Conditions": "Cubierta viva de 1 Oct hasta 31 Marzo O Triturar y distribuir restos de poda de forma uniforme sobre superficie. Pendiente superior al 30%",
       "Rates": {
         "Pluriannuality": "Si",
         "Threshold_ha": 15,
