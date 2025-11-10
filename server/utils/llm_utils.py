@@ -1,10 +1,11 @@
+from ..benchmark.vlm.constants import BM_DIR, BM_PROMPT_LIST_FILE
 from ..config.constants import BASE_CONTEXT_PATH, BASE_PROMPTS_PATH, CALCULATIONS_RULE, CONTEXT_DOCUMENTS_FILE, EXCLUSIVITY_RULE, FULL_DESC_TRIGGER, MIME_TYPES, PROMPT_LIST_FILE, SHORT_DESC_TRIGGER
-from server.services.llm_services import upload_context_document
+from ..services.llm_services import upload_context_document
 from google.genai.types import Content, Part
 import json
 import os
 
-def generate_system_instructions(prompt_json_path: str= PROMPT_LIST_FILE):
+def generate_system_instructions(prompt_json_path: str=PROMPT_LIST_FILE):
     """
     Sets up the initial model's system instructions and context documents for the chat.
     
@@ -19,14 +20,38 @@ def generate_system_instructions(prompt_json_path: str= PROMPT_LIST_FILE):
     classification_data = load_prompt_from_json(prompt_json_path, 'classification')
     short_description_prompt = load_prompt_from_json(prompt_json_path,'short', True)
     full_description_prompt = load_prompt_from_json(prompt_json_path, 'long', True)
+    examples_data = load_prompt_from_json(prompt_json_path, 'examples', True).replace("}{", "}\n\n{")
 
     # Compose system instructions from files' URI and role text data
-    short_description_instruction = f"""\n\n
-These are the description instructions, format and example for the short image description. You will use these to describe and classify a parcel whenever you are prompted with an image and the tokens {SHORT_DESC_TRIGGER} and date and crop info:\n\n{short_description_prompt}\n\nNotice how if a land use is eligible for more than one ES, you must only take the most long-term benefitial option and indicate so using the `Applicable` column as specified by the **MUTUALLY EXCLUSIVE** rule.
-"""
+    short_description_instruction = f"""\n\nThese are the description instructions, format and example for the short image description. You will use these to describe and classify a parcel whenever you are prompted with an image and the tokens {SHORT_DESC_TRIGGER} and date and crop info:\n\n{short_description_prompt}\n\nNotice how if a land use is eligible for more than one ES, you must only take the most long-term benefitial option and indicate so using the `Applicable` column as specified by the **MUTUALLY EXCLUSIVE** rule."""
     long_description_instruction = "\n\nThese are the description instructions, format and example for the long image description. You will use these to describe and classify a parcel whenever you are prompted with an image and the tokens '" + FULL_DESC_TRIGGER +"' and date and crop info:\n\n" + full_description_prompt
     classification_instruction = "\n\nThese is the Eco-schemes classification data for each possible land use. There is an English and Spanish version. Use these to fill out the table data whenever you are prompted to describe a parcel:\n\n" + classification_data
-    system_instructions = role_prompt + EXCLUSIVITY_RULE + CALCULATIONS_RULE + short_description_instruction + long_description_instruction + classification_instruction
+
+    examples_instructions=f"""\n\n
+## CORE DIRECTIVES: REPORT GENERATION & DATA HIERARCHY
+
+### A. DATA SOURCE HIERARCHY (Single Source of Truth)
+When an input JSON (containing "Report_Type": "EcoScheme_Payment_Estimate") is provided, this JSON is the **SINGLE, SOLE, AND FINAL SOURCE OF TRUTH** for all financial, geographical, and eligibility data in the current turn. You MUST use the values contained in the JSON, even if they conflict with static information elsewhere in these system instructions.
+
+### B. REPORT GENERATION MODE (Hard Reset)
+Upon receiving a new JSON input, your primary task is to enter **REPORT GENERATION MODE**.
+1.  **Action:** Generate the full, structured Markdown report.
+2.  **Hard Reset:** Immediately disregard ALL previous conversational context and data related to prior parcels.
+
+### C. HYBRID MAPPING RULES
+You will use two external references to construct the report:
+1.  **MAPPING TABLES (EN/ES):** Use these tables (provided below) as the **PRIMARY LOGIC** for determining which JSON key goes into which table column/section.
+2.  **SINGLE EXAMPLE (MD/JSON Pair):** Use the provided JSON-MD example as the **VISUAL TEMPLATE** for styling, bolding, table structures, and punctuation.
+
+### D. CRITICAL FINAL OUTPUT DIRECTIVE
+**Your final response in Report Generation Mode MUST BE the complete, structured Markdown report. DO NOT output the source JSON nor use blocks of code (```) around it. DO NOT include any explanatory text nor acknowledgement before or after the report. Return ONLY the Markdown report in the same language as the values in the JSON (English or Spanish).**
+
+### E. EXAMPLES AND TEMPLATES
+---BEGIN\n
+{examples_data}
+\n---END
+"""
+    system_instructions = role_prompt + classification_instruction + examples_instructions
 
     return system_instructions
 
@@ -64,18 +89,19 @@ def get_description_prompt(base_path, prompt_data, is_image_desc_prompt):
     Returns:
         content (str): The full constructed description prompt to pass to the LLM.
     """
+    content = "\n"
     if is_image_desc_prompt:
         prompt_example_dir = os.path.join(base_path, prompt_data["examples"]).replace("\\", "/")
         for prompt_example_path in os.listdir(prompt_example_dir):
             prompt_example_path = os.path.join(prompt_example_dir, prompt_example_path)
             with open(prompt_example_path, 'r', encoding='utf-8') as f:
-                content = "\n" + f.read()
+                content += f.read()
     else:
         desc_filename = prompt_data["prompt_filepath"]
         prompt_path = os.path.join(base_path, desc_filename).replace("\\", "/")
 
         with open(prompt_path, 'r', encoding='utf-8') as pf:
-            content = pf.read()
+            content += pf.read()
 
     return content
 
