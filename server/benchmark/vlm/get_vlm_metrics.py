@@ -42,7 +42,7 @@ def init():
     logger.debug(f"DataFrames initialized")
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    return out_col_names, input_df, out_df, timestamp
+    return input_df, out_df, timestamp
 
 def setup_ndates(n_dates:int, to_date: datetime=datetime.today(), delta_days: int=4 * 365):
     # Get all parcel descriptions
@@ -96,11 +96,7 @@ def get_llm_full_desc(image_filepath: str, parcel_desc: str, lang: str=LANG, cla
     if not lang:
         lang = LANG
 
-    json_data = None
-    with open(classification_filepath, 'r') as file:
-        all_rules_list = json.load(file)[lang.upper()]
-    rules_json_str = json.dumps(all_rules_list) 
-    json_data = calculate_ecoscheme_payment_exclusive(parcel_desc, rules_json_str)
+    json_data = calculate_ecoscheme_payment_exclusive(parcel_desc, lang)
     
     prompt_en = f"Produce a full English parcel description with the following information. Combine it with the image for a 700-character max description:\n\n{json_data}"
     desc_en = "The satellite image displays a **31.18-hectare** agricultural parcel dominated by **dry, reddish-brown tones**, indicative of **low vegetation cover** or recently worked soil, typical of Mediterranean woody crops or extensive grazing lands. This visual assessment directly correlates with the digital land use analysis. The largest area, **Olive Groves (OV)**, accounts for **30.72 ha** and has been assigned to the Eco-scheme **P6/P7 (Plant Cover)**, based on the highest payment/ha. A smaller portion of **Shrub Pastures (PR)**, **0.36 ha**, is assigned to **P1 (Extensive Grazing)**.The overall low vegetation signal in the image is consistent with the extensive farming practices suggested by the two applicable Eco-schemes, particularly the large area of OV allocated to the P6/P7 scheme using the Tier 2 rate."
@@ -110,7 +106,7 @@ def get_llm_full_desc(image_filepath: str, parcel_desc: str, lang: str=LANG, cla
     prompt_es += f'\n\Este es un ejemplo de la la descripción de 700 caracteres máximo:\n"{desc_es}"'
     prompt = f"Describe the parcels based on the following information and image:\n\n{parcel_desc}"
 
-    prompt = prompt_en if lang is "en" else prompt_es if lang is "es" else prompt
+    prompt = prompt_en if lang == "en" else prompt_es if lang == "es" else prompt
     logger.debug(f'Prompt generated:\n"{prompt[:150]}..."')
 
     image = Image.open(image_filepath)
@@ -135,7 +131,7 @@ def get_llm_full_desc(image_filepath: str, parcel_desc: str, lang: str=LANG, cla
 
     return llm_response, json_data
 
-def extract_json_from_reply(raw_text: str):
+def extract_json_from_reply(raw_text: str, cadastral_ref: str):
     # Split into lines and remove first line (e.g., ```json or BEGIN)
     lines = raw_text.splitlines()
     
@@ -144,8 +140,8 @@ def extract_json_from_reply(raw_text: str):
     start_idx = end_idx = None
     found = False
     while j > 0 and not found:
-        start_idx = i if "{" is lines[i] else start_idx
-        end_idx = j + 1 if "}" is lines[j] else end_idx
+        start_idx = i if "{" == lines[i] else start_idx
+        end_idx = j + 1 if "}" == lines[j] else end_idx
         found = start_idx is not None  and end_idx is not None
         i += 1
         j -= 1
@@ -194,7 +190,7 @@ def run_vlm_benchmark(use_vlm_only: bool=False, lang: str=LANG, use_paper_data: 
         dates = DATES_PAPER if use_paper_data else setup_ndates(len(cadastral_ref_list))
     
         for cadastral_ref in cadastral_ref_list:
-            if len(cadastral_ref) is not 20:
+            if len(cadastral_ref) != 20:
                 continue
             init_time = datetime.now()
         
@@ -228,7 +224,7 @@ def run_vlm_benchmark(use_vlm_only: bool=False, lang: str=LANG, use_paper_data: 
                 json.dump(json_data, f, indent=4)
             exec_time = str(timedelta(seconds=(datetime.now() - init_time).total_seconds()))
         # Parse LLM reply
-            json_df = extract_json_from_reply(raw_text.text.strip()) if not json_data else json_data
+            json_df = extract_json_from_reply(raw_text.text.strip(), cadastral_ref) if not json_data else json_data
             if json_data:
                 es_list = sorted({
                 item["Ecoscheme_ID"]
@@ -286,21 +282,26 @@ def run_vlm_benchmark(use_vlm_only: bool=False, lang: str=LANG, use_paper_data: 
         input_df.to_csv(input_filepath, sep="\t", index=False)
         out_df.to_csv(out_filepath, sep="\t", index=False)
         logger.debug(f"Input & output dataframes saved to:\n{input_filepath}\n{out_filepath}")
+        logger.info(f"PARAMS. PERMUTATION:\t{prefix[:-1]}")
 
-times = defaultdict(lambda: defaultdict(dict))
-for lang in ["en", "es"]:
-    for flag in [True, False]:
-        id= "vlm" if flag else "hybrid"
-        init_time = datetime.now()
-        time_taken = (datetime.now() - init_time).total_seconds()
+# try:
+#     times = defaultdict(lambda: defaultdict(dict))
+#     for lang in ["en", "es"]:
+#         for flag in [True, False]:
+#             id= "vlm" if flag else "hybrid"
+#             init_time = datetime.now()
+#             time_taken = (datetime.now() - init_time).total_seconds()
 
-        run_vlm_benchmark(flag, lang)
+#             run_vlm_benchmark(flag, lang)
 
-        total_time_formatted = str(timedelta(seconds=time_taken))
-        logger.debug(f"BENCHMARK EXEC. TIME {total_time_formatted}")
-        
-        times[id][lang]["time"] = total_time_formatted
+#             total_time_formatted = str(timedelta(seconds=time_taken))
+#             logger.debug(f"BENCHMARK EXEC. TIME {total_time_formatted}")
+            
+#             times[id][lang]["time"] = total_time_formatted
 
-run_vlm_benchmark(use_paper_data=True)
-
-print("times:\n", dict(times))
+#     run_vlm_benchmark(use_paper_data=True)
+# finally:
+#     print("TIMES:\n", dict(times))
+#     times_filepath = BM_JSON_DIR / "times.json"
+#     with open(times_filepath, 'w') as f:
+#         json.dump(times, f, indent=4)

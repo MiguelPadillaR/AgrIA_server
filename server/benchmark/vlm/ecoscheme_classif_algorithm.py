@@ -3,7 +3,7 @@ import json
 import structlog
 from decimal import Decimal, ROUND_HALF_UP
 
-from .constants import CLASSIFICATION_OUT_DIR, OG_CLASSIFICATION_FILEPATH
+from .constants import CLASSIFICATION_OUT_DIR, LANG, OG_CLASSIFICATION_FILEPATH
 from ...utils.parcel_finder_utils import reset_dir
 
 # Fixed constant for the pluriannuality bonus (€25.00/ha) as per instructions
@@ -18,7 +18,7 @@ logger = structlog.get_logger()
 
 # --- Main Calculation Function (Modified) ---
 
-def calculate_ecoscheme_payment_exclusive(input_data_str: str, rules_json_str: str) -> dict:
+def calculate_ecoscheme_payment_exclusive(input_data_str: str, lang: str=LANG, rules_json_fielpath: str=OG_CLASSIFICATION_FILEPATH) -> dict:
     """
     Processes land use input data and calculates estimated Eco-scheme payments
     by applying the Critical Exclusivity Rule (choosing the highest payment/ha
@@ -26,7 +26,10 @@ def calculate_ecoscheme_payment_exclusive(input_data_str: str, rules_json_str: s
     """
 
     # --- 1. PREPARE RULES AND CONSTANTS ---
-    
+    with open(rules_json_fielpath, 'r') as file:
+        all_rules_list = json.load(file)[lang.upper()]
+    rules_json_str = json.dumps(all_rules_list) 
+
     try:
         rules_data_list = json.loads(rules_json_str.strip())
     except json.JSONDecodeError:
@@ -37,8 +40,11 @@ def calculate_ecoscheme_payment_exclusive(input_data_str: str, rules_json_str: s
 
     # --- 2. PARSE INPUT DATA AND CALCULATE TOTAL AREA ---
     
-    land_use_regex = r'- Land Use: ([A-Z]{2})\s*- Eligible surface \(ha\): ([\d\.]+)\s*- Irrigation Coeficient: ([\d\.]+%)\s*(?:- Slope Coeficient: ([\d\.]+%))?'
-    land_use_blocks = re.findall(land_use_regex, input_data_str, re.DOTALL)
+    land_use_regex = {
+        "en": r'- Land Use: ([A-Z]{2})\s*- Eligible surface \(ha\): ([\d\.]+)\s*- Irrigation Coeficient: ([\d\.]+%)\s*(?:- Slope Coeficient: ([\d\.]+%))?',
+        "es": r'- Tipo de Uso:\s*([A-Z]{2})\s*- Superficie admisible \(ha\):\s*([\d\.]+)\s*- Coef\. de Regadío:\s*([\d\.]+%)\s*(?:- Pendiente media:\s*([\d\.]+%))?'
+        }
+    land_use_blocks = re.findall(land_use_regex[lang], input_data_str, re.DOTALL)
 
     parsed_data = {}
     total_parcel_area = Decimal('0.0')
@@ -131,13 +137,13 @@ def calculate_ecoscheme_payment_exclusive(input_data_str: str, rules_json_str: s
          f"The total pluriannuality bonus of {pluriannuality_bonus_total.quantize(ROUNDING_PAYMENT, rounding=ROUND_HALF_UP)} EUR is applied to the {pluri_area.quantize(ROUNDING_PAYMENT, rounding=ROUND_HALF_UP)} ha of eligible land (calculated using Peninsular rates).",
     ]
 
-    clarifications = []
+    # clarifications = []
 
     final_results = {
         "Applicable_Ecoschemes": sorted(list(set(applicable_ecoschemes))),
         "Total_Aid_without_Pluriannuality_EUR": float(total_aid_no_pluriannuality.quantize(ROUNDING_PAYMENT, rounding=ROUND_HALF_UP)),
-        "Total_Aid_with_Pluriannuality_EUR": float(total_aid_with_pluriannuality.quantize(ROUNDING_PAYMENT, rounding=ROUND_HALF_UP)),
-        "Clarifications": clarifications
+        "Total_Aid_with_Pluriannuality_EUR": float(total_aid_with_pluriannuality.quantize(ROUNDING_PAYMENT, rounding=ROUND_HALF_UP))
+        # "Clarifications": clarifications
     }
 
     # Final Output Structure - Update Context
@@ -340,142 +346,142 @@ def calculate_payments_for_rate_type(area: Decimal, rate_details: dict, pluri_ap
     }
 
 
-# Example usage
-import json
-import os
+# # Example usage
+# import json
+# import os
 
-cad_ref_dict = {
-    "26002A001000010000EQ": """IMAGE DATE: 2025-6-6
-LAND USES DETECTED: 13
+# cad_ref_dict = {
+#     "26002A001000010000EQ": """IMAGE DATE: 2025-6-6
+# LAND USES DETECTED: 13
 
-- Land Use: TA
-- Eligible surface (ha): 22.7474
-- Irrigation Coeficient: 83.0%
+# - Land Use: TA
+# - Eligible surface (ha): 22.7474
+# - Irrigation Coeficient: 83.0%
 
-- Land Use: VI
-- Eligible surface (ha): 9.3441
-- Irrigation Coeficient: 89.88%
-- Slope Coeficient: 1.01%
+# - Land Use: VI
+# - Eligible surface (ha): 9.3441
+# - Irrigation Coeficient: 89.88%
+# - Slope Coeficient: 1.01%
 
-- Land Use: FO
-- Eligible surface (ha): 3.4562
-- Irrigation Coeficient: 80.0%
+# - Land Use: FO
+# - Eligible surface (ha): 3.4562
+# - Irrigation Coeficient: 80.0%
 
-- Land Use: AG
-- Eligible surface (ha): 0.4099
-- Irrigation Coeficient: 0.0%
+# - Land Use: AG
+# - Eligible surface (ha): 0.4099
+# - Irrigation Coeficient: 0.0%
 
-- Land Use: PA
-- Eligible surface (ha): 0.1257
-- Irrigation Coeficient: 100.0%
+# - Land Use: PA
+# - Eligible surface (ha): 0.1257
+# - Irrigation Coeficient: 100.0%
 
-- Land Use: PS
-- Eligible surface (ha): 0.2272
-- Irrigation Coeficient: 100.0%
+# - Land Use: PS
+# - Eligible surface (ha): 0.2272
+# - Irrigation Coeficient: 100.0%
 
-- Land Use: PR
-- Eligible surface (ha): 4.0175
-- Irrigation Coeficient: 100.0%
+# - Land Use: PR
+# - Eligible surface (ha): 4.0175
+# - Irrigation Coeficient: 100.0%
 
-- Land Use: CA
-- Eligible surface (ha): 0.4838
-- Irrigation Coeficient: 0.0%
+# - Land Use: CA
+# - Eligible surface (ha): 0.4838
+# - Irrigation Coeficient: 0.0%
 
-- Land Use: IM
-- Eligible surface (ha): 1.9813
-- Irrigation Coeficient: 0.0%
+# - Land Use: IM
+# - Eligible surface (ha): 1.9813
+# - Irrigation Coeficient: 0.0%
 
-- Land Use: MT
-- Eligible surface (ha): 2.6999
-- Irrigation Coeficient: 20.0%
+# - Land Use: MT
+# - Eligible surface (ha): 2.6999
+# - Irrigation Coeficient: 20.0%
 
-- Land Use: ED
-- Eligible surface (ha): 0.0894
-- Irrigation Coeficient: 0.0%
+# - Land Use: ED
+# - Eligible surface (ha): 0.0894
+# - Irrigation Coeficient: 0.0%
 
-- Land Use: ZU
-- Eligible surface (ha): 0.0086
-- Irrigation Coeficient: 0.0%
+# - Land Use: ZU
+# - Eligible surface (ha): 0.0086
+# - Irrigation Coeficient: 0.0%
 
-- Land Use: FY
-- Eligible surface (ha): 0.1422
-- Irrigation Coeficient: 100.0%
-- Slope Coeficient: 1.7%
+# - Land Use: FY
+# - Eligible surface (ha): 0.1422
+# - Irrigation Coeficient: 100.0%
+# - Slope Coeficient: 1.7%
 
-TOTAL ELIGIBLE SURFACE (ha): 45.733
-""",
-    "14048A001001990000RM": """IMAGE DATE: 2024-10-19
-LAND USES DETECTED: 2
+# TOTAL ELIGIBLE SURFACE (ha): 45.733
+# """,
+#     "14048A001001990000RM": """IMAGE DATE: 2024-10-19
+# LAND USES DETECTED: 2
 
-- Land Use: OV
-- Eligible surface (ha): 7.4659
-- Irrigation Coeficient: 0.0%
-- Slope Coeficient: 12.4%
+# - Land Use: OV
+# - Eligible surface (ha): 7.4659
+# - Irrigation Coeficient: 0.0%
+# - Slope Coeficient: 12.4%
 
-- Land Use: CA
-- Eligible surface (ha): 0.0352
-- Irrigation Coeficient: 0.0%
+# - Land Use: CA
+# - Eligible surface (ha): 0.0352
+# - Irrigation Coeficient: 0.0%
 
-TOTAL ELIGIBLE SURFACE (ha): 7.501
+# TOTAL ELIGIBLE SURFACE (ha): 7.501
 
-""",
-    "45054A067000090000QA": """IMAGE DATE: 2025-03-30
-LAND USES DETECTED: 2
+# """,
+#     "45054A067000090000QA": """IMAGE DATE: 2025-03-30
+# LAND USES DETECTED: 2
 
-- Land Use: IM
-- Eligible surface (ha): 0.0065
-- Irrigation Coeficient: 0.0%
+# - Land Use: IM
+# - Eligible surface (ha): 0.0065
+# - Irrigation Coeficient: 0.0%
 
-- Land Use: TA
-- Eligible surface (ha): 42.8326
-- Irrigation Coeficient: 0.0%
+# - Land Use: TA
+# - Eligible surface (ha): 42.8326
+# - Irrigation Coeficient: 0.0%
 
-TOTAL ELIGIBLE SURFACE (ha): 42.839
+# TOTAL ELIGIBLE SURFACE (ha): 42.839
 
-""",
-    "43157A024000010000KE": """IMAGE DATE: 2024-03-15
-LAND USES DETECTED: 4
+# """,
+#     "43157A024000010000KE": """IMAGE DATE: 2024-03-15
+# LAND USES DETECTED: 4
 
-- Land Use: OV
-- Eligible surface (ha): 30.7162
-- Irrigation Coeficient: 0.0%
-- Slope Coeficient: 4.7%
+# - Land Use: OV
+# - Eligible surface (ha): 30.7162
+# - Irrigation Coeficient: 0.0%
+# - Slope Coeficient: 4.7%
 
-- Land Use: PR
-- Eligible surface (ha): 0.3574
-- Irrigation Coeficient: 0.0%
+# - Land Use: PR
+# - Eligible surface (ha): 0.3574
+# - Irrigation Coeficient: 0.0%
 
-- Land Use: IM
-- Eligible surface (ha): 0.0966
-- Irrigation Coeficient: 0.0%
+# - Land Use: IM
+# - Eligible surface (ha): 0.0966
+# - Irrigation Coeficient: 0.0%
 
-- Land Use: ED
-- Eligible surface (ha): 0.0065
-- Irrigation Coeficient: 0.0%
+# - Land Use: ED
+# - Eligible surface (ha): 0.0065
+# - Irrigation Coeficient: 0.0%
 
-TOTAL ELIGIBLE SURFACE (ha): 31.177
+# TOTAL ELIGIBLE SURFACE (ha): 31.177
 
-"""
-}
+# """
+# }
 
-languages = ["EN", "ES"]
-classification_filepath =  OG_CLASSIFICATION_FILEPATH
+# languages = ["EN", "ES"]
+# classification_filepath =  OG_CLASSIFICATION_FILEPATH
 
-os.makedirs(CLASSIFICATION_OUT_DIR, exist_ok=True)
-reset_dir(CLASSIFICATION_OUT_DIR)
+# os.makedirs(CLASSIFICATION_OUT_DIR, exist_ok=True)
+# reset_dir(CLASSIFICATION_OUT_DIR)
 
-for lang in languages:
-    lang.lower()
-    # Get classification JSON data
-    with open(classification_filepath, 'r') as file:
-        all_rules_list = json.load(file)[lang]
-    # Convert the list of dictionaries back into a valid JSON string
-    rules_json_str = json.dumps(all_rules_list) 
+# for lang in languages:
+#     lang.lower()
+#     # Get classification JSON data
+#     with open(classification_filepath, 'r') as file:
+#         all_rules_list = json.load(file)[lang]
+#     # Convert the list of dictionaries back into a valid JSON string
+#     rules_json_str = json.dumps(all_rules_list) 
 
-    # Get ecoschemes classification
-    for key in cad_ref_dict.keys():
-        output_dict = calculate_ecoscheme_payment_exclusive(cad_ref_dict[key], str(rules_json_str))
-        out_path = CLASSIFICATION_OUT_DIR / f"{key}_example_{lang}.json"
-        with open(out_path, 'w') as file:
-            json.dump(output_dict, file, indent=4)
-        logger.info(f"Ecoscheme classification saved to {out_path}")
+#     # Get ecoschemes classification
+#     for key in cad_ref_dict.keys():
+#         output_dict = calculate_ecoscheme_payment_exclusive(cad_ref_dict[key], str(rules_json_str))
+#         out_path = CLASSIFICATION_OUT_DIR / f"{key}_example_{lang}.json"
+#         with open(out_path, 'w') as file:
+#             json.dump(output_dict, file, indent=4)
+#         logger.info(f"Ecoscheme classification saved to {out_path}")

@@ -74,13 +74,13 @@ Para que el LLM pueda replicar con precisión este formato, se recomienda el sig
 
 **MAPEO DE DATOS:**
 
-| Sección | Columna/Placeholder | Fuente de Datos (JSON Key) | Regla Específica |
-| :--- | :--- | :--- | :--- |
-| **DESCRIPCIÓN** | Párrafo Descriptivo | *Texto Pre-Generado* | Insertar `Total_Parcel_Area_ha` dentro del texto. |
-| **ECORREGÍMENES POSIBLES** | Ecorrégimen, Importes | `Estimated_Total_Payment` y `Classification Data` (ES) | Usar todos los Ecorregímenes listados en `Estimated_Total_Payment`. Usar este formato para la columna de Ecorrégimen: `Ecoscheme_ID` - `Ecoscheme_Name` (`Ecoscheme_Subtype` si hubiera) Usar `Applied_Base_Payment_EUR` para la columna de tasa. |
-| **PAGO TOTAL ESTIMADO** | Importes (€) | `Estimated_Total_Payment` (Peninsular) | Usar **solo** los valores bajo la clave `"Peninsular"` para `Total_Base_Payment_EUR` y `Total_with_Pluriannuality_EUR`. |
-| **RESULTADOS** | Total Ayuda | `Final_Results` | Unir `Applicable_Ecoschemes` con ` + ` para el título de la tabla. |
-| **RESULTADOS** | Aclaraciones | *Texto Pre-Generado* | Insertar el listado de Aclaraciones como puntos. |
+| SECCIÓN MD | ORIGEN DEL DATO (JSON Key) | MAPEO/REGLA |
+| :--- | :--- | :--- |
+| **DESCRIPCIÓN** | `Total_Parcel_Area_ha` y *Texto de Descripción Pre-Generado* | **REGLA:** Insertar el texto pre-generado completo. Asegurar que el valor exacto de **`Total_Parcel_Area_ha`** se inserte en el texto si contiene un marcador. |
+| **ECORREGÍMENES POSIBLES** | `Estimated_Total_Payment` (Iterar todos) y `Datos de Clasificación` | **Formato Ecorégimen:** **`Ecoscheme_ID`** - **`Ecoscheme_Name`** (**`Ecoscheme_Subtype`** si no es nulo). Usar **`Peninsular/Insular.Applied_Base_Payment_EUR`** para las columnas de tasa. Usar los **`Datos de Clasificación`** para el texto de `Condiciones` y `Complemento Plurianualidad`. |
+| **PAGO TOTAL ESTIMADO** | `Estimated_Total_Payment` (Iterar todos) | **REGLA:** Usar **solo** los valores **Peninsular** para **`Total_Base_Payment_EUR`** y **`Total_with_Pluriannuality_EUR`**. Usar **`Peninsular.Applicable`** para la columna 'Aplicable'. |
+| **RESULTADOS (Tabla Resumen)** | `Final_Results` | **REGLA:** Unir **`Final_Results.Applicable_Ecoschemes`** con un signo de suma (`+`) para el título de la fila. Usar **`Total_Aid_without_Pluriannuality_EUR`** y **`Total_Aid_with_Pluriannuality_EUR`** para los totales. |
+| **RESULTADOS (Aclaraciones)** | *Texto de Aclaraciones Pre-Generado* | **REGLA:** Insertar la lista de puntos de las aclaraciones pre-generadas textualmente en la sección `RESULTADOS`. |
 
 **REGLA DE CONTEXTO GEOGRÁFICO:** El informe inicial debe usar las tasas **Peninsulares**. Si el usuario solicita un cambio a la región **Insular**, el LLM debe regenerar las tablas `ECORREGÍMENES POSIBLES` y `PAGO TOTAL ESTIMADO` utilizando los valores de la clave `"Insular"`.
 
