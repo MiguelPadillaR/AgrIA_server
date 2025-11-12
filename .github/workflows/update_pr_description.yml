@@ -54,8 +54,12 @@ jobs:
               const regex = new RegExp(`${header}[\\s\\S]*?(\n\\s*---|$|##)`, 'm');
               newBody = currentBody.replace(regex, commitList + '\n\n---');
             } else {
+              
               // If the header does not exist, prepend the new list and a separator
-              newBody = commitList + '\n\n---\n\n' + (currentBody || '');
+              // newBody = commitList + '\n\n---\n\n' + (currentBody || '');
+              
+              // If the header does not exist, append new list and add separator
+              newBody = (currentBody || '') + '\n\n---\n\n' + commitList;
             }
 
             // Update the PR
