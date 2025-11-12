@@ -22,31 +22,27 @@ jobs:
       - name: ⚙️ Get Commit List and Format
         id: commit_list
         run: |
-          # 1. Define a unique delimiter (e.g., EOF)
-          DELIMITER=$(uuidgen)
-          
-          # 2. Get the list of commits
+          # 1. Get the list of commits
           COMMIT_LIST=$(git log --pretty=format:"* %s" ${{ github.event.pull_request.base.sha }}..HEAD)
           
-          # 3. Format the final output string, including the header
+          # 2. Format the final output string, including the header
           FORMATTED_LIST="## 📦 Commits Included in this PR:\n\n${COMMIT_LIST}"
           
-          # 4. Use the multiline delimiter syntax to set the output variable
-          echo "list<<$DELIMITER" >> $GITHUB_OUTPUT
-          echo "${FORMATTED_LIST}" >> $GITHUB_OUTPUT
-          echo "$DELIMITER" >> $GITHUB_OUTPUT
-        shell: bash # Explicitly ensure bash is used
-        
+          # 3. Use the special GITHUB_ENV file to make the variable available globally
+          #    NOTE: We must use the multiline syntax here as well!
+          echo "FORMATTED_LIST<<EOF" >> $GITHUB_ENV
+          echo "${FORMATTED_LIST}" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+        shell: bash
+
       - name: 🔄 Update Pull Request Description
         uses: actions/github-script@v7
         with:
-          # 💡 Inject the previous step's output directly as a variable named 'commitListOutput'
-          github-token: ${{ secrets.GITHUB_TOKEN }} # Ensure you have a token
+          # 💡 Pass the environment variable as an input. No 'input_' prefix needed.
+          commit-list-input: ${{ env.FORMATTED_LIST }}
           script: |
-            // Access the injected variable via the 'core' library
-            const core = require('@actions/core');
-            const commitList = core.getInput('commit-list-output');
-            
+            // Access the input using the globally available 'core' library
+            const commitList = core.getInput('commit-list-input');
             const currentBody = context.payload.pull_request.body;
             
             // Check if the commit list header already exists
@@ -69,6 +65,3 @@ jobs:
               pull_number: context.issue.number,
               body: newBody
             });
-          # 💡 Define the input for the script: MUST BE `input_` followed by the variable name
-          # The variable name used here is 'commit-list-output'
-          input_commit_list_output: ${{ steps.commit_list.outputs.list }}
