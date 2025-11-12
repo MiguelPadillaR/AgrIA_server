@@ -71,8 +71,8 @@
     "Total_Aid_without_Pluriannuality_EUR": 4475.70,
     "Total_Aid_with_Pluriannuality_EUR": 5281.55,
     "Clarifications": [
-      "P3/P4 (TA) was calculated using the Regadío rate. Tier 1 was applied as the area (22.75 ha) is below the 25 ha threshold (T1: 141.74 €/ha).",
-      "P6/P7 (VI, FY) was calculated using the Pendiente Media rate (110.56 €/ha) based on the slope percentage of 10.12% for VI.",
+      "P3/P4 (TA) was calculated using the Irrigated rate. Tier 1 was applied as the area (22.75 ha) is below the 25 ha threshold (T1: 141.74 €/ha, T2: 99.22 €/ha).",
+      "P6/P7 (VI, FY) was calculated using the Medium Slope rate (110.56 €/ha) based on the slope percentage of 10.12% for VI.",
       "The total pluriannuality bonus of 805.85 EUR is applied to the 32.23 ha of eligible land (TA + VI + FY)."
     ]
   }
