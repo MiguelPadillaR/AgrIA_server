@@ -152,35 +152,18 @@ def set_initial_history(documents_json_path: str=CONTEXT_DOCUMENTS_FILE):
         doc_paths_list = []
 
     if doc_paths_list:
-        document_parts.append(Part(text="Use the following files as context documents for the task. You may display tables and quote or reference information directly from these documents:"))
+        prompt = "Use the following files as context documents for the task. You may display tables and quote or reference information directly from these documents:\n"
+        upload_success = upload_context_files(document_parts, doc_paths_list[:3], prompt)
+        prompt = "Use the following files examples of user input (JSON) and your output (MD) when prompted for a parcel description with that input:\n"
+        upload_success += upload_context_files(document_parts, doc_paths_list[3:], prompt)
 
-        for doc_path in doc_paths_list:
-            if not doc_path:
-                continue
-
-            file_extension = doc_path.split('.')[-1].lower()
-            mime_type = MIME_TYPES.get(file_extension, 'application/octet-stream')
-
-            try:
-                uploaded_doc = upload_context_document(doc_path)
-                if uploaded_doc and uploaded_doc.uri:
-                    print(f"Successfully uploaded document. {os.path.basename(doc_path)} URI: {uploaded_doc.uri}")
-                    document_parts.append(Part(text=f"Document: {os.path.basename(doc_path)}"))
-                    # Add the document URI part
-                    document_parts.append(Part.from_uri(file_uri=uploaded_doc.uri, mime_type=mime_type))
-                    upload_success += 1
-                else:
-                    print(f"Warning: Failed to get URI for uploaded document: {doc_path}")
-            except Exception as e:
-                print(f"Error uploading document {doc_path}: {e}")
-        
         llm_answer = "Apologies, it appears there has been an error during the document upload process and I have not got access to the files. I will do my best to answer any queries though."
         if upload_success > 0:
-            print(f"Successfully uploaded and prepared {upload_success} documents for context.")
+            print(f"Successfully uploaded and prepared {upload_success} files.")
             # Append all document parts as a single 'user' turn
             initial_history.append(Content(role='user', parts=document_parts))
             # Model's optional "OK" response to the context
-            llm_answer = "Okay, I have received the context documents and I will use them for our conversation."
+            llm_answer = "Okay, I have received the context documents, format examples and clasification file and I will use them for our conversation."
         else:
             print("No documents were successfully uploaded to include in the initial history.")
 
@@ -202,3 +185,43 @@ def set_initial_history(documents_json_path: str=CONTEXT_DOCUMENTS_FILE):
 
     print(f"Initial history prepared with {len(initial_history)} turns.")
     return initial_history
+
+def upload_context_files(document_parts, doc_paths_list, prompt):
+    document_parts.append(Part(text=prompt))
+    upload_success = 0
+    for doc_path in doc_paths_list:
+        if not doc_path:
+            continue
+        file_extension = doc_path.split('.')[-1].lower()
+        if file_extension == 'json':
+            # --- Special handling for JSON ---
+            try:
+                # Read JSON content as a string
+                with open(doc_path, 'r', encoding='utf-8') as f:
+                    json_content = f.read()
+                
+                # Append a descriptive text part and the JSON content itself as text
+                document_parts.append(Part(text=f"Example JSON User Input ({os.path.basename(doc_path)}):\n{json_content}"))
+                upload_success += 1
+                print(f"Successfully included JSON content as text: {os.path.basename(doc_path)}")
+
+            except Exception as e:
+                print(f"Error reading JSON file {doc_path}: {e}")
+            # --- End JSON handling ---
+
+        else:
+            # --- Existing handling for other file types (e.g., .md, images) ---
+            mime_type = MIME_TYPES.get(file_extension, 'application/octet-stream')
+            try:
+                uploaded_doc = upload_context_document(doc_path)
+                if uploaded_doc and uploaded_doc.uri:
+                    print(f"Successfully uploaded document. {os.path.basename(doc_path)} URI: {uploaded_doc.uri}")
+                    document_parts.append(Part(text=f"Document: {os.path.basename(doc_path)}"))
+                    document_parts.append(Part.from_uri(file_uri=uploaded_doc.uri, mime_type=mime_type))
+                    upload_success += 1
+                else:
+                    print(f"Warning: Failed to get URI for uploaded document: {doc_path}")
+            except Exception as e:
+                print(f"Error uploading document {doc_path}: {e}")
+
+    return upload_success

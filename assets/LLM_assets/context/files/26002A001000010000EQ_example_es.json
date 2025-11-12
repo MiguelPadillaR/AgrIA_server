@@ -1,0 +1,115 @@
+{
+    "Report_Type": "EcoScheme_Payment_Estimate",
+    "Total_Parcel_Area_ha": 45.7332,
+    "Calculation_Context": {
+        "Rate_Applied": "Peninsular_Rates_Used_For_Final_Summary_Total",
+        "Source": "Provisional base rates for Eco-schemes, 2025 CAP Campaign"
+    },
+    "Estimated_Total_Payment": [
+        {
+            "Ecoscheme_ID": "P1",
+            "Ecoscheme_Name": "Pastoreo y Biodiversidad",
+            "Ecoscheme_Subtype": "Pastos Mediterr\u00e1neos",
+            "Land_Use_Class_Eligible": "MT, PA, PR, PS (7.07 ha)",
+            "Total_Area_ha": 7.0703,
+            "Peninsular": {
+                "Applied_Base_Payment_EUR": 27.27,
+                "Total_Base_Payment_EUR": 192.81,
+                "Total_with_Pluriannuality_EUR": 192.81,
+                "Applicable": "Si (Tarifa Plana)"
+            },
+            "Insular": {
+                "Applied_Base_Payment_EUR": 49.27,
+                "Total_Base_Payment_EUR": 348.35,
+                "Total_with_Pluriannuality_EUR": 348.35,
+                "Applicable": "Si (Tarifa Plana)"
+            }
+        },
+        {
+            "Ecoscheme_ID": "P3/P4",
+            "Ecoscheme_Name": "Rotaci\u00f3n y Siembra Directa",
+            "Ecoscheme_Subtype": "Regad\u00edo",
+            "Land_Use_Class_Eligible": "TA (22.75 ha)",
+            "Total_Area_ha": 22.7474,
+            "Peninsular": {
+                "Applied_Base_Payment_EUR": 141.742439,
+                "Total_Base_Payment_EUR": 3224.27,
+                "Total_with_Pluriannuality_EUR": 3792.95,
+                "Applicable": "Si (Tramo 1 aplicado)"
+            },
+            "Insular": {
+                "Applied_Base_Payment_EUR": 221.742439,
+                "Total_Base_Payment_EUR": 5044.06,
+                "Total_with_Pluriannuality_EUR": 5612.74,
+                "Applicable": "Si (Tramo 1 aplicado)"
+            }
+        },
+        {
+            "Ecoscheme_ID": "P5 (B)",
+            "Ecoscheme_Name": "Espacios de Biodiversidad",
+            "Ecoscheme_Subtype": "Bajo Agua",
+            "Land_Use_Class_Eligible": "AG (0.41 ha)",
+            "Total_Area_ha": 0.4099,
+            "Peninsular": {
+                "Applied_Base_Payment_EUR": 145.098595,
+                "Total_Base_Payment_EUR": 59.48,
+                "Total_with_Pluriannuality_EUR": 59.48,
+                "Applicable": "Si (Tarifa Plana)"
+            },
+            "Insular": {
+                "Applied_Base_Payment_EUR": 0.0,
+                "Total_Base_Payment_EUR": 0.0,
+                "Total_with_Pluriannuality_EUR": 0.0,
+                "Applicable": "Si (Tarifa Plana)"
+            }
+        },
+        {
+            "Ecoscheme_ID": "P6/P7",
+            "Ecoscheme_Name": "Cubiertas Vegetales o Espont\u00e1neas",
+            "Ecoscheme_Subtype": "Terreno Llano",
+            "Land_Use_Class_Eligible": "FY, VI (9.49 ha)",
+            "Total_Area_ha": 9.4863,
+            "Peninsular": {
+                "Applied_Base_Payment_EUR": 59.12,
+                "Total_Base_Payment_EUR": 560.83,
+                "Total_with_Pluriannuality_EUR": 797.98,
+                "Applicable": "Si (Tramo 1 aplicado)"
+            },
+            "Insular": {
+                "Applied_Base_Payment_EUR": 99.12,
+                "Total_Base_Payment_EUR": 940.28,
+                "Total_with_Pluriannuality_EUR": 1177.44,
+                "Applicable": "Si (Tramo 1 aplicado)"
+            }
+        },
+        {
+            "Ecoscheme_ID": "N/A",
+            "Ecoscheme_Name": "Non-Eligible",
+            "Ecoscheme_Subtype": null,
+            "Land_Use_Class_Eligible": "CA, ED, FO, IM, ZU",
+            "Total_Area_ha": 6.0193,
+            "Peninsular": {
+                "Applied_Base_Payment_EUR": "N/A",
+                "Total_Base_Payment_EUR": "N/A",
+                "Total_with_Pluriannuality_EUR": "N/A",
+                "Applicable": "N/A"
+            },
+            "Insular": {
+                "Applied_Base_Payment_EUR": "N/A",
+                "Total_Base_Payment_EUR": "N/A",
+                "Total_with_Pluriannuality_EUR": "N/A",
+                "Applicable": "N/A"
+            }
+        }
+    ],
+    "Final_Results": {
+        "Applicable_Ecoschemes": [
+            "P1",
+            "P3/P4",
+            "P5 (B)",
+            "P6/P7"
+        ],
+        "Total_Aid_without_Pluriannuality_EUR": 4037.39,
+        "Total_Aid_with_Pluriannuality_EUR": 4885.52
+    }
+}

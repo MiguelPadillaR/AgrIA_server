@@ -17,12 +17,28 @@
       "url": "https://www.fega.gob.es/sites/default/files/files/document/230306_pmf4-ecorregimenes_v4.pdf"
     },
     {
-    "title": "IMPORTES UNITARIOS DEFINITIVOS. CAMPAÑA 2024 ",
-    "description": "Información sobre importes definitivos de Ecorregimenes para el año 2024.",
-    "date": "2024-09-23",
+    "title": "IMPORTES UNITARIOS PROVISIONALES CAMPAÑA 2025 ",
+    "description": "Información sobre importes definitivos de Ecorregimenes para el año 2025.",
+    "date": "2025-09-01",
     "source": "FEGA",
-    "path": "files/NOTA_WEB_EERR_SEGUNDO_SALDO_C2024.md",
-    "url": "https://www.fega.gob.es/sites/default/files/files/document/NOTA_WEB_EERR_SEGUNDO_SALDO_C2024.pdf"
+    "path": "files/250925_NOTA_WEB_Ecorregimenes_Ca_2025_ANTICIPO_v02.md",
+    "url": "https://www.fega.gob.es/sites/default/files/files/document/250925_NOTA_WEB_Ecorregimenes_Ca_2025_ANTICIPO_v02.pdf"
+    },
+    {
+    "title": "Input Example 26002A001000010000EQ (EN) ",
+    "description": "JSON input example the LLM actually gets when prompted for parcel description (cadastral/address).",
+    "date": "2025-11-11",
+    "source": "AgrIA + Gemini",
+    "path": "files/26002A001000010000EQ_example_es.json",
+    "url": ""
+    },
+    {
+    "title": "Output Example 26002A001000010000EQ (EN) ",
+    "description": "MD report output example the LLM returns when prompted for parcel description (cadastral/address).",
+    "date": "2025-11-11",
+    "source": "AgrIA + Gemini",
+    "path": "files/26002A001000010000EQ_example_es.md",
+    "url": ""
     }
 
   ]

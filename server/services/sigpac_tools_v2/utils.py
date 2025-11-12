@@ -100,7 +100,7 @@ def get_parcel_metadata_and_geometry(base_endpoint: str) -> dict:
         ValueError: If the reference is not valid
         NotImplementedError: If the reference is urban
     """
-    logger.debug(base_endpoint)
+    logger.debug(f"Base endpoint:\t{base_endpoint}")
     response = requests.get(base_endpoint)
     response.raise_for_status()
     full_json = response.json()

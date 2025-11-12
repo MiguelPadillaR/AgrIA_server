@@ -54,7 +54,7 @@ def generate_image_context_data(image_date, land_uses, query) -> str:
             surface = float(use.get("superficie_admisible") or use.get("dn_surface", 0))
 
             total_surface += surface
-            irrigation_coef, slope_coef = get_irrigation_coefficient(query, land_use_type)
+            irrigation_coef, slope_coef = get_coefficients(query, land_use_type)
 
             for lang in ["es", "en"]:
                 results[lang] += templates[lang]["parcel"].format(type=land_use_type, surface=surface, irrigation=round(irrigation_coef, 2))
@@ -72,7 +72,7 @@ def generate_image_context_data(image_date, land_uses, query) -> str:
     except Exception as e:
         print("Error while getting image context data: " + e)
 
-def get_irrigation_coefficient(query, land_use)-> float:
+def get_coefficients(query, land_use)-> float:
     """
     Returns the mean irrigation and slope coefficient across all parcels in state for the specified land use.
 
