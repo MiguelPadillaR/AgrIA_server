@@ -16,12 +16,12 @@ def upload_context_document(context_file_path: str) -> str:
     if context_file_path and pathlib.Path(context_file_path).exists():
         try:
             mime_type = MIME_TYPES.get(context_file_path.split(".")[-1].lower(), 'application/octet-stream')
-            uploaded_pdf = client.files.upload(
+            uploaded_file = client.files.upload(
                 file=pathlib.Path(context_file_path),
                 config=dict(mime_type=mime_type, display_name= pathlib.Path(context_file_path).name)
             )
         except Exception as e:
-            print(f"Error uploading PDF: {e}")
-            uploaded_pdf = None
+            print(f"Error uploading file: {e}")
+            uploaded_file = None
         finally:
-            return uploaded_pdf
+            return uploaded_file

@@ -1,10 +1,33 @@
 import os
-from ..config.constants import TEMP_UPLOADS_PATH
-from ..utils.parcel_finder_utils import *
+from datetime import datetime
+from ..config.constants import TEMP_DIR
+from ..utils.parcel_finder_utils import check_cadastral_data, is_coord_in_zones, reset_dir
 from ..services.parcel_finder_service import get_parcel_image
 from flask import Blueprint, make_response, request, jsonify, send_from_directory
 
 parcel_finder_bp = Blueprint('find_parcel', __name__)
+
+@parcel_finder_bp.route('/load-parcel-description', methods=['POST'])
+def load_parcel_descriptio():
+    """
+    Loads and returns dinamically the correct parcel description file.
+    Returns:
+        response (dict): Contains the image description of the text file.
+    """
+    try:
+        lang = request.form.get('lang')
+        parcel_desc_file = os.path.join(TEMP_DIR, f"parcel_desc-{lang}.txt")
+        content = "..."
+        
+        if os.path.exists(parcel_desc_file):
+            print("Loading parcel description file:", parcel_desc_file)
+            with open(parcel_desc_file, 'r', encoding='utf-8') as file:
+                content = file.read()
+            print(content)
+        return jsonify({'response': content}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @parcel_finder_bp.route('/find-parcel', methods=['POST'])
 def find_parcel():
@@ -22,7 +45,7 @@ def find_parcel():
     Returns:
         response: A JSON response with the parcel data or an error message and appropriate HTTP status code.
     """
-    reset_temp_dir()
+    reset_dir(TEMP_DIR)
     init = datetime.now()
     try:
         cadastral_reference = request.form.get('cadastralReference')
@@ -35,7 +58,6 @@ def find_parcel():
         municipality = request.form.get('municipality')
         polygon = request.form.get('polygon')
         parcel_id = request.form.get('parcelId')
-        
         if is_from_cadastral_reference:
             cadastral_reference = check_cadastral_data(cadastral_reference, province, municipality, polygon, parcel_id)
 
@@ -59,16 +81,26 @@ def find_parcel():
             "imagePath": url_image_address,
             "metadata": metadata,
         }
-        print("TIME TAKEN:", datetime.now() - init)
+        print(f"\nTOTAL TIME TAKEN: {datetime.now() - init}\n")
         return jsonify({'response': response})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@parcel_finder_bp.route('/is-coord-in-zone', methods=['POST'])
+def is_coord_in_zone():
+    try:
+        lat = float(request.form.get('lat'))
+        lng = float(request.form.get('lng'))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid or missing coordinates"}), 400
+
+    return jsonify({"response": is_coord_in_zones(lng, lat)}), 200
 
 @parcel_finder_bp.route('/uploads/<filename>')
 def uploaded_file(filename):
     response = make_response(
         send_from_directory(
-            os.path.join(os.getcwd(), TEMP_UPLOADS_PATH),
+            os.path.join(os.getcwd(), TEMP_DIR),
             filename
         )
     )

@@ -1,0 +1,66 @@
+{
+  "Report_Type": "EcoScheme_Payment_Estimate",
+  "Total_Parcel_Area_ha": 48.88,
+  "Calculation_Context": {
+    "Rate_Applied": "Peninsular_Estimated_Rate",
+    "Source": "Provisional base rates for Eco-schemes, 2025 CAP Campaign"
+  },
+  "Estimated_Total_Payment": [
+    {
+      "Ecoscheme_ID": "P3/P4",
+      "Ecoscheme_Name": "Rotation/No-Till",
+      "Ecoscheme_Subtype": "Rainfed",
+      "Land_Use_Class_Eligible": "TA",
+      "Total_Area_ha": 11.92635,
+      "Applicable_Base_Payment_EUR": 44.32,
+      "Total_Base_Payment_EUR": 528.57,
+      "Total_with_Pluriannuality_EUR": 826.73,
+      "Applicable": "Yes (Tier 1 Applied)"
+    },
+    {
+      "Ecoscheme_ID": "P5 (A)",
+      "Ecoscheme_Name": "Biodiversity Spaces",
+      "Ecoscheme_Subtype": "Cultivated/Permanent",
+      "Land_Use_Class_Eligible": "Excluded: FY used for P6/P7",
+      "Total_Area_ha": 0.0,
+      "Applicable_Base_Payment_EUR": 44.32,
+      "Total_Base_Payment_EUR": 0.0,
+      "Total_with_Pluriannuality_EUR": 0.0,
+      "Applicable": "No"
+    },
+    {
+      "Ecoscheme_ID": "P6/P7",
+      "Ecoscheme_Name": "Plant Cover",
+      "Ecoscheme_Subtype": "Steep Slope/Terraces",
+      "Land_Use_Class_Eligible": "FY",
+      "Total_Area_ha": 30.77452,
+      "Applicable_Base_Payment_EUR": 102.91,
+      "Total_Base_Payment_EUR": 3167.74,
+      "Total_with_Pluriannuality_EUR": 3921.46,
+      "Applicable": "Yes"
+    },
+    {
+      "Ecoscheme_ID": "N/A",
+      "Ecoscheme_Name": "Non-Eligible",
+      "Ecoscheme_Subtype": null,
+      "Land_Use_Class_Eligible": "IM",
+      "Total_Area_ha": 6.17678,
+      "Applicable_Base_Payment_EUR":  "N/A",
+      "Total_Base_Payment_EUR": "N/A",
+      "Total_with_Pluriannuality_EUR": "N/A",
+      "Applicable": "N/A"
+    }
+  ],
+  "Final_Results": {
+    "Applicable_Ecoschemes": [
+      "P3/P4",
+      "P6/P7"
+    ],
+    "Total_Aid_without_Pluriannuality_EUR": 3537.62,
+    "Total_Aid_with_Pluriannuality_EUR": 4565.59,
+    "Clarifications": [
+      "P6/P7 payment includes a steep slope rate for the 30.77 ha of FY.",
+      "The total pluriannuality bonus of 830.15 EUR is applied to the 42.70 ha of eligible land (TA + FY)."
+    ]
+  }
+}

@@ -1,0 +1,46 @@
+{
+    "Report_Type": "EcoScheme_Payment_Estimate",
+    "Total_Parcel_Area_ha": <FLOAT>,
+    "Calculation_Context": {
+        "Rate_Applied": "<STRING>",
+        "Source": "<STRING>"
+    },
+    "Estimated_Total_Payment": [
+        {
+            "Ecoscheme_ID": "<STRING>",
+            "Ecoscheme_Name": "<STRING>",
+            "Ecoscheme_Subtype": "<STRING>",
+            "Land_Use_Class_Eligible": "<STRING>",
+            "Total_Area_ha": <FLOAT>,
+            "Peninsular": {
+                "Applied_Base_Payment_EUR": <FLOAT>,
+                "Total_Base_Payment_EUR": <FLOAT>,
+                "Total_with_Pluriannuality_EUR": <FLOAT>,
+                "Applicable": "<STRING>"
+            },
+            "Insular": {
+                "Applied_Base_Payment_EUR": <FLOAT>,
+                "Total_Base_Payment_EUR": <FLOAT>,
+                "Total_with_Pluriannuality_EUR": <FLOAT>,
+                "Applicable": "<STRING>"
+            }
+        },
+        {...}.
+        ...
+    ],
+    "Final_Results": {
+        "Applicable_Ecoschemes": [
+            "<STRING>",
+            "<STRING>",
+            "<STRING>",
+            "<STRING>"
+        ],
+        "Total_Aid_without_Pluriannuality_EUR": <FLOAT>,
+        "Total_Aid_with_Pluriannuality_EUR": <FLOAT>,
+        "Clarifications": [
+            "<STRING>",
+            "<STRING>",
+            "<STRING>"
+        ]
+    }
+}

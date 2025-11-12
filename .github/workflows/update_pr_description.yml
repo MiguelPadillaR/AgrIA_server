@@ -1,0 +1,67 @@
+name: 📝 Auto-Populate PR Description with Commits
+
+on:
+  pull_request:
+    # Run the action when a PR is opened, reopened, or synchronized (new commits pushed)
+    types: [opened, reopened, synchronize]
+
+jobs:
+  update_pr_body:
+    runs-on: ubuntu-latest
+    permissions:
+      # Required permission to read commits and write to the PR description
+      pull-requests: write
+    
+    steps:
+      - name: ⬇️ Checkout Repository
+        uses: actions/checkout@v4
+        # We need to fetch the history up to the base branch
+        with:
+          fetch-depth: 0 
+          
+      - name: ⚙️ Get Commit List and Format
+        id: commit_list
+        run: |
+          # 1. Get the list of commits
+          COMMIT_LIST=$(git log --pretty=format:"* %s" ${{ github.event.pull_request.base.sha }}..HEAD)
+          
+          # 2. Format the final output string, including the header
+          FORMATTED_LIST="## 📦 Commits Included in this PR:\n\n${COMMIT_LIST}"
+          
+          # 3. Use the special GITHUB_ENV file to make the variable available globally
+          #    NOTE: We must use the multiline syntax here as well!
+          echo "FORMATTED_LIST<<EOF" >> $GITHUB_ENV
+          echo "${FORMATTED_LIST}" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+        shell: bash
+
+      - name: 🔄 Update Pull Request Description
+        uses: actions/github-script@v7
+        with:
+          # 💡 Pass the environment variable as an input. No 'input_' prefix needed.
+          commit-list-input: ${{ env.FORMATTED_LIST }}
+          script: |
+            // Access the input using the globally available 'core' library
+            const commitList = core.getInput('commit-list-input');
+            const currentBody = context.payload.pull_request.body;
+            
+            // Check if the commit list header already exists
+            const header = '## 📦 Commits Included in this PR:';
+            let newBody;
+            
+            if (currentBody && currentBody.includes(header)) {
+              // If the header exists, replace the old list with the new one
+              const regex = new RegExp(`${header}[\\s\\S]*?(\n\\s*---|$|##)`, 'm');
+              newBody = currentBody.replace(regex, commitList + '\n\n---');
+            } else {
+              // If the header does not exist, prepend the new list and a separator
+              newBody = commitList + '\n\n---\n\n' + (currentBody || '');
+            }
+
+            // Update the PR
+            github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              body: newBody
+            });

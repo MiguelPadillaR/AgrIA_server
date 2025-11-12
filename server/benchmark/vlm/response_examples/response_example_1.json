@@ -1,0 +1,79 @@
+{
+  "Report_Type": "EcoScheme_Payment_Estimate",
+  "Total_Parcel_Area_ha": 64.413,
+  "Calculation_Context": {
+    "Rate_Applied": "Peninsular_Estimated_Rate",
+    "Source": "Provisional base rates for Eco-schemes, 2025 CAP Campaign"
+  },
+  "Estimated_Total_Payment": [
+    {
+      "Ecoscheme_ID": "P3/P4",
+      "Ecoscheme_Name": "Rotation/No-Till",
+      "Ecoscheme_Subtype": "Irrigated",
+      "Land_Use_Class_Eligible": "TA (47.06 ha)",
+      "Total_Area_ha": 47.05651,
+      "Applied_Base_Payment_EUR": 99.219707,
+      "Total_Base_Payment_EUR": 4668.93,
+      "Total_with_Pluriannuality_EUR": 5845.34,
+      "Applicable": "Yes (Tier 2 Applied)"
+    },
+    {
+      "Ecoscheme_ID": "P6/P7",
+      "Ecoscheme_Name": "Plant Cover",
+      "Ecoscheme_Subtype": "Steep Slope/Terraces",
+      "Land_Use_Class_Eligible": "CI, OV (13.46 ha)",
+      "Total_Area_ha": 13.45861,
+      "Applied_Base_Payment_EUR": 131.381037,
+      "Total_Base_Payment_EUR": 1768.80,
+      "Total_with_Pluriannuality_EUR": 2105.27,
+      "Applicable": "Yes (Steep Slope Rate)"
+    },
+    {
+      "Ecoscheme_ID": "P1",
+      "Ecoscheme_Name": "Extensive Grazing",
+      "Ecoscheme_Subtype": "Mediterranean Pastures",
+      "Land_Use_Class_Eligible": "PR, PS (0.32 ha)",
+      "Total_Area_ha": 0.32357,
+      "Applied_Base_Payment_EUR": 27.27,
+      "Total_Base_Payment_EUR": 8.83,
+      "Total_with_Pluriannuality_EUR": 8.83,
+      "Applicable": "Yes (Flat Rate)"
+    },
+    {
+      "Ecoscheme_ID": "P5(B)",
+      "Ecoscheme_Name": "Biodiversity Spaces",
+      "Ecoscheme_Subtype": "Under Water",
+      "Land_Use_Class_Eligible": "AG (1.26 ha)",
+      "Total_Area_ha": 1.2623,
+      "Applied_Base_Payment_EUR": 145.098595,
+      "Total_Base_Payment_EUR": 183.14,
+      "Total_with_Pluriannuality_EUR": 183.14,
+      "Applicable": "Yes (Flat Rate)"
+    },
+    {
+      "Ecoscheme_ID": "N/A",
+      "Ecoscheme_Name": "Non-Eligible",
+      "Ecoscheme_Subtype": null,
+      "Land_Use_Class_Eligible": "FO, IM",
+      "Total_Area_ha": 2.31206,
+      "Total_Base_Payment_EUR": "N/A",
+      "Total_with_Pluriannuality_EUR": "N/A",
+      "Applicable": "N/A"
+    }
+  ],
+  "Final_Results": {
+    "Applicable_Ecoschemes": [
+      "P3/P4",
+      "P6/P7",
+      "P1",
+      "P5(B)"
+    ],
+    "Total_Aid_without_Pluriannuality_EUR": 6629.70,
+    "Total_Aid_with_Pluriannuality_EUR": 8142.58,
+    "Clarifications": [
+      "P3/P4 (TA) was calculated using the Irrigated rate. Tier 2 was applied to the 22.06 ha exceeding the 25 ha threshold (T1: 141.74 €/ha, T2: 99.22 €/ha).",
+      "P6/P7 (CI, OV) was calculated using the Steep Slope rate (131.38 €/ha) based on the high slope percentage (>15%).",
+      "The total pluriannuality bonus of 1512.88 EUR is applied to the 60.52 ha of eligible land (TA + CI + OV)."
+    ]
+  }
+}

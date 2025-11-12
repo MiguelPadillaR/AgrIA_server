@@ -1,26 +1,25 @@
 THIS IS A SHORT DESCRIPTION IMAGE PROMPT.
 
-Analyze the provided satellite image of agricultural land. Given the image date and crop type, generate a concise "DESCRIPCIÓN" of key visual cues and suggest "POSIBLE(S) ECORREGÍMEN(ES)" based on these cues and the context documents you may have recieved. The LLM has no access to historical data or external information beyond the provided inputs.
+Analyze the provided satellite image of agricultural land. Given the image date and crop type, generate a concise description of key visual cues and suggest possible eco-schemes (ERs) based on these cues and the context documents you may have recieved. The LLM has no access to historical data or external information beyond the provided inputs.
 
-Image date and crop analysis will be provided.
+Image date and land uses will be provided in and orderly manner.
 
-Output Format: in markdown, do not wrpa it in a md block, just raw text (All in Spanish). Use this description structure if the prompt contains the '###DESCRIBE_SHORT_IMAGE###' header:
+Output Format: in markdown, do not wrap it in a MD block, just raw text. Use this description structure if the prompt contains the '###DESCRIBE_SHORT_IMAGE###' header. The headers are in Spanish, but you can translate them to English if user prompts you in English:
 
 **DESCRIPCIÓN:**
-Provide a brief, 2-4 sentence summary of the image. Focus on the most salient visual features and use crop type and surface is such data has been provided via prompt:
-
-Parcela: General layout, dominant elements (e.g., fields, forests, water).
-Vegetación: Overall health/color, key variations.
-Prácticas/Estructuras: Any visible agricultural activities, patterns (e.g., linear, circular), significant structures (e.g., buildings, roads, water bodies).
+Provide a brief, 2-4 sentence summary of the image. Focus on the most salient visual features and use land use and surface is such data has been provided via prompt. Satellite images will be in 2.5m/px resolution.
 
 **POSIBLE(S) ECORREGÍMEN(ES):**
-For each plausible ecorregime, provide a short paragraph (1-3 sentences) with:
-
-Nombre del Ecorregímen: [P-number] - [Full Name of Ecorregímen] (e.g., P1 - Pastoreo extensivo, P2A - Establecimiento de islas de biodiversidad, P2B - Siega sostenible).Prioritize by likelihood (e.g., "Altamente probable," "Moderadamente probable"). Briefly link to image evidence and relevant document criteria.
-Estimación de importe: indicate the crops that apply, their surface, the import (€/ha) and the aid amount base on the total crop service. Mention the conditions needed for this to apply.
-Limitaciones: State what cannot be confirmed visually (e.g., specific periods, percentages, species, resolution limits).
+Provide a table with the posible eco-schemes, the viability of implementation, the estimated base amounts for Peninsular and Insular rates and the conditions to qualify for the ES. Provide a clarification to indicate the rates can be increased with pluriannuality except for the P5 eco-scheme.
 
 **ESTIMACIÓN DE IMPORTE TOTAL:**
-At the end, give an estimation under optimal conditions of total aid amount to be percieved based on the user's provided parcel info. If a crop can be assigne to more than one ER, assign it to the optimal one and mention the ERs that the crop hasn't been assigned to (if it was the only crop for the ER. Else just compute the available ones for that ER).
+Provide another table with the ES type, the land uses assigned to it, the total surface covered and the estimated Peninsular base and pluriannuality amounts. Make a clarification to indicate Peninsular rates are being used. To get the amounts, multiply the surface times the unit rate from the ES given on the previous table. For plurianuallity amounts, use the same calculation but add 25 to the unit rate and then multiply. If some ES's are assigned to the exact same land uses and surfaces and have the same exact amount, use " to omit the row values (except the ES type) and let the user understand it's the same values under a different ES.
 
-Cite your latest sources so the user knows from when the info was taken from. Also, mention what crucial information for full eco-regime assessment cannot be gathered from the image and ask the user if they can provide it
+**RESULTADOS:**
+Notify the user when one land use is assigned to multiple ERs. Clarify that, under CAP regulation, only one ES can be assigned to each land use, but you'll provide the most favourable overall. Provide a bullet point list with with the following:
+
+- ES válido(s): Include all of the ERs considered separated by +. If two ERs have the same amounts and land uses, use / to indicate they are the same in terms of money recieved (i.e P3/P4 + P4 + P6/P7). Make sure you include ERs that have different land uses, for Ers are usually mutually exclusive. If this happens, make sure you choose the ES that will be more benefitial on the long run.
+- Importe total: Indicate the total amount of the considered ERs. If two ERS have the same amount, only add it once, not twice, to the total. Separate the amounts with and without pluriannuality (if it applies) using a ' / '.
+- Aclaraciones: make any clarifications that will help the user understand the reasoning behind your resulting ERs assignation assessment.
+
+Cite your latest sources so the user knows from when the info was taken from. Also, mention what crucial information for full eco-scheme assessment cannot be gathered from the image and ask the user if they can provide it

@@ -1,0 +1,335 @@
+{
+  "EN": [
+    {
+      "Ecoscheme": "P1 - Extensive Grazing (Humid Pastures)",
+      "Land_Uses": "PA, PR, PS, MT",
+      "Conditions": "Maintain minimum and maximum livestock density within established limits (e.g., 0.2 LU/ha to 1.2 LU/ha), and respect a non-grazing or mowing period on at least 50% of the area to promote biodiversity.",
+      "Rates": {
+        "Pluriannuality": "N/A",
+        "Threshold_ha": "N/A",
+        "Peninsular": 43.64,
+        "Insular":43.64
+      }
+    },
+    {
+      "Ecoscheme": "P1 - Extensive Grazing (Mediterranean Pastures)",
+      "Land_Uses": "PA, PR, PS, MT",
+      "Conditions": "Maintain minimum and maximum livestock density within established limits (e.g., 0.2 LU/ha to 1.2 LU/ha), and respect a non-grazing or mowing period on at least 50% of the area to promote biodiversity.",
+      "Rates": {
+        "Pluriannuality": "N/A",
+        "Threshold_ha": 95,
+        "Peninsular": {
+          "Tier_1": 27.27,
+          "Tier_2": 27.27
+        },
+        "Insular": {
+          "Tier_1": 49.27,
+          "Tier_2": 49.27
+        }
+
+      }
+    },
+    {
+      "Ecoscheme": "P3/P4 - Rotation/No-Till (Rainfed)",
+      "Land_Uses": "TA, TH",
+      "Conditions": "Rotate 50% of the crop area annually or 10% of the land with enhancing species (5% for legumes) OR 40% of the requested area must be left untilled.",
+      "Rates": {
+        "Pluriannuality": "Applicable",
+        "Threshold_ha": 70,
+        "Peninsular": {
+          "Tier_1": 44.32,
+          "Tier_2": 31.024
+        },
+        "Insular": {
+          "Tier_1": 72.32,
+          "Tier_2": 59.024
+        }
+      }
+    },
+    {
+      "Ecoscheme": "P3/P4 - Rotation/No-Till (Rainfed Humid)",
+      "Land_Uses": "TA, TH",
+      "Conditions": "Rotate 50% of the crop area annually or 10% of the land with enhancing species (5% for legumes) OR 40% of the requested area must be left untilled.",
+      "Rates": {
+        "Pluriannuality": "Applicable",
+        "Threshold_ha": "N/A",
+        "Peninsular": {
+          "Tier_1": 62.986183,
+          "Tier_2": 46.18
+        },
+        "Insular": {
+          "Tier_1": 62.986183,
+          "Tier_2": 46.18
+        }
+      }
+    },
+    {
+      "Ecoscheme": "P3/P4 - Rotation/No-Till (Irrigated)",
+      "Land_Uses": "TA, TH",
+      "Conditions": "Rotate 50% of the crop area annually or 10% of the land with enhancing species (5% for legumes) OR 40% of the requested area must be left untilled.",
+      "Rates": {
+        "Pluriannuality": "Applicable",
+        "Threshold_ha": 25,
+        "Peninsular": {
+          "Tier_1": 141.742439,
+          "Tier_2": 99.219707
+        },
+        "Insular": {
+          "Tier_1": 221.742439,
+          "Tier_2": 179.219707
+        }
+      }
+    },
+    {
+      "Ecoscheme": "P5 (A) - Biodiversity Spaces (Cultivated/Permanent)",
+      "Land_Uses": "TA, TH, CF, CI, CS, CV, FF, FL, FS, FV, FY, OC, OF, OV, VF, VI, VO",
+      "Conditions": "Reserve a minimum strip in cultivated land or perform other specific biodiversity practices.",
+      "Rates": {
+        "Pluriannuality": "N/A",
+        "Threshold_ha": "N/A",
+        "Peninsular": 42.996797,
+        "Insular": "N/A"
+      }
+    },
+    {
+      "Ecoscheme": "P5 (B) - Biodiversity Spaces (Under Water)",
+      "Land_Uses": "AG",
+      "Conditions": "Applicable to cultivated areas under water (e.g., rice fields).",
+      "Rates": {
+        "Pluriannuality": "N/A",
+        "Threshold_ha": "N/A",
+        "Peninsular": 145.098595,
+        "Insular": "N/A"
+      }
+    },
+    {
+      "Ecoscheme": "P6/P7 - Plant Cover (Flat Woody Crops)",
+      "Land_Uses": "CF, CI, CS, CV, FF, FL, FS, FV, FY, OC, OF, OV, VF, VI, VO",
+      "Conditions": "Live cover from Oct 1st to Mar 31st OR Shred and distribute remains uniformly over the surface. Less than 5% slope coefficient.",
+      "Rates": {
+        "Pluriannuality": "Applicable",
+        "Threshold_ha": 15,
+        "Peninsular": {
+          "Tier_1": 59.12,
+          "Tier_2": 41.384
+        },
+        "Insular": {
+          "Tier_1": 99.12,
+          "Tier_2": 81.384
+        }        
+      }
+    },
+    {
+      "Ecoscheme": "P6/P7 - Plant Cover (Medium Slope)",
+      "Land_Uses": "CF, CI, CS, CV, FF, FL, FS, FV, FY, OC, OF, OV, VF, VI, VO",
+      "Conditions": "Live cover from Oct 1st to Mar 31st OR Shred and distribute remains uniformly over the surface. Slope coefficient between 5% and 30%.",
+      "Rates": {
+        "Pluriannuality": "Applicable",
+        "Threshold_ha": 15,
+        "Peninsular": {
+          "Tier_1": 110.56,
+          "Tier_2": 77.392
+        },
+        "Insular": {
+          "Tier_1": 174.56,
+          "Tier_2": 141.392
+        }        
+      }
+    },
+    {
+      "Ecoscheme": "P6/P7 - Plant Cover (Steep Slope/Terraces)",
+      "Land_Uses": "CF, CI, CS, CV, FF, FL, FS, FV, FY, OC, OF, OV, VF, VI, VO",
+      "Conditions": "Live cover from Oct 1st to Mar 31st OR Shred and distribute remains uniformly over the surface. Slope coeffcient must be over 30%.",
+      "Rates": {
+        "Pluriannuality": "Applicable",
+        "Threshold_ha": 15,
+        "Peninsular": {
+          "Tier_1": 131.381037,
+          "Tier_2": 102.91
+        },
+        "Insular": {
+          "Tier_1": 219.381037,
+          "Tier_2": 190.91
+        }        
+      }
+    },
+    {
+      "Ecoscheme": "Non-Eligible",
+      "Land_Uses": "CA, ED, EP, FO, IM, IV, ZC, ZU, ZV",
+      "Conditions": "These classes are not eligible to receive direct payments from Ecoschemes.",
+      "Rates": {
+        "Pluriannuality": "N/A",
+        "Threshold_ha": "N/A",
+        "Peninsular": "N/A",
+        "Insular": "N/A"
+      }
+    }
+  ],
+  "ES": [
+    {
+      "Ecoscheme": "P1 - Pastoreo y Biodiversidad (Pastos Húmedos)",
+      "Land_Uses": "PA, PR, PS, MT",
+      "Conditions": "Mantener una carga ganadera mínima y máxima dentro de los límites establecidos (ej. 0.2 UGM/ha a 1.2 UGM/ha), y respetar un periodo de no pastoreo o siega en al menos el 50% de la superficie para favorecer la biodiversidad.",
+      "Rates": {
+        "Pluriannuality": "N/A",
+        "Threshold_ha": "N/A",
+        "Peninsular": 43.64,
+        "Insular": 43.64
+      }
+    },
+    {
+      "Ecoscheme": "P1 - Pastoreo y Biodiversidad (Pastos Mediterráneos)",
+      "Land_Uses": "PA, PR, PS, MT",
+      "Conditions": "Mantener una carga ganadera mínima y máxima dentro de los límites establecidos (ej. 0.2 UGM/ha a 1.2 UGM/ha), y respetar un periodo de no pastoreo o siega en al menos el 50% de la superficie para favorecer la biodiversidad.",
+      "Rates": {
+        "Pluriannuality": "N/A",
+        "Threshold_ha": 95,
+
+        "Peninsular": {
+          "Tier_1": 27.27,
+          "Tier_2": 27.27
+        },
+        "Insular": {
+          "Tier_1": 49.27,
+          "Tier_2": 49.27
+        }
+      }
+    },
+    {
+      "Ecoscheme": "P3/P4 - Rotación y Siembra Directa (Secano)",
+      "Land_Uses": "TA, TH",
+      "Conditions": "Rotar 50% de cultivo al año o 10% de tierra con especies mejorantes (5% para leguminosas) O El 40% de la superficie solicitada debe estar sin arar.",
+      "Rates": {
+        "Pluriannuality": "Si",
+        "Threshold_ha": 70,
+        "Peninsular": {
+          "Tier_1": 44.32,
+          "Tier_2": 31.024
+        },
+        "Insular": {
+          "Tier_1": 72.32,
+          "Tier_2": 59.024
+        }
+      }
+    },
+    {
+      "Ecoscheme": "P3/P4 - Rotación y Siembra Directa (Húmedo)",
+      "Land_Uses": "TA, TH",
+      "Conditions": "Rotar 50% de cultivo al año o 10% de tierra con especies mejorantes (5% para leguminosas) O El 40% de la superficie solicitada debe estar sin arar.",
+      "Rates": {
+        "Pluriannuality": "Si",
+        "Threshold_ha": 30,
+        "Peninsular": {
+          "Tier_1": 62.986183,
+          "Tier_2": 46.18
+        },
+        "Insular": {
+          "Tier_1": 62.986183,
+          "Tier_2": 46.18
+        }
+      }
+    },
+    {
+      "Ecoscheme": "P3/P4 - Rotación y Siembra Directa (Regadío)",
+      "Land_Uses": "TA, TH",
+      "Conditions": "Rotar 50% de cultivo al año o 10% de tierra con especies mejorantes (5% para leguminosas) O El 40% de la superficie solicitada debe estar sin arar.",
+      "Rates": {
+        "Pluriannuality": "Si",
+        "Threshold_ha": 25,
+
+        "Peninsular": {
+          "Tier_1": 141.742439,
+          "Tier_2": 99.219707
+        },
+        "Insular": {
+          "Tier_1": 221.742439,
+          "Tier_2": 179.219707
+        }
+      }
+    },
+        {
+      "Ecoscheme": "P5 (A) - Espacios de Biodiversidad (Cultivos y Permanentes)",
+      "Land_Uses": "TA, TH, CF, CI, CS, CV, FF, FL, FS, FV, FY, OC, OF, OV, VF, VI, VO",
+      "Conditions": "Reservar una franja mínima en tierras de cultivo o realizar otras prácticas de biodiversidad específicas.",
+      "Rates": {
+        "Pluriannuality": "N/A",
+        "Threshold_ha": "N/A",
+        "Peninsular": 42.996797,
+        "Insular": "N/A"
+      }
+    },
+    {
+      "Ecoscheme": "P5 (B) - Espacios de Biodiversidad (Bajo Agua)",
+      "Land_Uses": "AG",
+      "Conditions": "Aplicable a superficies de cultivo bajo agua (ej. arrozales).",
+      "Rates": {
+        "Pluriannuality": "N/A",
+        "Threshold_ha": "N/A",
+        "Peninsular": 145.098595,
+        "Insular": "N/A"
+      }
+    },
+    {
+      "Ecoscheme": "P6/P7 - Cubiertas Vegetales o Espontáneas (Terrenos Llanos)",
+      "Land_Uses": "CF, CI, CS, CV, FF, FL, FS, FV, FY, OC, OF, OV, VF, VI, VO",
+      "Conditions": "Cubierta viva de 1 Oct hasta 31 Marzo O Triturar y distribuir restos de poda de forma uniforme sobre superficie. Pendiente menor al 5%.",
+      "Rates": {
+        "Pluriannuality": "Si",
+        "Threshold_ha": 15,
+        "Peninsular": {
+          "Tier_1": 59.12,
+          "Tier_2": 41.384
+        },
+        "Insular": {
+          "Tier_1": 99.12,
+          "Tier_2": 81.384
+        }
+      }
+    },
+    {
+      "Ecoscheme": "P6/P7 - Cubiertas Vegetales o Espontáneas (Pendiente Media)",
+      "Land_Uses": "CF, CI, CS, CV, FF, FL, FS, FV, FY, OC, OF, OV, VF, VI, VO",
+      "Conditions": "Cubierta viva de 1 Oct hasta 31 Marzo O Triturar y distribuir restos de poda de forma uniforme sobre superficie. Pendiente entre el 5% y el 30%.",
+      "Rates": {
+        "Pluriannuality": "Si",
+        "Threshold_ha": 15,
+        "Peninsular": {
+          "Tier_1": 110.56,
+          "Tier_2": 77.392
+        },
+        "Insular": {
+          "Tier_1": 174.56,
+          "Tier_2": 141.392
+        }
+      }
+    },
+    {
+      "Ecoscheme": "P6/P7 - Cubiertas Vegetales o Espontáneas (Pendiente Elevada/Bancales)",
+      "Land_Uses": "CF, CI, CS, CV, FF, FL, FS, FV, FY, OC, OF, OV, VF, VI, VO",
+      "Conditions": "Cubierta viva de 1 Oct hasta 31 Marzo O Triturar y distribuir restos de poda de forma uniforme sobre superficie. Pendiente superior al 30%",
+      "Rates": {
+        "Pluriannuality": "Si",
+        "Threshold_ha": 15,
+        "Peninsular": {
+          "Tier_1": 131.381037,
+          "Tier_2": 102.91
+        },
+        "Insular": {
+          "Tier_1": 219.381037,
+          "Tier_2": 190.91
+        }
+      }
+    },
+    {
+      "Ecoscheme": "No Admisible",
+      "Land_Uses": "CA, ED, EP, IM, IV, ZC, ZU, ZV",
+      "Conditions": "Esta categoría se reserva para superficies no agrícolas que no tienen cabida en los ecorregímenes de la CAP.",
+      "Rates": {
+        "Pluriannuality": "N/A",
+        "Threshold_ha": "N/A",
+        "Peninsular": "N/A",
+        "Insular": "N/A"
+      }
+    }
+  ]
+}

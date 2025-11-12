@@ -1,0 +1,16 @@
+{
+  "name": "Country or Region Name",
+  "unit": "Decimal Degrees",
+  "zones": [
+    {
+      "id": "Zone_Identifier",
+      "desc": "Brief description of this zone",
+      "bbox": [-9.30, 35.90, 3.50, 43.80]
+    },
+    {
+      "id": "Another_Zone",
+      "desc": "Optional extra info",
+      "bbox": [1.10, 38.40, 4.40, 40.50]
+    }
+  ]
+}
