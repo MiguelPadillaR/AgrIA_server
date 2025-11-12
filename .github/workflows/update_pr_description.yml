@@ -22,16 +22,21 @@ jobs:
       - name: ⚙️ Get Commit List and Format
         id: commit_list
         run: |
-          # Get the list of commits between the base branch and the head of the PR branch
-          # --pretty=format:"* %s (`%h`)" is a common clean format: "* Commit message (short-hash)"
+          # 1. Define a unique delimiter (e.g., EOF)
+          DELIMITER=$(uuidgen)
+          
+          # 2. Get the list of commits
           COMMIT_LIST=$(git log --pretty=format:"* %s" ${{ github.event.pull_request.base.sha }}..HEAD)
           
-          # Add a header and escape newlines for the next step
+          # 3. Format the final output string, including the header
           FORMATTED_LIST="## 📦 Commits Included in this PR:\n\n${COMMIT_LIST}"
           
-          # Set the output variable for the next step (using github actions output format)
-          echo "list=${FORMATTED_LIST}" >> $GITHUB_OUTPUT
-
+          # 4. Use the multiline delimiter syntax to set the output variable
+          echo "list<<$DELIMITER" >> $GITHUB_OUTPUT
+          echo "${FORMATTED_LIST}" >> $GITHUB_OUTPUT
+          echo "$DELIMITER" >> $GITHUB_OUTPUT
+        shell: bash # Explicitly ensure bash is used
+        
       - name: 🔄 Update Pull Request Description
         uses: actions/github-script@v7
         with:
