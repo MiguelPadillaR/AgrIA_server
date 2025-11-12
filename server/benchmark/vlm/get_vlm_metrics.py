@@ -284,24 +284,33 @@ def run_vlm_benchmark(use_vlm_only: bool=False, lang: str=LANG, use_paper_data: 
         logger.debug(f"Input & output dataframes saved to:\n{input_filepath}\n{out_filepath}")
         logger.info(f"PARAMS. PERMUTATION:\t{prefix[:-1]}")
 
-# try:
-#     times = defaultdict(lambda: defaultdict(dict))
-#     for lang in ["en", "es"]:
-#         for flag in [True, False]:
-#             id= "vlm" if flag else "hybrid"
-#             init_time = datetime.now()
-#             time_taken = (datetime.now() - init_time).total_seconds()
+# Example usage
+def demo():
+    try:
+        times = defaultdict(lambda: defaultdict(dict))
+        for lang in ["en", "es"]:
+            for flag in [True, False]:
+                id= "vlm" if flag else "hybrid"
+                init_time = datetime.now()
+                time_taken = (datetime.now() - init_time).total_seconds()
 
-#             run_vlm_benchmark(flag, lang)
+                run_vlm_benchmark(flag, lang)
 
-#             total_time_formatted = str(timedelta(seconds=time_taken))
-#             logger.debug(f"BENCHMARK EXEC. TIME {total_time_formatted}")
-            
-#             times[id][lang]["time"] = total_time_formatted
+                total_time_formatted = str(timedelta(seconds=time_taken))
+                logger.debug(f"BENCHMARK EXEC. TIME {total_time_formatted}")
+                
+                times[id][lang]["time"] = total_time_formatted
 
-#     run_vlm_benchmark(use_paper_data=True)
-# finally:
-#     print("TIMES:\n", dict(times))
-#     times_filepath = BM_JSON_DIR / "times.json"
-#     with open(times_filepath, 'w') as f:
-#         json.dump(times, f, indent=4)
+        run_vlm_benchmark(use_paper_data=True)
+    
+    except Exception as e:
+        logger.exception(f"Error during VLM metrics collection:\nEXCEPTION:\t{e}")
+    finally:
+        logger.info(f"TIMES:\n{dict(times)}")
+        times_filepath = BM_JSON_DIR / "times.json"
+        with open(times_filepath, 'w') as f:
+            json.depath = BM_JSON_DIR / "times1.json"
+        with open(times_filepath, 'w') as f:
+            f.write(str(times))
+
+# demo()

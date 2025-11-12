@@ -228,67 +228,112 @@ def get_base_rate_details(rates: dict, threshold: Decimal, keys: list = ["Penins
     return base_rate_details
 
 
-def get_exclusivity_land_uses(eligible_schemes_by_land_use, non_eligible_uses, parsed_data) -> dict:
-    land_use_assignments = {} 
+def get_exclusivity_land_uses(eligible_schemes_by_land_use, non_eligible_uses, parsed_data, lang="EN") -> dict:
+    land_use_assignments = {}
     
     for land_use_code, data in parsed_data.items():
-        area = data['area']
-        irrigation = data['irrigation_coef']
-        slope = data['slope_coef'] if data['slope_coef'] else 0.0
-        
+        area = data.get('area', 0.0)
+        irrigation = float(data.get('irrigation_coef', 0.0)[:-1])  # Input format '00.00%'
+        slope = float(data.get('slope_coef')[:-1]) if len(data.get('slope_coef')) > 0 else 0.0  # Input format '00.00%'
+
+        # Skip non-eligible uses
         if land_use_code in non_eligible_uses or land_use_code not in eligible_schemes_by_land_use:
-            land_use_assignments[land_use_code] = {'id': 'N/A', 'name': 'Non-Eligible', 'subtype': None, 'payment_per_ha': Decimal('0')}
+            land_use_assignments[land_use_code] = {
+                'id': 'N/A',
+                'name': 'Non-Eligible',
+                'subtype': None,
+                'payment_per_ha': Decimal('0')
+            }
             continue
-            
+
         best_payment_per_ha = Decimal('-1')
         best_scheme_assignment = None
 
-        # Iterate over ALL rate types (Peninsular, Insular) and all schemes to find the absolute maximum
         for rate_type in ["Peninsular", "Insular"]:
             for scheme in eligible_schemes_by_land_use[land_use_code]:
-                # if "P6/P7" in scheme["id"]:
-                #     # Terrenos Llanos Flat Woody Crops
-                #     # Pendiente Media Medium Slope
-                #     # Pendiente Elevada/Balcanes Steep Slope/Terraces
-                #     type = "Steep Slope/Terraces" if slope <= 12.0 else "Medium Slope" if 6.0 < slope < 12.0 else "Flat Woody Crops" <= 6.0 
-                # elif "P3/P4" in scheme["id"]:
-                #     # Secano Rainfed
-                #     # Húmedo Rainfed Humid
-                #     # Regadío Irrigated
-                #     type = "Irrigated" if irrigation <= 85.0 else "Rainfed Humid" if 20.0 < irrigation < 85.0 else "Rainfed" <= 20.0 
-                # # TODO: Assign proper scheme
+                scheme_id = scheme["id"]
+                scheme_subtype = scheme["subtype"]
+                
+                # Check irrigation and slope coefficient for better assignment accuracy
+                if not is_valid_rate_for_coefficients(scheme_id, scheme_subtype, slope, irrigation):
+                    continue
 
-                # Use rates specific to the current rate_type
+                # Get rate details
                 rate_details = scheme['rates'].get(rate_type)
-                if not rate_details: continue # Skip if rates for this type are not defined
-                
-                # Determine the Base Rate using the Tiered Calculation Rule
-                current_rate = Decimal('0.0')
-                if 'Flat' in rate_details:
-                    current_rate = rate_details['Flat']
-                else:
-                    L = rate_details['Threshold_ha']
-                    current_rate = rate_details['Tier_1'] if (L is not None and area <= L) else rate_details['Tier_2']
+                if not rate_details:
+                    continue
 
-                # Calculate Total Payment per Hectare (Base + Pluriannuality Bonus)
+                # Determine base rate
+                if 'Flat' in rate_details:
+                    current_rate = Decimal(rate_details['Flat']) if rate_details['Flat'] != "N/A" else Decimal("0")
+                else:
+                    threshold = rate_details.get('Threshold_ha')
+                    tier1 = Decimal(rate_details.get('Tier_1', 0))
+                    tier2 = Decimal(rate_details.get('Tier_2', 0))
+                    current_rate = tier1 if (threshold and area <= threshold) else tier2
+
+                # Add pluriannuality if applicable
                 payment_per_ha_total = current_rate
-                if scheme['pluriannuality_applicable']:
+                if scheme.get('pluriannuality_applicable'):
                     payment_per_ha_total += PLURIANNUALITY_BONUS_PER_HA
-                
-                # Compare and assign the best scheme
-                payment_per_ha_total = payment_per_ha_total if "/" not in str(payment_per_ha_total) else Decimal(str("0"))
+
+                # Validate value and assign if better
                 if payment_per_ha_total > best_payment_per_ha:
                     best_payment_per_ha = payment_per_ha_total
-                    
-                    # Store the scheme and the rate_type that yielded the best result
                     best_scheme_assignment = scheme.copy()
                     best_scheme_assignment['best_rate_type'] = rate_type
                     best_scheme_assignment['payment_per_ha_total'] = payment_per_ha_total
-                    # Note: We don't store the applied_rate/tier here, we calculate both fully in step 4
 
+        # Store final best result
         if best_scheme_assignment:
             land_use_assignments[land_use_code] = best_scheme_assignment
+        else:
+            land_use_assignments[land_use_code] = {
+                'id': 'N/A',
+                'name': 'Non-Eligible',
+                'subtype': None,
+                'payment_per_ha': Decimal('0')
+            }
+
     return land_use_assignments
+
+
+def is_valid_rate_for_coefficients(scheme_id, subtype, slope, irrigation):
+    """
+    Validate if an ecoscheme is compatible with the slope or irrigation coefficients.
+    Returns True if valid, False otherwise.
+    """
+    slope_kw = {
+        "flat": ["Flat Woody Crops", "Terrenos Llanos"],
+        "medium": ["Medium Slope", "Pendiente Media"],
+        "steep": ["Steep Slope", "Pendiente Elevada", "Terraces", "Balcanes"],
+    }
+    irrig_kw = {
+        "irrigated": ["Irrigated", "Regadío"],
+        "humid": ["Rainfed Humid", "Húmedo"],
+        "rainfed": ["Rainfed", "Secano"],
+    }
+
+    # --- P6 / P7 schemes: depend on slope ---
+    if any(k in scheme_id for k in ("P6", "P7")):
+        if slope > 12:
+            return any(k in subtype for k in slope_kw["steep"])
+        elif 6 < slope <= 12:
+            return any(k in subtype for k in slope_kw["medium"])
+        else:  # slope <= 6
+            return any(k in subtype for k in slope_kw["flat"])
+
+    # --- P3 / P4 schemes: depend on irrigation ---
+    elif any(k in scheme_id for k in ("P3", "P4")):
+        if irrigation > 50:
+            return any(k in subtype for k in irrig_kw["irrigated"])
+        elif 25 < irrigation <= 50:
+            return any(k in subtype for k in irrig_kw["humid"])
+        else:  # irrigation <= 20
+            return any(k in subtype for k in irrig_kw["rainfed"])
+
+    # Other schemes: no restriction
+    return True
 
 
 def get_ecoschemes_rates_and_totals(parsed_data, land_use_assignments) -> dict:
@@ -612,4 +657,4 @@ def demo():
             logger.info(f"Ecoscheme classification saved to {out_path}")
         print(lang)
 
-demo()
+# demo()
