@@ -10,4 +10,5 @@
 *model*
 *data*
 *res*
+*out*
 server/benchmark/vlm/**/*.json

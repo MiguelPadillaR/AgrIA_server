@@ -14,4 +14,7 @@ def create_chat():
     return chat
 
 CHAT = create_chat()
+# CHAT = None
 
+with open("sys_ins.md", 'w') as f:
+    f.write(generate_system_instructions())

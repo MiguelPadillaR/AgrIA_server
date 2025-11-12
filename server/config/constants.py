@@ -23,11 +23,12 @@ When calculating the amounts, if a Land Use (e.g., TA, OV, VI) is eligible for m
 CALCULATIONS_RULE = """\n\n
 **TIERED CALCULATION RULE:**
 If the 'Rates' object contains 'Tier_1' (`Tramo_1` in Spanish) and 'Tier_2' (`Tramo_2` in Spanish) keys:
-    1.  Identify the **Threshold_ha** (L) from the 'Rates' object. Below or equal to this area, use Tier 1; above i, use Tier 2.
-    2.  The area to be paid at the Tier 1 rate is: AreaTier1 = Minimum(Total Area, L).
-    3.  The area to be paid at the Tier 2 rate is: AreaTier2 = Maximum(0, Total Area - L).
-    4.  The Base Payment for that ES is the sum of: (AreaTier1 * Tier_1) + (AreaTier2 * Tier_2).
-    5.  If the 'Pluriannuality' field is 'Applicable', add the fixed bonus of **25.00 €/ha** (as defined in the system instructions) to the Total Area for the 'Total with Pluriannuality' column.
+    1.  Identify the **Threshold_ha** (L) from the 'Rates' object. Below or equal to this area, use Tier 1; above it, use Tier 2.
+    2.  If Total Area ≤ L:
+            Base Payment = Total Area * Tier_1
+        Else:
+            Base Payment = Total Area * Tier_2
+    3.  If the 'Pluriannuality' field is 'Applicable', add the fixed bonus of **25.00 €/ha** (as defined in the system instructions) to the Total Area for the 'Total with Pluriannuality' column.
 """
 
 FULL_DESC_TRIGGER = '###DESCRIBE_LONG_IMAGE###'

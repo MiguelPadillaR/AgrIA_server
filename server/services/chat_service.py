@@ -1,9 +1,15 @@
+import structlog
+
 from PIL import Image
 from google.genai.types import Content
+
+from ..benchmark.vlm.ecoscheme_classif_algorithm import calculate_ecoscheme_payment_exclusive
+from ..config.chat_config import CHAT as chat
+from ..config.constants import FULL_DESC_TRIGGER, SHORT_DESC_TRIGGER, TEMP_DIR
 from ..config.llm_client import client
 from ..utils.chat_utils import generate_image_context_data, save_image_and_get_path
-from ..config.constants import FULL_DESC_TRIGGER, SHORT_DESC_TRIGGER, TEMP_DIR
-from ..config.chat_config import CHAT as chat
+
+logger = structlog.getLogger()
 
 def generate_user_response(user_input: str) -> str:
     """
@@ -45,18 +51,19 @@ def get_parcel_description(image_date, land_uses, query, image_filename, is_deta
         response (dict:{text:str, imagedesc:str}): Contains the text response and image description.
     """
     try:
-        # Build image context prompt
+        logger.info("Retrieveing parcel data...")
         image_context_data = generate_image_context_data(image_date, land_uses, query)
+        json_data = calculate_ecoscheme_payment_exclusive(image_context_data[lang], lang)
+        logger.debug(f"JSON DATA:\n{json_data}")
         # Insert image context prompt and read image desc file
-        image_desc_prompt =  FULL_DESC_TRIGGER if is_detailed_description else SHORT_DESC_TRIGGER
-        image_desc_prompt += "\n"+image_context_data[lang]
+        desc_trigger =  FULL_DESC_TRIGGER if is_detailed_description else SHORT_DESC_TRIGGER
+        image_desc_prompt = desc_trigger+"\n"+image_context_data[lang]
 
         image_indication_options ={
             'es': "Estas son las características de la parcela cuya imagen te paso. Tenlo en cuenta para tu descripción en español. Comprueba el siguiente prompt para ver si es necesario cambiar el idioma:",
             'en': "These are the parcel's features whose image I am sending you. Take them into account for your description in English. Check next prompt for language change if needed:"
         }
-        image_indication_prompt  = image_indication_options[lang]+ "\n\n" + image_desc_prompt
-
+        image_indication_prompt  = str(f"{desc_trigger}\n{image_indication_options[lang]}\n\n{json_data}")
         # Open image from path
         image_path = TEMP_DIR / str(image_filename).split("?")[0]
         image = Image.open(image_path)
@@ -68,7 +75,8 @@ def get_parcel_description(image_date, land_uses, query, image_filename, is_deta
 
         return response
     except Exception as e:
-        print("Error while getting parcel description: " + e)
+        print(f"Error while getting parcel description:\t{e}")
+        raise
 
 def get_suggestion_for_chat(chat_history: list[Content], lang: str):
     """
@@ -95,7 +103,7 @@ def get_suggestion_for_chat(chat_history: list[Content], lang: str):
         )
         return suggestion.text
     except Exception as e:
-        print("Error getting suggestion:\t", e)
+        print(f"Error getting suggestion:\t{e}")
 
 def get_summarised_chat(chat_history):
     """
@@ -116,7 +124,7 @@ def get_summarised_chat(chat_history):
         )
         return summarised_chat.text
     except Exception as e:
-        print("Error while summarising chat:\t",e)
+        print(f"Error while summarising chat:\t{e}")
 
 def get_role_and_content(chat_history):
     """

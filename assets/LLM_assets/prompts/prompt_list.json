@@ -17,6 +17,11 @@
     "classification": {
         "name": "classification",
         "prompt_filepath": "classification.json"
+    },
+    "examples": {
+        "name": "examples",
+        "prompt_filepath": "",
+        "examples": "examples"
     }
 
 
