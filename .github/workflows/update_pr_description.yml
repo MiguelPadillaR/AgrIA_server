@@ -40,9 +40,9 @@ jobs:
       - name: 🔄 Update Pull Request Description
         uses: actions/github-script@v7
         with:
-          # The script runs with the output from the previous step
+          # Pass the output from the previous step as a new input
           script: |
-            const commitList = context.steps.commit_list.outputs.list;
+            const commitList = inputs.commit_list_output;
             const currentBody = context.payload.pull_request.body;
             
             // Check if the commit list header already exists
@@ -65,3 +65,6 @@ jobs:
               pull_number: context.issue.number,
               body: newBody
             });
+          # 💡 NEW LINE: Map the output 'list' to an input 'commit_list_output'
+          # This is the cleanest way to handle multiline outputs from a previous step
+          commit_list_output: ${{ steps.commit_list.outputs.list }}
